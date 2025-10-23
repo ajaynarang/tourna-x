@@ -24,14 +24,14 @@ tourna-x/
 
 ### Prerequisites
 - Node.js >= 20.x
-- Yarn 1.22.22
+- pnpm 9.0.0
 - MongoDB (local or Atlas)
 
 ### Installation
 
 1. **Install dependencies:**
    ```bash
-   yarn install
+   pnpm install
    ```
 
 2. **Set up environment variables:**
@@ -52,7 +52,7 @@ tourna-x/
 
 4. **Start development:**
    ```bash
-   yarn dev
+   pnpm dev
    ```
 
 This will start:
@@ -61,11 +61,11 @@ This will start:
 
 ## 📦 Available Scripts
 
-- `yarn dev` - Start all apps in development mode
-- `yarn build` - Build all apps for production
-- `yarn lint` - Lint all packages
-- `yarn check-types` - Type check all packages
-- `yarn db:init` - Initialize database with sample data
+- `pnpm dev` - Start all apps in development mode
+- `pnpm build` - Build all apps for production
+- `pnpm lint` - Lint all packages
+- `pnpm check-types` - Type check all packages
+- `pnpm db:init` - Initialize database with sample data
 
 ## 🗄️ Database
 
@@ -104,7 +104,7 @@ The application uses **MongoDB** with the following collections:
 
 ## 🔐 Default Credentials
 
-After running `yarn db:init`:
+After running `pnpm db:init`:
 - **Username:** admin
 - **Password:** admin123
 
@@ -126,12 +126,12 @@ The app includes multiple themes:
 
 ### Frontend (Vercel)
 ```bash
-yarn build:frontend
+pnpm build:frontend
 ```
 
 ### Backend (Railway/Render)
 ```bash
-yarn build:backend
+pnpm build:backend
 ```
 
 ## 📄 License

@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@hookform/resolvers": "3.3.4",
-    "@repo/schemas": "*",
-    "@repo/ui": "*",
+    "@repo/schemas": "workspace:*",
+    "@repo/ui": "workspace:*",
     "@tanstack/react-query": "^5.85.5",
     "@tanstack/react-query-devtools": "^5.85.5",
     "class-variance-authority": "^0.7.0",
@@ -37,8 +37,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2",
-    "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.15.3",
     "@types/react": "^18.2.0",
