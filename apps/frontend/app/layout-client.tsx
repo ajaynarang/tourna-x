@@ -4,15 +4,17 @@ import MobileBottomNavigation from '@/components/layout/mobile-bottom-navigation
 import { AppHeader } from '@/components/layout/app-header';
 import { CommandPalette } from '@/components/command-palette';
 import Providers from '@/components/providers';
+import { ScoringProvider, useScoring } from '@/contexts/scoring-context';
 import { Toaster } from 'sonner';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { usePageTitle } from '@/hooks/use-page-title';
 
-export function RootLayoutClient({ children }: { children: React.ReactNode }) {
+function LayoutContent({ children }: { children: React.ReactNode }) {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const pathname = usePathname();
   const { title, subtitle } = usePageTitle();
+  const { isScoring } = useScoring();
 
   // Check if we're on landing page or auth pages (no header)
   const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/register';
@@ -48,31 +50,38 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
 
   if (isPublicPage) {
     return (
-      <Providers>
-        <div className="relative min-h-screen">
-          <main className="relative z-10 w-full">{children}</main>
-        </div>
-        <Toaster position="top-right" richColors />
-      </Providers>
+      <div className="relative min-h-screen">
+        <main className="relative z-10 w-full">{children}</main>
+      </div>
     );
   }
 
   return (
-    <Providers>
-      <div className="relative min-h-screen">
+    <div className="relative min-h-screen">
+      {!isScoring && (
         <AppHeader
           onCommandPaletteToggle={() => setIsCommandPaletteOpen(true)}
           pageTitle={title}
           pageSubtitle={subtitle}
         />
-        <main className="relative z-10 w-full pb-20 lg:pb-0">{children}</main>
-        {/* <MobileBottomNavigation /> */}
-      </div>
+      )}
+      <main className="relative z-10 w-full pb-20 lg:pb-0">{children}</main>
+      {/* <MobileBottomNavigation /> */}
       <CommandPalette
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
       />
-      <Toaster position="top-right" richColors />
+    </div>
+  );
+}
+
+export function RootLayoutClient({ children }: { children: React.ReactNode }) {
+  return (
+    <Providers>
+      <ScoringProvider>
+        <LayoutContent>{children}</LayoutContent>
+        <Toaster position="top-right" richColors />
+      </ScoringProvider>
     </Providers>
   );
 }

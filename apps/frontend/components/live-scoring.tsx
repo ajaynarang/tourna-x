@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Undo2, BarChart3, X, Trophy, ArrowLeft } from 'lucide-react';
+import { useScoring } from '@/contexts/scoring-context';
 import { 
   ScoringFormat, 
   MatchScore, 
@@ -45,6 +46,17 @@ export default function LiveScoring({
   onMatchComplete,
   onViewDetails
 }: LiveScoringProps) {
+  const { setIsScoring } = useScoring();
+  
+  // Set scoring mode when component mounts
+  React.useEffect(() => {
+    setIsScoring(true);
+    
+    return () => {
+      setIsScoring(false);
+    };
+  }, [setIsScoring]);
+  
   const [playerA, setPlayerA] = useState({ name: initialPlayerA.name, score: initialPlayerA.score });
   const [playerB, setPlayerB] = useState({ name: initialPlayerB.name, score: initialPlayerB.score });
   const [trackingEnabled, setTrackingEnabled] = useState(true);
@@ -210,7 +222,9 @@ export default function LiveScoring({
     const loser = matchScore.winner === 'player1' ? playerB : playerA;
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-black flex items-center justify-center p-6 relative overflow-hidden">
+      <div 
+        className="fixed inset-0 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-black flex items-center justify-center p-6 overflow-y-auto z-[9999]"
+      >
         {/* Celebration Confetti Effect */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-10 left-10 w-3 h-3 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
@@ -296,7 +310,12 @@ export default function LiveScoring({
           </div>
           <div className="flex gap-4">
             <button
-              onClick={() => window.location.href = '/admin/practice-matches'}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = '/admin/practice-matches';
+              }}
               className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-semibold py-4 rounded-xl transition-colors"
             >
               <ArrowLeft className="inline mr-2 h-5 w-5" />
@@ -304,7 +323,12 @@ export default function LiveScoring({
             </button>
             {onViewDetails && (
               <button
-                onClick={() => onViewDetails()}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onViewDetails();
+                }}
                 className="flex-1 bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white font-semibold py-4 rounded-xl transition-colors"
               >
                 View Match Details
@@ -317,158 +341,205 @@ export default function LiveScoring({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      {/* Header */}
-      <div className="max-w-4xl mx-auto mb-6 p-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Badminton Scorer</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={handleUndo}
-              disabled={history.length === 0}
-              className="p-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Undo2 size={20} className="text-gray-600 dark:text-gray-400" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Settings Panel */}
-      {showSettings && (
-        <div className="max-w-4xl mx-auto mb-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">Point Analysis Tracking</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Record why each point was won/lost</p>
-            </div>
-            <button
-              onClick={() => setTrackingEnabled(!trackingEnabled)}
-              className={`relative w-14 h-8 rounded-full transition ${
-                trackingEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-            >
-              <div
-                className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform ${
-                  trackingEnabled ? 'translate-x-6' : ''
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Match Score Display */}
-      <div className="max-w-4xl mx-auto mb-6 px-6">
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 text-center shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Match Score</h3>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white">
-            {getMatchDisplayText(matchScore)}
-          </div>
-          {matchScore.games.length > 0 && (
-            <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Game {matchScore.currentGame} of {scoringFormat.gamesPerMatch}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Current Game Score Display */}
-      <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 px-6">
-        {/* Player A */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white truncate">{playerA.name}</h2>
-          <div className="text-7xl font-bold mb-4 text-gray-900 dark:text-white">
-            {matchScore.games[matchScore.games.length - 1]?.player1Score || 0}
-          </div>
-          {matchScore.games[matchScore.games.length - 1]?.isDeuce && (
-            <div className="text-sm text-yellow-600 dark:text-yellow-400 font-semibold mb-2">Deuce!</div>
-          )}
+    <div 
+      className="fixed inset-0 bg-gray-50 dark:bg-gray-950 overflow-y-auto z-[9999]"
+    >
+      {/* Main Content Container */}
+      <div className="flex flex-col min-h-screen px-4 py-4">
+        {/* Close Button - Top */}
+        <div className="flex justify-end mb-4">
           <button
-            onClick={() => handleScore('A')}
-            disabled={matchScore.isMatchComplete}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsScoring(false);
+              if (onViewDetails) {
+                onViewDetails();
+              } else {
+                window.history.back();
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all"
           >
-            + Point
+            <X size={20} />
+            <span>Close</span>
           </button>
         </div>
 
-        {/* Player B */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white truncate">{playerB.name}</h2>
-          <div className="text-7xl font-bold mb-4 text-gray-900 dark:text-white">
-            {matchScore.games[matchScore.games.length - 1]?.player2Score || 0}
+        {/* Point Analysis Settings - Full Width */}
+        {showSettings && (
+          <div className="w-full mb-4">
+            <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Point Analysis</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Track shot types and analyze gameplay</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setTrackingEnabled(!trackingEnabled);
+                  }}
+                  className={`relative w-14 h-7 rounded-full transition ${
+                    trackingEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                >
+                  <div
+                    className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${
+                      trackingEnabled ? 'translate-x-7' : ''
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
           </div>
-          {matchScore.games[matchScore.games.length - 1]?.isDeuce && (
-            <div className="text-sm text-yellow-600 dark:text-yellow-400 font-semibold mb-2">Deuce!</div>
-          )}
+        )}
+
+        {/* Match Score Display - Full Width */}
+        <div className="w-full mb-6">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-2xl p-6 text-center shadow-lg">
+            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">Match Score</h3>
+            <div className="text-5xl font-bold text-gray-900 dark:text-white">
+              {getMatchDisplayText(matchScore)}
+            </div>
+            {matchScore.games.length > 0 && (
+              <div className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+                Game {matchScore.currentGame} of {scoringFormat.gamesPerMatch}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Undo Button - Full Width */}
+        <div className="w-full mb-6">
           <button
-            onClick={() => handleScore('B')}
-            disabled={matchScore.isMatchComplete}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleUndo();
+            }}
+            disabled={history.length === 0}
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600"
           >
-            + Point
+            <span className="text-lg font-medium">Undo Last Point</span>
           </button>
         </div>
-      </div>
 
-      {/* Quick Stats */}
-      {trackingEnabled && history.length > 0 && (
-        <div className="max-w-4xl mx-auto mb-8 px-6">
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <BarChart3 size={20} className="text-gray-900 dark:text-white" />
-              <h3 className="font-semibold text-gray-900 dark:text-white">Point Analysis</h3>
+        {/* Player Cards - Full Width */}
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+          {/* Player A */}
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white truncate text-center">{playerA.name}</h2>
+            <div className="text-8xl font-bold mb-6 text-gray-900 dark:text-white text-center">
+              {matchScore.games[matchScore.games.length - 1]?.player1Score || 0}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Player A Stats */}
-              <div>
-                <p className="text-gray-900 dark:text-white font-semibold mb-3 text-lg">{playerA.name}</p>
-                <div className="space-y-2">
-                  {Object.entries(stats.A).map(([key, value]) => {
-                    const category = [...pointCategories.winner, ...pointCategories.error].find(c => c.id === key);
-                    if (!category) return null;
-                    return (
-                      <div key={key} className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 flex-1">
-                          <div className={`w-3 h-3 rounded-full ${category.color.split(' ')[0]}`}></div>
-                          <span className="text-gray-700 dark:text-gray-300 text-sm">{category.label}</span>
-                        </div>
-                        <span className="font-bold text-gray-900 dark:text-white text-lg">{value}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+            {matchScore.games[matchScore.games.length - 1]?.isDeuce && (
+              <div className="text-lg text-yellow-600 dark:text-yellow-400 font-semibold mb-4 text-center">Deuce!</div>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleScore('A');
+              }}
+              disabled={matchScore.isMatchComplete}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-6 rounded-xl transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl text-xl"
+            >
+              + Point
+            </button>
+          </div>
+
+          {/* Player B */}
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white truncate text-center">{playerB.name}</h2>
+            <div className="text-8xl font-bold mb-6 text-gray-900 dark:text-white text-center">
+              {matchScore.games[matchScore.games.length - 1]?.player2Score || 0}
+            </div>
+            {matchScore.games[matchScore.games.length - 1]?.isDeuce && (
+              <div className="text-lg text-yellow-600 dark:text-yellow-400 font-semibold mb-4 text-center">Deuce!</div>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleScore('B');
+              }}
+              disabled={matchScore.isMatchComplete}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-6 rounded-xl transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl text-xl"
+            >
+              + Point
+            </button>
+          </div>
+        </div>
+
+        {/* Stats - Full Width at Bottom */}
+        {trackingEnabled && history.length > 0 && (
+          <div className="w-full">
+            <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 size={24} className="text-gray-900 dark:text-white" />
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Point Analysis Stats</h3>
               </div>
-              {/* Player B Stats */}
-              <div>
-                <p className="text-gray-900 dark:text-white font-semibold mb-3 text-lg">{playerB.name}</p>
-                <div className="space-y-2">
-                  {Object.entries(stats.B).map(([key, value]) => {
-                    const category = [...pointCategories.winner, ...pointCategories.error].find(c => c.id === key);
-                    if (!category) return null;
-                    return (
-                      <div key={key} className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 flex-1">
-                          <div className={`w-3 h-3 rounded-full ${category.color.split(' ')[0]}`}></div>
-                          <span className="text-gray-700 dark:text-gray-300 text-sm">{category.label}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Player A Stats */}
+                <div>
+                  <p className="text-gray-900 dark:text-white font-semibold mb-4 text-xl">{playerA.name}</p>
+                  <div className="space-y-3">
+                    {Object.entries(stats.A).map(([key, value]) => {
+                      const category = [...pointCategories.winner, ...pointCategories.error].find(c => c.id === key);
+                      if (!category) return null;
+                      return (
+                        <div key={key} className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className={`w-4 h-4 rounded-full ${category.color.split(' ')[0]}`}></div>
+                            <span className="text-gray-700 dark:text-gray-300 text-base">{category.label}</span>
+                          </div>
+                          <span className="font-bold text-gray-900 dark:text-white text-xl">{value}</span>
                         </div>
-                        <span className="font-bold text-gray-900 dark:text-white text-lg">{value}</span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Player B Stats */}
+                <div>
+                  <p className="text-gray-900 dark:text-white font-semibold mb-4 text-xl">{playerB.name}</p>
+                  <div className="space-y-3">
+                    {Object.entries(stats.B).map(([key, value]) => {
+                      const category = [...pointCategories.winner, ...pointCategories.error].find(c => c.id === key);
+                      if (!category) return null;
+                      return (
+                        <div key={key} className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className={`w-4 h-4 rounded-full ${category.color.split(' ')[0]}`}></div>
+                            <span className="text-gray-700 dark:text-gray-300 text-base">{category.label}</span>
+                          </div>
+                          <span className="font-bold text-gray-900 dark:text-white text-xl">{value}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Analysis Modal */}
       {showAnalysis && currentPoint && (
         <div 
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
-          onClick={skipAnalysis}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            skipAnalysis();
+          }}
         >
           <div 
             className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-3xl p-4 sm:p-6 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
@@ -483,7 +554,12 @@ export default function LiveScoring({
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Tap a reason or tap outside to skip</p>
               </div>
               <button
-                onClick={skipAnalysis}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  skipAnalysis();
+                }}
                 className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0"
                 title="Skip (Esc)"
               >
@@ -502,7 +578,12 @@ export default function LiveScoring({
                   {pointCategories.winner.map((cat, index) => (
                     <button
                       key={cat.id}
-                      onClick={() => handleAnalysisSelect(cat.id)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleAnalysisSelect(cat.id);
+                      }}
                       className={`${cat.color} py-3 sm:py-4 px-3 sm:px-4 rounded-xl font-semibold transition transform active:scale-95 text-white shadow-lg hover:shadow-xl group relative overflow-hidden touch-manipulation`}
                       title={`${cat.description} (Press ${index + 1})`}
                     >
@@ -511,7 +592,6 @@ export default function LiveScoring({
                           <span className="text-base sm:text-lg">{cat.label}</span>
                           <span className="text-xs bg-white/20 rounded px-1.5 py-0.5 font-mono">{index + 1}</span>
                         </div>
-                        {/* <div className="text-[10px] sm:text-xs opacity-90">{cat.description}</div> */}
                       </div>
                       <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
                     </button>
@@ -531,7 +611,12 @@ export default function LiveScoring({
                     return (
                       <button
                         key={cat.id}
-                        onClick={() => handleAnalysisSelect(cat.id)}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleAnalysisSelect(cat.id);
+                        }}
                         className={`${cat.color} py-3 sm:py-4 px-3 sm:px-4 rounded-xl font-semibold transition transform active:scale-95 text-white shadow-lg hover:shadow-xl group relative overflow-hidden touch-manipulation`}
                         title={`${cat.description} (Press ${keyNumber})`}
                       >
@@ -540,7 +625,6 @@ export default function LiveScoring({
                             <span className="text-base sm:text-lg">{cat.label}</span>
                             <span className="text-xs bg-white/20 rounded px-1.5 py-0.5 font-mono">{keyNumber}</span>
                           </div>
-                          {/* <div className="text-[10px] sm:text-xs opacity-90">{cat.description}</div> */}
                         </div>
                         <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
                       </button>
@@ -551,7 +635,12 @@ export default function LiveScoring({
 
               {/* Skip Button */}
               <button
-                onClick={skipAnalysis}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  skipAnalysis();
+                }}
                 className="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-3 sm:py-4 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition font-semibold border-2 border-gray-200 dark:border-gray-700 touch-manipulation"
               >
                 <span className="text-sm sm:text-base">Skip Analysis</span>

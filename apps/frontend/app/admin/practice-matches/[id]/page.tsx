@@ -218,60 +218,32 @@ export default function PracticeMatchDetailsPage({
   // If scoring mode is active, show full-screen scoring
   if (showScoring && match.status === 'in_progress') {
     return (
-      <div className="fixed inset-0 z-50 bg-white dark:bg-gray-950 flex flex-col">
-        {/* Scoring Header */}
-        <div className="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
-          <div className="mx-auto max-w-7xl px-4 py-4">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => setShowScoring(false)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium"
-              >
-                <ArrowLeft className="h-5 w-5" />
-                Exit Scoring
-              </button>
-              
-              <div className="flex items-center gap-2">
-                <Badge className={getCategoryBadge(match.category)}>
-                  {match.category}
-                </Badge>
-                <Badge className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20">
-                  Live
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Scoring Content */}
-        <div className="flex-1 overflow-y-auto">
-          <LiveScoring
-            matchId={match._id}
-            playerA={{ 
-              name: formatPlayers(match).team1,
-              score: match.games && match.games.length > 0 
-                ? match.games[match.games.length - 1].player1Score || 0 
-                : 0, 
-              id: match.player1Id || 'guest1' 
-            }}
-            playerB={{ 
-              name: formatPlayers(match).team2,
-              score: match.games && match.games.length > 0 
-                ? match.games[match.games.length - 1].player2Score || 0 
-                : 0, 
-              id: match.player2Id || 'guest2' 
-            }}
-            scoringFormat={{
-              pointsPerGame: match.scoringFormat?.pointsPerGame || 21,
-              gamesPerMatch: match.scoringFormat?.gamesPerMatch || 3,
-              winBy: match.scoringFormat?.winBy || 2,
-              maxPoints: match.scoringFormat?.maxPoints || 30,
-            }}
-            onScoreUpdate={handleScoreUpdate}
-            onMatchComplete={handleMatchComplete}
-          />
-        </div>
-      </div>
+      <LiveScoring
+        matchId={match._id}
+        playerA={{ 
+          name: formatPlayers(match).team1,
+          score: match.games && match.games.length > 0 
+            ? match.games[match.games.length - 1].player1Score || 0 
+            : 0, 
+          id: match.player1Id || 'guest1' 
+        }}
+        playerB={{ 
+          name: formatPlayers(match).team2,
+          score: match.games && match.games.length > 0 
+            ? match.games[match.games.length - 1].player2Score || 0 
+            : 0, 
+          id: match.player2Id || 'guest2' 
+        }}
+        scoringFormat={{
+          pointsPerGame: match.scoringFormat?.pointsPerGame || 21,
+          gamesPerMatch: match.scoringFormat?.gamesPerMatch || 3,
+          winBy: match.scoringFormat?.winBy || 2,
+          maxPoints: match.scoringFormat?.maxPoints || 30,
+        }}
+        onScoreUpdate={handleScoreUpdate}
+        onMatchComplete={handleMatchComplete}
+        onViewDetails={() => setShowScoring(false)}
+      />
     );
   }
 

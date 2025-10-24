@@ -515,44 +515,26 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
 
       {/* Scoring Modal */}
       {showScoringModal && selectedMatch && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="glass-card-intense w-full max-w-2xl rounded-2xl p-6"
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-primary text-xl font-bold">Live Scoring</h3>
-              <button
-                onClick={() => {
-                  setShowScoringModal(false);
-                  setSelectedMatch(null);
-                }}
-                className="glass-card rounded-lg p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              >
-                <XCircle className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <LiveScoring 
-              matchId={selectedMatch._id || ''} 
-              playerA={{
-                name: selectedMatch.player1Name || 'Player 1',
-                score: selectedMatch.player1Score?.[0] || 0,
-                id: selectedMatch.player1Id || ''
-              }}
-              playerB={{
-                name: selectedMatch.player2Name || 'Player 2',
-                score: selectedMatch.player2Score?.[0] || 0,
-                id: selectedMatch.player2Id || ''
-              }}
-              scoringFormat={{ pointsPerGame: 21, gamesPerMatch: 3, winBy: 2, maxPoints: 30 }}
-              onScoreUpdate={handleLiveScoreUpdate}
-              onMatchComplete={handleMatchComplete}
-            />
-          </motion.div>
-        </div>
+        <LiveScoring 
+          matchId={selectedMatch._id || ''} 
+          playerA={{
+            name: selectedMatch.player1Name || 'Player 1',
+            score: selectedMatch.player1Score?.[0] || 0,
+            id: selectedMatch.player1Id || ''
+          }}
+          playerB={{
+            name: selectedMatch.player2Name || 'Player 2',
+            score: selectedMatch.player2Score?.[0] || 0,
+            id: selectedMatch.player2Id || ''
+          }}
+          scoringFormat={{ pointsPerGame: 21, gamesPerMatch: 3, winBy: 2, maxPoints: 30 }}
+          onScoreUpdate={handleLiveScoreUpdate}
+          onMatchComplete={handleMatchComplete}
+          onViewDetails={() => {
+            setShowScoringModal(false);
+            setSelectedMatch(null);
+          }}
+        />
       )}
     </div>
   );
