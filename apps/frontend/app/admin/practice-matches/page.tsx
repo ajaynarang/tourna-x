@@ -100,16 +100,21 @@ export default function PracticeMatchesPage() {
     if (!confirm('Are you sure you want to delete this practice match?')) return;
 
     try {
+      console.log('Deleting match:', matchId);
       const response = await fetch(`/api/practice-matches/${matchId}`, {
         method: 'DELETE',
       });
 
+      console.log('Delete response status:', response.status);
       const data = await response.json();
+      console.log('Delete response data:', data);
 
       if (response.ok && data.success) {
+        console.log('Match deleted successfully, refreshing list...');
         // Successfully deleted, refresh the matches list
         await fetchMatches();
       } else {
+        console.log('Delete failed:', data.error);
         // Show specific error message from API
         alert(data.error || 'Failed to delete match');
       }

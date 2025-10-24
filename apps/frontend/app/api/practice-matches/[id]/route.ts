@@ -114,14 +114,18 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    console.log('DELETE request for practice match:', id);
+    
     const db = await connectToDatabase();
     const authUser = await getAuthUser(request);
 
     if (!authUser || !authUser.roles.includes('admin')) {
+      console.log('Unauthorized delete attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!ObjectId.isValid(id)) {
+      console.log('Invalid match ID:', id);
       return NextResponse.json({ error: 'Invalid match ID' }, { status: 400 });
     }
 
@@ -131,20 +135,26 @@ export async function DELETE(
     });
 
     if (!match) {
+      console.log('Practice match not found:', id);
       return NextResponse.json({ error: 'Practice match not found' }, { status: 404 });
     }
 
+    console.log('Found match to delete:', { id, status: match.status });
+
     // Don't allow deletion of completed matches
     if (match.status === 'completed') {
+      console.log('Cannot delete completed match');
       return NextResponse.json(
         { error: 'Cannot delete a completed match' },
         { status: 400 }
       );
     }
 
-    await db.collection(COLLECTIONS.MATCHES).deleteOne({
+    const deleteResult = await db.collection(COLLECTIONS.MATCHES).deleteOne({
       _id: new ObjectId(id)
     });
+
+    console.log('Delete result:', deleteResult);
 
     return NextResponse.json({
       success: true,

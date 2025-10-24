@@ -90,15 +90,20 @@ export default function PracticeMatchDetailsPage({
       const response = await fetch(`/api/practice-matches/${id}`);
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         console.log('Practice match data:', data.data);
         console.log('Winner:', data.data.winnerName);
         console.log('Match result:', data.data.matchResult);
         console.log('Games:', data.data.games);
         setMatch(data.data);
+      } else {
+        // Match not found or error - set match to null to show 404 page
+        console.log('Match not found or error:', data.error);
+        setMatch(null);
       }
     } catch (error) {
       console.error('Error fetching practice match:', error);
+      setMatch(null);
     } finally {
       setIsLoading(false);
     }
