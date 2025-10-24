@@ -1,9 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "pnpm run build",
-  "installCommand": "pnpm install",
+  "buildCommand": "cd ../.. && pnpm run build",
+  "installCommand": "cd ../.. && pnpm install",
   "framework": "nextjs",
-  "outputDirectory": "apps/frontend/.next",
   "env": {
     "NODE_ENV": "production",
     "MONGODB_URI": "mongodb-uri",
