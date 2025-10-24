@@ -65,6 +65,7 @@ export default function LiveScoring({
   const [history, setHistory] = useState<PointHistory[]>([]);
   const [showSettings, setShowSettings] = useState(true);
   const [matchScore, setMatchScore] = useState<MatchScore>(initializeMatch(scoringFormat));
+  const [showNewGameNotification, setShowNewGameNotification] = useState(false);
 
   // Keyboard shortcuts for quick point analysis
   React.useEffect(() => {
@@ -122,7 +123,14 @@ export default function LiveScoring({
 
   const addPoint = (player: string, reason: string | null) => {
     const scoringPlayer = player === 'A' ? 'player1' : 'player2';
+    const previousGameCount = matchScore.games.length;
     const updatedMatchScore = updateMatchScore(matchScore, scoringPlayer, scoringFormat);
+    
+    // Check if a new game started
+    if (updatedMatchScore.games.length > previousGameCount) {
+      setShowNewGameNotification(true);
+      setTimeout(() => setShowNewGameNotification(false), 3000); // Hide after 3 seconds
+    }
     
     const newHistory = [...history, {
       player,
@@ -344,6 +352,16 @@ export default function LiveScoring({
     <div 
       className="fixed inset-0 bg-gray-50 dark:bg-gray-950 overflow-y-auto z-[9999]"
     >
+      {/* New Game Notification */}
+      {showNewGameNotification && (
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[10000] animate-in zoom-in-95 duration-300">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-6 rounded-2xl shadow-2xl text-center">
+            <div className="text-2xl font-bold mb-2">🎉 New Game Started! 🎉</div>
+            <div className="text-lg">Game {matchScore.games.length} of {scoringFormat.gamesPerMatch}</div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content Container */}
       <div className="flex flex-col min-h-screen px-4 py-4">
         {/* Close Button - Top */}
@@ -401,13 +419,44 @@ export default function LiveScoring({
         {/* Match Score Display - Full Width */}
         <div className="w-full mb-6">
           <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-2xl p-6 text-center shadow-lg">
-            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">Match Score</h3>
-            <div className="text-5xl font-bold text-gray-900 dark:text-white">
+            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">Overall Match Score</h3>
+            <div className="text-5xl font-bold text-gray-900 dark:text-white mb-2">
               {getMatchDisplayText(matchScore)}
             </div>
             {matchScore.games.length > 0 && (
-              <div className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+              <div className="text-lg text-gray-600 dark:text-gray-400 mb-2">
                 Game {matchScore.currentGame} of {scoringFormat.gamesPerMatch}
+              </div>
+            )}
+            {/* Game Progress Indicator */}
+            <div className="flex justify-center items-center gap-2 mt-3">
+              {Array.from({ length: scoringFormat.gamesPerMatch }, (_, index) => (
+                <div
+                  key={index}
+                  className={`w-3 h-3 rounded-full transition-all ${
+                    index < matchScore.games.length
+                      ? matchScore.games[index]?.winner === 'player1'
+                        ? 'bg-green-500'
+                        : 'bg-blue-500'
+                      : index === matchScore.games.length
+                      ? 'bg-yellow-500 animate-pulse'
+                      : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                />
+              ))}
+            </div>
+            {/* Game Status */}
+            {matchScore.games.length > 0 && (
+              <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                {matchScore.games[matchScore.games.length - 1]?.isGameComplete ? (
+                  <span className="text-green-600 dark:text-green-400 font-semibold">
+                    Game {matchScore.games.length} Complete
+                  </span>
+                ) : (
+                  <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                    Game {matchScore.games.length} In Progress
+                  </span>
+                )}
               </div>
             )}
           </div>

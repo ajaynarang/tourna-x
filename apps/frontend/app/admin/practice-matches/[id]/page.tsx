@@ -429,14 +429,6 @@ export default function PracticeMatchDetailsPage({
                           </div>
                         </div>
                         
-                        {game.winner && (
-                          <div className="flex items-center gap-1">
-                            <Trophy className="h-4 w-4 text-green-600 dark:text-green-400" />
-                            <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                              {game.winner === 'player1' ? players.team1 : players.team2}
-                            </span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -649,79 +641,7 @@ export default function PracticeMatchDetailsPage({
           </Card>
         </div>
 
-        {/* Game Results */}
-        {match.games && match.games.length > 0 ? (
-          <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 mt-6">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">Game Results</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {match.games.map((game: any, index: number) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-                        Game {game.gameNumber || index + 1}
-                      </div>
-                      {game.winner && (
-                        <Trophy className="h-4 w-4 text-yellow-500" />
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <div className={`text-2xl font-bold ${
-                          game.winner === 'player1' 
-                            ? 'text-green-600 dark:text-green-400' 
-                            : 'text-gray-500 dark:text-gray-400'
-                        }`}>
-                          {game.player1Score}
-                        </div>
-                      </div>
-                      
-                      <div className="text-gray-400 dark:text-gray-600 font-bold">-</div>
-                      
-                      <div className="text-left">
-                        <div className={`text-2xl font-bold ${
-                          game.winner === 'player2' 
-                            ? 'text-green-600 dark:text-green-400' 
-                            : 'text-gray-500 dark:text-gray-400'
-                        }`}>
-                          {game.player2Score}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {game.winner && (
-                      <div className="text-sm text-gray-600 dark:text-gray-400 min-w-[100px] text-right">
-                        {game.winner === 'player1' 
-                          ? (match.category === 'singles' ? match.player1Name : `${match.player1Name}/${match.player3Name}`)
-                          : (match.category === 'singles' ? match.player2Name : `${match.player2Name}/${match.player4Name}`)
-                        } won
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ) : match.status === 'completed' && (
-          <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 mt-6">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">Match Result</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-6">
-                <p className="text-gray-600 dark:text-gray-400">
-                  Match completed. Check the match completion card above for the final result.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+       
       </div>
     </div>
   );
