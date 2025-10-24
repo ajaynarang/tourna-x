@@ -215,7 +215,7 @@ export default function PracticeMatchesPage() {
                 <Dumbbell className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Practice Matches</h1>
+                <h1 className="text-l font-semibold text-gray-900 dark:text-white">Practice Matches</h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{matches.length} total matches</p>
               </div>
             </div>
@@ -223,7 +223,12 @@ export default function PracticeMatchesPage() {
             <div className="flex items-center gap-2">
               {/* Mobile Filter Toggle */}
               <Button
-                onClick={() => setShowFilters(!showFilters)}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowFilters(!showFilters);
+                }}
                 variant="outline"
                 className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-xl"
               >
@@ -232,8 +237,13 @@ export default function PracticeMatchesPage() {
               </Button>
               
               <Button
-                onClick={() => setIsCreateDialogOpen(true)}
-                variant="default"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsCreateDialogOpen(true);
+                }}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">New Match</span>
@@ -258,7 +268,12 @@ export default function PracticeMatchesPage() {
                   {['all', 'scheduled', 'in_progress', 'completed'].map((status) => (
                     <button
                       key={status}
-                      onClick={() => setFilter(status as any)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setFilter(status as any);
+                      }}
                       className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                         filter === status
                           ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
@@ -282,7 +297,12 @@ export default function PracticeMatchesPage() {
                   {['all', 'singles', 'doubles', 'mixed'].map((category) => (
                     <button
                       key={category}
-                      onClick={() => setCategoryFilter(category as any)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCategoryFilter(category as any);
+                      }}
                       className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                         categoryFilter === category
                           ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
@@ -303,7 +323,12 @@ export default function PracticeMatchesPage() {
                 Showing {matches.length} match{matches.length !== 1 ? 'es' : ''}
               </div>
               <button
-                onClick={fetchMatches}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  fetchMatches();
+                }}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
               >
                 <RefreshCw className="h-4 w-4" />
@@ -331,7 +356,12 @@ export default function PracticeMatchesPage() {
               Get started by creating your first practice match and track your progress
             </p>
             <Button
-              onClick={() => setIsCreateDialogOpen(true)}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsCreateDialogOpen(true);
+              }}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25"
             >
               <Plus className="mr-2 h-4 w-4" />
