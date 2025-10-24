@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+        gradient.addColorStop(0, '#3b82f6');
+        gradient.addColorStop(1, '#1d4ed8');
+        
+        // Fill background with rounded corners
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 512, 512);
+        
+        // Create clipping path for rounded corners
+        ctx.beginPath();
+        ctx.roundRect(0, 0, 512, 512, 80);
+        ctx.clip();
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 512, 512);
+        
+        // Reset clipping
+        ctx.restore();
+        ctx.save();
+        
+        // Draw badminton racket
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 16;
+        ctx.lineCap = 'round';
+        
+        // Racket frame
+        ctx.beginPath();
+        ctx.ellipse(256, 200, 100, 60, 0, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Racket handle
+        ctx.beginPath();
+        ctx.moveTo(256, 140);
+        ctx.lineTo(256, 260);
+        ctx.stroke();
+        
+        // Racket strings
+        ctx.beginPath();
+        ctx.moveTo(206, 200);
+        ctx.lineTo(306, 200);
+        ctx.stroke();
+        
+        // Shuttlecock
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(350, 150, 15, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Shuttlecock feathers
+        ctx.beginPath();
+        ctx.moveTo(350, 165);
+        ctx.lineTo(340, 185);
+        ctx.lineTo(360, 185);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Add text
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Tourna-X', 256, 400);
+        
+        // Download function
+        function downloadIcon(size) {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = size;
+            tempCanvas.height = size;
+            
+            tempCtx.drawImage(canvas, 0, 0, size, size);
+            
+            const link = document.createElement('a');
+            link.download = `icon-${size}x${size}.png`;
+            link.href = tempCanvas.toDataURL();
+            link.click();
+        }
+        
+        // Generate all required sizes
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        sizes.forEach(size => {
+            setTimeout(() => downloadIcon(size), size * 10);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+  <g transform="translate(128, 128)">
+    <!-- Badminton racket -->
+    <ellipse cx="128" cy="128" rx="100" ry="60" fill="none" stroke="white" stroke-width="8"/>
+    <line x1="128" y1="68" x2="128" y2="188" stroke="white" stroke-width="8"/>
+    <line x1="78" y1="128" x2="178" y2="128" stroke="white" stroke-width="8"/>
+    <!-- Shuttlecock -->
+    <circle cx="200" cy="80" r="12" fill="white"/>
+    <path d="M200 92 L190 110 L210 110 Z" fill="white"/>
+  </g>
+  <!-- Tournament text -->
+  <text x="256" y="400" font-family="Arial, sans-serif" font-size="32" font-weight="bold" text-anchor="middle" fill="white">Tourna-X</text>
+</svg>

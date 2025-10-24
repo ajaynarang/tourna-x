@@ -17,6 +17,19 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
   // Check if we're on landing page or auth pages (no header)
   const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/register';
 
+  // Register service worker for PWA
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+          console.log('SW registered: ', registration);
+        })
+        .catch((registrationError) => {
+          console.log('SW registration failed: ', registrationError);
+        });
+    }
+  }, []);
+
   // Cmd+K keyboard shortcut
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
