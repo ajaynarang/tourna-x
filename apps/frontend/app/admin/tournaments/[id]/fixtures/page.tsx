@@ -5,7 +5,22 @@ import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/auth-guard';
 import LiveScoring from '@/components/live-scoring';
 import { Match as BaseMatch } from '@repo/schemas';
+import { MatchScore } from '@/lib/scoring-utils';
 import { motion } from 'framer-motion';
+
+interface PointHistory {
+  player: string;
+  reason: string | null;
+  scoreA: number;
+  scoreB: number;
+  timestamp: Date;
+}
+
+interface Player {
+  name: string;
+  score: number;
+  id: string;
+}
 
 // Extended Match interface with new scoring fields
 interface Match extends Omit<BaseMatch, 'games'> {
@@ -136,27 +151,27 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
     );
   };
 
-  const handleLiveScoreUpdate = (playerA: any, playerB: any, history: any[]) => {
+  const handleLiveScoreUpdate = (matchScore: MatchScore, history: PointHistory[]) => {
     if (!selectedMatch) return;
     
     // Convert LiveScoring format to Match format
     const updatedMatch: Match = {
       ...selectedMatch,
-      player1Score: [playerA.score],
-      player2Score: [playerB.score],
-      status: 'in_progress'
+      player1Score: [matchScore.games[matchScore.currentGame - 1]?.player1Score || 0],
+      player2Score: [matchScore.games[matchScore.currentGame - 1]?.player2Score || 0],
+      status: matchScore.isMatchComplete ? 'completed' : 'in_progress'
     };
     
     handleScoreUpdate(updatedMatch);
   };
 
-  const handleMatchComplete = (winner: any, finalScore: { playerA: number; playerB: number }) => {
+  const handleMatchComplete = (winner: Player, finalScore: MatchScore) => {
     if (!selectedMatch) return;
     
     const updatedMatch: Match = {
       ...selectedMatch,
-      player1Score: [finalScore.playerA],
-      player2Score: [finalScore.playerB],
+      player1Score: [finalScore.player1GamesWon],
+      player2Score: [finalScore.player2GamesWon],
       status: 'completed',
       winnerId: winner.id === selectedMatch.player1Id ? selectedMatch.player1Id : selectedMatch.player2Id
     };
@@ -230,7 +245,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
             Completed
           </span>
         );
-      case 'ongoing':
+      case 'in_progress':
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-500">
             <Play className="h-3 w-3" />
@@ -532,6 +547,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
                 score: selectedMatch.player2Score?.[0] || 0,
                 id: selectedMatch.player2Id || ''
               }}
+              scoringFormat={{ pointsPerGame: 21, gamesPerMatch: 3, winBy: 2, maxPoints: 30 }}
               onScoreUpdate={handleLiveScoreUpdate}
               onMatchComplete={handleMatchComplete}
             />

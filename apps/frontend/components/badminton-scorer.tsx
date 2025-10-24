@@ -82,7 +82,7 @@ export default function BadmintonScorer({
             stats[player][point.reason] = 0;
           }
           if (stats[player][point.reason] !== undefined) {
-            stats[player][point.reason]++;
+            stats[player][point.reason] = (stats[player][point.reason] || 0) + 1;
           }
         }
       }
