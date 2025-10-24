@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Validate practice match data
-    const practiceMatchData = {
+    const practiceMatchData: any = {
       matchType: 'practice',
       tournamentId: null,
       category: body.category,
@@ -109,10 +109,12 @@ export async function POST(request: NextRequest) {
       player1Name: body.player1?.name || '',
       player1Phone: body.player1?.phone,
       player1IsGuest: body.player1?.isGuest || false,
+      player1Gender: body.player1?.gender,
       player2Id: body.player2?.userId ? new ObjectId(body.player2.userId) : undefined,
       player2Name: body.player2?.name || '',
       player2Phone: body.player2?.phone,
       player2IsGuest: body.player2?.isGuest || false,
+      player2Gender: body.player2?.gender,
       court: body.court,
       venue: body.venue,
       notes: body.notes,
@@ -130,7 +132,22 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     };
 
-    // Validate that we have either userId or phone+name for both players
+    // For doubles/mixed doubles, add team partners
+    if (body.category === 'doubles' || body.category === 'mixed') {
+      practiceMatchData.player3Id = body.player3?.userId ? new ObjectId(body.player3.userId) : undefined;
+      practiceMatchData.player3Name = body.player3?.name || '';
+      practiceMatchData.player3Phone = body.player3?.phone;
+      practiceMatchData.player3IsGuest = body.player3?.isGuest || false;
+      practiceMatchData.player3Gender = body.player3?.gender;
+      
+      practiceMatchData.player4Id = body.player4?.userId ? new ObjectId(body.player4.userId) : undefined;
+      practiceMatchData.player4Name = body.player4?.name || '';
+      practiceMatchData.player4Phone = body.player4?.phone;
+      practiceMatchData.player4IsGuest = body.player4?.isGuest || false;
+      practiceMatchData.player4Gender = body.player4?.gender;
+    }
+
+    // Validate that we have either userId or phone+name for all players
     if (!practiceMatchData.player1Id && (!practiceMatchData.player1Phone || !practiceMatchData.player1Name)) {
       return NextResponse.json(
         { error: 'Player 1 must have either a user ID or phone and name' },
@@ -143,6 +160,46 @@ export async function POST(request: NextRequest) {
         { error: 'Player 2 must have either a user ID or phone and name' },
         { status: 400 }
       );
+    }
+
+    // Validate doubles/mixed doubles requirements
+    if (body.category === 'doubles' || body.category === 'mixed') {
+      if (!practiceMatchData.player3Id && (!practiceMatchData.player3Phone || !practiceMatchData.player3Name)) {
+        return NextResponse.json(
+          { error: 'Team 1 Player 2 must have either a user ID or phone and name' },
+          { status: 400 }
+        );
+      }
+
+      if (!practiceMatchData.player4Id && (!practiceMatchData.player4Phone || !practiceMatchData.player4Name)) {
+        return NextResponse.json(
+          { error: 'Team 2 Player 2 must have either a user ID or phone and name' },
+          { status: 400 }
+        );
+      }
+
+      // Validate mixed doubles gender requirements
+      if (body.category === 'mixed') {
+        // Check if team 1 has different genders
+        if (practiceMatchData.player1Gender && practiceMatchData.player3Gender) {
+          if (practiceMatchData.player1Gender === practiceMatchData.player3Gender) {
+            return NextResponse.json(
+              { error: 'Mixed doubles requires each team to have one male and one female player' },
+              { status: 400 }
+            );
+          }
+        }
+
+        // Check if team 2 has different genders
+        if (practiceMatchData.player2Gender && practiceMatchData.player4Gender) {
+          if (practiceMatchData.player2Gender === practiceMatchData.player4Gender) {
+            return NextResponse.json(
+              { error: 'Mixed doubles requires each team to have one male and one female player' },
+              { status: 400 }
+            );
+          }
+        }
+      }
     }
 
     const result = await db.collection(COLLECTIONS.MATCHES).insertOne(practiceMatchData);

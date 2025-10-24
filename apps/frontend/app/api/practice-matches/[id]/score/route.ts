@@ -186,7 +186,13 @@ export async function POST(
       case 'update_score':
         // Handle new matchScore format
         if (matchScore) {
-          updatedMatch.games = matchScore.games || [];
+          // Add gameNumber to each game if not present
+          const gamesWithNumbers = matchScore.games.map((game: any, index: number) => ({
+            ...game,
+            gameNumber: game.gameNumber || index + 1
+          }));
+          
+          updatedMatch.games = gamesWithNumbers;
           updatedMatch.player1GamesWon = matchScore.player1GamesWon || 0;
           updatedMatch.player2GamesWon = matchScore.player2GamesWon || 0;
           
@@ -194,7 +200,17 @@ export async function POST(
           if (matchScore.isMatchComplete && matchScore.winner) {
             updatedMatch.status = 'completed';
             updatedMatch.winnerId = matchScore.winner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id;
-            updatedMatch.winnerName = matchScore.winner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
+            
+            // Set winner name based on category (team names for doubles/mixed)
+            if (updatedMatch.category === 'singles') {
+              updatedMatch.winnerName = matchScore.winner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
+            } else {
+              // For doubles/mixed, show team name
+              updatedMatch.winnerName = matchScore.winner === 'player1' 
+                ? `${updatedMatch.player1Name} / ${updatedMatch.player3Name}`
+                : `${updatedMatch.player2Name} / ${updatedMatch.player4Name}`;
+            }
+            
             updatedMatch.endTime = new Date();
             
             // Update match result
@@ -255,7 +271,16 @@ export async function POST(
           updatedMatch.status = 'completed';
           updatedMatch.endTime = new Date();
           updatedMatch.winnerId = matchWinner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id;
-          updatedMatch.winnerName = matchWinner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
+          
+          // Set winner name based on category (team names for doubles/mixed)
+          if (updatedMatch.category === 'singles') {
+            updatedMatch.winnerName = matchWinner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
+          } else {
+            // For doubles/mixed, show team name
+            updatedMatch.winnerName = matchWinner === 'player1' 
+              ? `${updatedMatch.player1Name} / ${updatedMatch.player3Name}`
+              : `${updatedMatch.player2Name} / ${updatedMatch.player4Name}`;
+          }
 
           // Calculate match result
           const player1GamesWon = updatedMatch.games.filter((g: any) => g.winner === 'player1').length;
@@ -286,7 +311,16 @@ export async function POST(
         const finalWinner = determineMatchWinner(updatedMatch.games, scoringFormat || updatedMatch.scoringFormat);
         if (finalWinner) {
           updatedMatch.winnerId = finalWinner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id;
-          updatedMatch.winnerName = finalWinner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
+          
+          // Set winner name based on category (team names for doubles/mixed)
+          if (updatedMatch.category === 'singles') {
+            updatedMatch.winnerName = finalWinner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
+          } else {
+            // For doubles/mixed, show team name
+            updatedMatch.winnerName = finalWinner === 'player1' 
+              ? `${updatedMatch.player1Name} / ${updatedMatch.player3Name}`
+              : `${updatedMatch.player2Name} / ${updatedMatch.player4Name}`;
+          }
 
           const player1GamesWon = updatedMatch.games.filter((g: any) => g.winner === 'player1').length;
           const player2GamesWon = updatedMatch.games.filter((g: any) => g.winner === 'player2').length;
@@ -349,6 +383,14 @@ export async function POST(
       { _id: new ObjectId(id) },
       { $set: updatedMatch }
     );
+
+    console.log(`Practice match ${action} completed:`, {
+      matchId: id,
+      status: updatedMatch.status,
+      winnerName: updatedMatch.winnerName,
+      matchResult: updatedMatch.matchResult,
+      gamesCount: updatedMatch.games?.length || 0
+    });
 
     return NextResponse.json({
       success: true,

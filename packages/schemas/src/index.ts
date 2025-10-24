@@ -114,14 +114,33 @@ export const matchSchema = z.object({
   round: z.string().optional(), // "Quarter Final", "Semi Final", "Final" - optional for practice matches
   roundNumber: z.number().optional(), // Optional for practice matches
   matchNumber: z.number().optional(), // Optional for practice matches
+  
+  // Singles: player1 vs player2
+  // Doubles/Mixed: team1 (player1 + player3) vs team2 (player2 + player4)
   player1Id: objectIdSchema.optional(),
   player2Id: objectIdSchema.optional(),
+  player3Id: objectIdSchema.optional(), // Team 1 partner (for doubles/mixed)
+  player4Id: objectIdSchema.optional(), // Team 2 partner (for doubles/mixed)
+  
   player1Name: z.string().optional(),
   player2Name: z.string().optional(),
+  player3Name: z.string().optional(), // Team 1 partner name
+  player4Name: z.string().optional(), // Team 2 partner name
+  
   player1Phone: z.string().min(10).max(15).optional(), // For guest players
   player2Phone: z.string().min(10).max(15).optional(), // For guest players
+  player3Phone: z.string().min(10).max(15).optional(), // For guest players
+  player4Phone: z.string().min(10).max(15).optional(), // For guest players
+  
   player1IsGuest: z.boolean().default(false),
   player2IsGuest: z.boolean().default(false),
+  player3IsGuest: z.boolean().default(false),
+  player4IsGuest: z.boolean().default(false),
+  
+  player1Gender: z.enum(["male", "female", "other"]).optional(), // For mixed doubles validation
+  player2Gender: z.enum(["male", "female", "other"]).optional(),
+  player3Gender: z.enum(["male", "female", "other"]).optional(),
+  player4Gender: z.enum(["male", "female", "other"]).optional(),
   
   // Flexible scoring system
   scoringFormat: z.object({
