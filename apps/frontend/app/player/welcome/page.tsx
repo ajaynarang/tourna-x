@@ -2,10 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/auth-guard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
-import { Button } from '@repo/ui';
 import { 
   Trophy, 
   Calendar, 
@@ -71,21 +70,41 @@ function PlayerWelcomeContent() {
     router.push('/tournaments');
   };
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full">
+    <div className="relative z-10 min-h-screen flex items-center justify-center p-8">
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="max-w-4xl w-full"
+      >
         {/* Welcome Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex p-4 bg-white rounded-full shadow-lg mb-4">
-            <Sparkles className="h-12 w-12 text-blue-600" />
+        <motion.div variants={item} className="text-center mb-8">
+          <div className="inline-flex p-4 glass-card-intense rounded-full shadow-lg mb-4">
+            <Sparkles className="h-12 w-12 text-blue-400" />
           </div>
-          <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent mb-3">
+          <h1 className="text-4xl lg:text-5xl font-bold text-primary mb-3">
             Welcome to Tourna-X! 👋
           </h1>
-          <p className="text-xl text-gray-600">
-            Hi <strong className="text-blue-600">{user?.name}</strong>, let's get you started on your tournament journey
+          <p className="text-xl text-secondary">
+            Hi <strong className="text-blue-400">{user?.name}</strong>, let's get you started on your tournament journey
           </p>
-        </div>
+        </motion.div>
 
         {/* Main Onboarding Card */}
         <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-sm mb-6">

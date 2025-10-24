@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/auth-guard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
-import { Button } from '@repo/ui';
-import { Badge } from '@repo/ui';
 import { 
   Calendar, 
   Clock, 
@@ -50,6 +49,7 @@ export default function PlayerMatches() {
 
 function PlayerMatchesContent() {
   const { user } = useAuth();
+  const router = useRouter();
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
@@ -135,110 +135,98 @@ function PlayerMatchesContent() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="text-center">
-          <div className="inline-block h-16 w-16 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading your matches...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="spinner"></div>
       </div>
     );
   }
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="relative z-10 min-h-screen p-8">
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="mx-auto max-w-7xl"
+      >
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <motion.div variants={item} className="mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/player/dashboard">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Link>
-              </Button>
-              <div>
-                <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
-                  My Matches
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  Track your tournament matches and performance
-                </p>
-              </div>
+              <Link
+                href="/player/dashboard"
+                className="text-secondary hover:text-primary flex items-center gap-2 text-sm transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Link>
             </div>
-            <Button 
-              onClick={fetchMatches} 
-              variant="outline" 
-              size="lg"
-              className="flex items-center gap-2"
+            <div>
+              <h1 className="text-primary text-3xl font-bold">My Matches</h1>
+              <p className="text-secondary mt-1">Track your tournament matches and performance</p>
+            </div>
+            <button
+              onClick={fetchMatches}
+              className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
-            </Button>
+            </button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Stats Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-gray-600 mb-1">Total Matches</div>
-                  <div className="text-3xl font-bold text-gray-900">{matches.length}</div>
-                </div>
-                <div className="p-3 bg-blue-100 rounded-xl">
-                  <Trophy className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-gray-600 mb-1">Upcoming</div>
-                  <div className="text-3xl font-bold text-gray-900">
-                    {matches.filter(m => m.status === 'scheduled').length}
-                  </div>
-                </div>
-                <div className="p-3 bg-yellow-100 rounded-xl">
-                  <Clock className="h-6 w-6 text-yellow-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-gray-600 mb-1">Completed</div>
-                  <div className="text-3xl font-bold text-gray-900">
-                    {matches.filter(m => m.status === 'completed').length}
-                  </div>
-                </div>
-                <div className="p-3 bg-green-100 rounded-xl">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <motion.div
+          variants={item}
+          className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-3"
+        >
+          <StatCard
+            title="Total Matches"
+            value={matches.length}
+            icon={Trophy}
+            color="from-blue-500 to-cyan-500"
+          />
+          <StatCard
+            title="Upcoming"
+            value={matches.filter(m => m.status === 'scheduled').length}
+            icon={Clock}
+            color="from-yellow-500 to-amber-500"
+          />
+          <StatCard
+            title="Completed"
+            value={matches.filter(m => m.status === 'completed').length}
+            icon={CheckCircle}
+            color="from-green-500 to-emerald-500"
+          />
+        </motion.div>
 
         {/* Filter Tabs */}
-        <Card className="mb-6 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-4">
+        <motion.div variants={item} className="mb-6">
+          <div className="glass-card-intense p-4">
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-500" />
+              <Filter className="h-4 w-4 text-tertiary" />
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setFilter('all')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     filter === 'all'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-primary text-white shadow-md'
+                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
                   }`}
                 >
                   All Matches ({matches.length})
@@ -247,8 +235,8 @@ function PlayerMatchesContent() {
                   onClick={() => setFilter('upcoming')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     filter === 'upcoming'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-primary text-white shadow-md'
+                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
                   }`}
                 >
                   Upcoming ({matches.filter(m => m.status === 'scheduled' || m.status === 'in_progress').length})
@@ -257,86 +245,88 @@ function PlayerMatchesContent() {
                   onClick={() => setFilter('completed')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     filter === 'completed'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-primary text-white shadow-md'
+                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
                   }`}
                 >
                   Completed ({matches.filter(m => m.status === 'completed').length})
                 </button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </motion.div>
 
         {/* Matches List */}
-        <div className="space-y-4">
+        <motion.div variants={item} className="space-y-4">
           {filteredMatches.length === 0 ? (
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-12 text-center">
-                <div className="inline-flex p-4 bg-gray-100 rounded-full mb-4">
-                  <Calendar className="h-12 w-12 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Matches Found</h3>
-                <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                  {filter === 'upcoming' 
-                    ? "You don't have any upcoming matches scheduled. Register for tournaments to start playing!"
-                    : filter === 'completed'
-                    ? "You haven't completed any matches yet. Play your first match to see results here."
-                    : "You don't have any matches yet. Browse and register for tournaments to get started!"
-                  }
-                </p>
-                <Button asChild size="lg">
-                  <Link href="/tournaments">
-                    <Trophy className="h-5 w-5 mr-2" />
-                    Browse Tournaments
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="glass-card-intense p-12 text-center">
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-green-500/20 to-blue-500/20">
+                <Calendar className="h-10 w-10 text-green-400" />
+              </div>
+              <h3 className="text-primary mb-2 text-xl font-semibold">No Matches Found</h3>
+              <p className="text-secondary mb-6 max-w-md mx-auto">
+                {filter === 'upcoming' 
+                  ? "You don't have any upcoming matches scheduled. Register for tournaments to start playing!"
+                  : filter === 'completed'
+                  ? "You haven't completed any matches yet. Play your first match to see results here."
+                  : "You don't have any matches yet. Browse and register for tournaments to get started!"
+                }
+              </p>
+              <button
+                onClick={() => router.push('/tournaments')}
+                className="bg-primary inline-flex items-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-transform hover:scale-105"
+              >
+                <Trophy className="h-5 w-5" />
+                Browse Tournaments
+              </button>
+            </div>
           ) : (
-            filteredMatches.map((match) => {
+            filteredMatches.map((match, index) => {
               const StatusIcon = getStatusIcon(match.status);
               const isUpcoming = match.status === 'scheduled' || match.status === 'in_progress';
               const isCompleted = match.status === 'completed';
               const matchResult = getMatchResult(match);
               
               return (
-                <Card 
-                  key={match._id} 
-                  className={`border-0 shadow-lg hover:shadow-xl transition-all ${
+                <motion.div
+                  key={match._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className={`glass-card p-6 transition-all hover:scale-[1.01] ${
                     isCompleted && matchResult === 'Won' 
-                      ? 'bg-gradient-to-br from-green-50 to-green-100/50' 
+                      ? 'border-l-4 border-l-green-500' 
                       : isCompleted && matchResult === 'Lost'
-                      ? 'bg-gradient-to-br from-red-50 to-red-100/50'
+                      ? 'border-l-4 border-l-red-500'
                       : isUpcoming
-                      ? 'bg-gradient-to-br from-blue-50 to-blue-100/50'
-                      : 'bg-white/80'
-                  } backdrop-blur-sm`}
+                      ? 'border-l-4 border-l-blue-500'
+                      : ''
+                  }`}
                 >
-                  <CardContent className="p-6">
+                  <div className="p-6">
                     {/* Match Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
+                          <h3 className="text-lg font-semibold text-primary">
                             {match.tournamentName}
                           </h3>
-                          <Badge className={getStatusColor(match.status)} variant="outline">
+                          <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(match.status)}`}>
                             <StatusIcon className="h-3 w-3 mr-1" />
                             {match.status.replace('_', ' ').toUpperCase()}
-                          </Badge>
+                          </span>
                         </div>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-secondary">
                           <strong>Round:</strong> {match.round}
                         </p>
                       </div>
                       {isCompleted && matchResult && (
                         <div className={`px-4 py-2 rounded-lg font-bold text-lg ${
                           matchResult === 'Won' 
-                            ? 'bg-green-600 text-white' 
+                            ? 'bg-green-500 text-white' 
                             : matchResult === 'Lost'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-gray-600 text-white'
+                            ? 'bg-red-500 text-white'
+                            : 'bg-gray-500 text-white'
                         }`}>
                           {matchResult === 'Won' ? '🏆 Won' : matchResult === 'Lost' ? '😔 Lost' : 'Draw'}
                         </div>
@@ -346,29 +336,29 @@ function PlayerMatchesContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Match Details */}
                       <div className="space-y-3">
-                        <h4 className="font-semibold text-gray-900 text-sm mb-3">Match Details</h4>
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                          <Users className="h-4 w-4 text-gray-500" />
+                        <h4 className="font-semibold text-primary text-sm mb-3">Match Details</h4>
+                        <div className="flex items-center gap-2 text-sm text-secondary">
+                          <Users className="h-4 w-4 text-tertiary" />
                           <span><strong>Opponent:</strong> {match.player2Name}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                          <Calendar className="h-4 w-4 text-gray-500" />
+                        <div className="flex items-center gap-2 text-sm text-secondary">
+                          <Calendar className="h-4 w-4 text-tertiary" />
                           <span><strong>Date:</strong> {new Date(match.scheduledDate).toLocaleDateString('en-IN', {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric'
                           })}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                          <Clock className="h-4 w-4 text-gray-500" />
+                        <div className="flex items-center gap-2 text-sm text-secondary">
+                          <Clock className="h-4 w-4 text-tertiary" />
                           <span><strong>Time:</strong> {new Date(match.scheduledDate).toLocaleTimeString('en-IN', {
                             hour: '2-digit',
                             minute: '2-digit'
                           })}</span>
                         </div>
                         {match.court && (
-                          <div className="flex items-center gap-2 text-sm text-gray-700">
-                            <MapPin className="h-4 w-4 text-gray-500" />
+                          <div className="flex items-center gap-2 text-sm text-secondary">
+                            <MapPin className="h-4 w-4 text-tertiary" />
                             <span><strong>Court:</strong> {match.court}</span>
                           </div>
                         )}
@@ -376,18 +366,18 @@ function PlayerMatchesContent() {
 
                       {/* Score Section */}
                       <div className="space-y-3">
-                        <h4 className="font-semibold text-gray-900 text-sm mb-3">
+                        <h4 className="font-semibold text-primary text-sm mb-3">
                           {isCompleted ? 'Final Score' : 'Match Status'}
                         </h4>
                         {isCompleted ? (
-                          <div className="bg-white/70 rounded-lg p-4 border-2 border-gray-200">
+                          <div className="glass-card rounded-lg p-4">
                             <div className="text-center">
-                              <div className="text-2xl font-bold text-gray-900 mb-2">
+                              <div className="text-2xl font-bold text-primary mb-2">
                                 {formatScore(match.player1Score, match.player2Score)}
                               </div>
                               {match.winnerId && (
                                 <div className={`text-sm font-medium ${
-                                  isWinner(match) ? 'text-green-600' : 'text-red-600'
+                                  isWinner(match) ? 'text-green-400' : 'text-red-400'
                                 }`}>
                                   {isWinner(match) ? (
                                     <div className="flex items-center justify-center gap-2">
@@ -405,12 +395,12 @@ function PlayerMatchesContent() {
                             </div>
                           </div>
                         ) : (
-                          <div className="bg-white/70 rounded-lg p-4 border-2 border-gray-200">
+                          <div className="glass-card rounded-lg p-4">
                             <div className="text-center">
-                              <div className="text-lg font-semibold text-gray-700 mb-1">
+                              <div className="text-lg font-semibold text-primary mb-1">
                                 {match.status === 'scheduled' ? 'Scheduled' : 'In Progress'}
                               </div>
-                              <div className="text-sm text-gray-600">
+                              <div className="text-sm text-secondary">
                                 {match.status === 'scheduled' ? 'Match will start soon' : 'Live match in progress'}
                               </div>
                             </div>
@@ -420,25 +410,52 @@ function PlayerMatchesContent() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-200">
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/tournaments/${match.tournamentId}`}>
-                          <Trophy className="h-4 w-4 mr-2" />
-                          View Tournament
-                        </Link>
-                      </Button>
+                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/10">
+                      <button
+                        onClick={() => router.push(`/tournaments/${match.tournamentId}`)}
+                        className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"
+                      >
+                        <Trophy className="h-4 w-4" />
+                        View Tournament
+                      </button>
                       {match.status === 'in_progress' && (
-                        <Badge className="bg-blue-100 text-blue-800 border-blue-200 px-3 py-1">
+                        <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400">
                           <AlertCircle className="h-3 w-3 mr-1" />
                           Live Match
-                        </Badge>
+                        </span>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </motion.div>
               );
             })
           )}
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  color,
+}: {
+  title: string;
+  value: number;
+  icon: any;
+  color: string;
+}) {
+  return (
+    <div className="glass-card-intense p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-secondary text-sm mb-1">{title}</div>
+          <div className="text-primary text-3xl font-bold">{value}</div>
+        </div>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color}`}>
+          <Icon className="h-6 w-6 text-white" />
         </div>
       </div>
     </div>

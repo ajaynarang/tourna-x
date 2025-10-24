@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/auth-guard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
-import { Button } from '@repo/ui';
-import { Badge } from '@repo/ui';
 import { 
   Trophy, 
   TrendingUp,
@@ -54,6 +53,7 @@ export default function PlayerStats() {
 
 function PlayerStatsContent() {
   const { user } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState<PlayerStats>({
     totalMatches: 0,
     wins: 0,
@@ -169,287 +169,322 @@ function PlayerStatsContent() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="text-center">
-          <div className="inline-block h-16 w-16 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading your stats...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="spinner"></div>
       </div>
     );
   }
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="relative z-10 min-h-screen p-8">
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="mx-auto max-w-7xl"
+      >
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <motion.div variants={item} className="mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/player/dashboard">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Link>
-              </Button>
-              <div>
-                <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
-                  Statistics & Achievements
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  Track your progress and unlock achievements
-                </p>
-              </div>
+              <Link
+                href="/player/dashboard"
+                className="text-secondary hover:text-primary flex items-center gap-2 text-sm transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Link>
+            </div>
+            <div>
+              <h1 className="text-primary text-3xl font-bold">Statistics & Achievements</h1>
+              <p className="text-secondary mt-1">Track your progress and unlock achievements</p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <Activity className="h-6 w-6 opacity-80" />
-              </div>
-              <div className="text-3xl font-bold mb-1">{stats.totalMatches}</div>
-              <div className="text-sm text-blue-100">Total Matches</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <CheckCircle2 className="h-6 w-6 opacity-80" />
-              </div>
-              <div className="text-3xl font-bold mb-1">{stats.wins}</div>
-              <div className="text-sm text-green-100">Victories</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <TrendingUp className="h-6 w-6 opacity-80" />
-              </div>
-              <div className="text-3xl font-bold mb-1">{stats.winRate.toFixed(0)}%</div>
-              <div className="text-sm text-purple-100">Win Rate</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <Trophy className="h-6 w-6 opacity-80" />
-              </div>
-              <div className="text-3xl font-bold mb-1">{stats.totalTournaments}</div>
-              <div className="text-sm text-orange-100">Tournaments</div>
-            </CardContent>
-          </Card>
-        </div>
+        <motion.div
+          variants={item}
+          className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <StatCard
+            title="Total Matches"
+            value={stats.totalMatches}
+            icon={Activity}
+            color="from-blue-500 to-cyan-500"
+          />
+          <StatCard
+            title="Victories"
+            value={stats.wins}
+            icon={CheckCircle2}
+            color="from-green-500 to-emerald-500"
+          />
+          <StatCard
+            title="Win Rate"
+            value={`${stats.winRate.toFixed(0)}%`}
+            icon={TrendingUp}
+            color="from-purple-500 to-pink-500"
+          />
+          <StatCard
+            title="Tournaments"
+            value={stats.totalTournaments}
+            icon={Trophy}
+            color="from-orange-500 to-amber-500"
+          />
+        </motion.div>
 
         {/* Additional Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Flame className="h-5 w-5 text-orange-600" />
+        <motion.div variants={item} className="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="glass-card-intense p-6">
+            <div className="mb-6">
+              <h3 className="text-primary text-lg font-semibold mb-2 flex items-center gap-2">
+                <Flame className="h-5 w-5 text-orange-400" />
                 Current Streak
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center">
-                <div className="text-5xl font-bold text-orange-600 mb-2">{stats.currentStreak}</div>
-                <div className="text-sm text-gray-600">Consecutive Wins</div>
-                {stats.currentStreak > 0 && (
-                  <Badge className="mt-3 bg-orange-100 text-orange-800">
-                    🔥 On Fire!
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              </h3>
+            </div>
+            <div className="text-center">
+              <div className="text-5xl font-bold text-orange-400 mb-2">{stats.currentStreak}</div>
+              <div className="text-sm text-secondary">Consecutive Wins</div>
+              {stats.currentStreak > 0 && (
+                <span className="mt-3 inline-block rounded-full bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-400">
+                  🔥 On Fire!
+                </span>
+              )}
+            </div>
+          </div>
 
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-yellow-600" />
+          <div className="glass-card-intense p-6">
+            <div className="mb-6">
+              <h3 className="text-primary text-lg font-semibold mb-2 flex items-center gap-2">
+                <Star className="h-5 w-5 text-yellow-400" />
                 Longest Streak
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center">
-                <div className="text-5xl font-bold text-yellow-600 mb-2">{stats.longestStreak}</div>
-                <div className="text-sm text-gray-600">Best Performance</div>
-              </div>
-            </CardContent>
-          </Card>
+              </h3>
+            </div>
+            <div className="text-center">
+              <div className="text-5xl font-bold text-yellow-400 mb-2">{stats.longestStreak}</div>
+              <div className="text-sm text-secondary">Best Performance</div>
+            </div>
+          </div>
 
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-blue-600" />
+          <div className="glass-card-intense p-6">
+            <div className="mb-6">
+              <h3 className="text-primary text-lg font-semibold mb-2 flex items-center gap-2">
+                <Zap className="h-5 w-5 text-blue-400" />
                 Total Points
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center">
-                <div className="text-5xl font-bold text-blue-600 mb-2">{stats.totalPoints}</div>
-                <div className="text-sm text-gray-600">Career Points</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </h3>
+            </div>
+            <div className="text-center">
+              <div className="text-5xl font-bold text-blue-400 mb-2">{stats.totalPoints}</div>
+              <div className="text-sm text-secondary">Career Points</div>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Performance Chart */}
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-purple-600" />
-              Performance Overview
-            </CardTitle>
-            <CardDescription>Your win/loss distribution</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <motion.div variants={item} className="mb-8">
+          <div className="glass-card-intense p-6">
+            <div className="mb-6">
+              <h3 className="text-primary text-lg font-semibold mb-2 flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-purple-400" />
+                Performance Overview
+              </h3>
+              <p className="text-secondary text-sm">Your win/loss distribution</p>
+            </div>
+            
             <div className="space-y-4">
               {/* Wins Bar */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Wins</span>
-                  <span className="text-sm font-bold text-green-600">{stats.wins}</span>
+                  <span className="text-sm font-medium text-primary">Wins</span>
+                  <span className="text-sm font-bold text-green-400">{stats.wins}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                  <div 
-                    className="h-4 bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all"
-                    style={{ width: `${stats.totalMatches > 0 ? (stats.wins / stats.totalMatches) * 100 : 0}%` }}
-                  ></div>
+                <div className="w-full bg-white/5 rounded-full h-4 overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${stats.totalMatches > 0 ? (stats.wins / stats.totalMatches) * 100 : 0}%` }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                    className="h-4 bg-gradient-to-r from-green-500 to-green-600 rounded-full"
+                  />
                 </div>
               </div>
 
               {/* Losses Bar */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Losses</span>
-                  <span className="text-sm font-bold text-red-600">{stats.losses}</span>
+                  <span className="text-sm font-medium text-primary">Losses</span>
+                  <span className="text-sm font-bold text-red-400">{stats.losses}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                  <div 
-                    className="h-4 bg-gradient-to-r from-red-500 to-red-600 rounded-full transition-all"
-                    style={{ width: `${stats.totalMatches > 0 ? (stats.losses / stats.totalMatches) * 100 : 0}%` }}
-                  ></div>
+                <div className="w-full bg-white/5 rounded-full h-4 overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${stats.totalMatches > 0 ? (stats.losses / stats.totalMatches) * 100 : 0}%` }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                    className="h-4 bg-gradient-to-r from-red-500 to-red-600 rounded-full"
+                  />
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </motion.div>
 
         {/* Achievements Section */}
         <div className="space-y-6">
           {/* Unlocked Achievements */}
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
+          <motion.div variants={item}>
+            <div className="glass-card-intense p-6">
+              <div className="mb-6 flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-yellow-600" />
+                  <h3 className="text-primary text-xl font-semibold mb-2 flex items-center gap-2">
+                    <Award className="h-5 w-5 text-yellow-400" />
                     Unlocked Achievements
-                  </CardTitle>
-                  <CardDescription>
+                  </h3>
+                  <p className="text-secondary text-sm">
                     {unlockedAchievements.length} of {achievements.length} achievements unlocked
-                  </CardDescription>
+                  </p>
                 </div>
-                <Badge className="bg-yellow-100 text-yellow-800 text-lg px-4 py-2">
+                <span className="rounded-full bg-yellow-500/10 px-4 py-2 text-lg font-medium text-yellow-400">
                   🏆 {unlockedAchievements.length}
-                </Badge>
+                </span>
               </div>
-            </CardHeader>
-            <CardContent>
+              
               {unlockedAchievements.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Trophy className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <div className="text-center py-8 text-tertiary">
+                  <Trophy className="h-12 w-12 mx-auto mb-3 text-tertiary" />
                   <p>No achievements unlocked yet. Keep playing to earn your first achievement!</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {unlockedAchievements.map((achievement) => {
+                  {unlockedAchievements.map((achievement, index) => {
                     const Icon = achievement.icon;
                     return (
-                      <div 
+                      <motion.div
                         key={achievement.id}
-                        className="p-4 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100/50 border-2 border-yellow-200"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="p-4 rounded-xl glass-card border-2 border-yellow-500/20"
                       >
                         <div className="flex items-start gap-3">
                           <div className={`p-3 bg-gradient-to-br ${achievement.color} rounded-xl shadow-lg`}>
                             <Icon className="h-6 w-6 text-white" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 mb-1">{achievement.title}</h4>
-                            <p className="text-sm text-gray-600 mb-2">{achievement.description}</p>
-                            <Badge className="bg-green-100 text-green-800 border-green-200">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                            <h4 className="font-semibold text-primary mb-1">{achievement.title}</h4>
+                            <p className="text-sm text-secondary mb-2">{achievement.description}</p>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-400">
+                              <CheckCircle2 className="h-3 w-3" />
                               Unlocked
-                            </Badge>
+                            </span>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
 
           {/* Locked Achievements */}
           {lockedAchievements.length > 0 && (
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-gray-600" />
-                  In Progress
-                </CardTitle>
-                <CardDescription>Keep playing to unlock these achievements</CardDescription>
-              </CardHeader>
-              <CardContent>
+            <motion.div variants={item}>
+              <div className="glass-card-intense p-6">
+                <div className="mb-6">
+                  <h3 className="text-primary text-xl font-semibold mb-2 flex items-center gap-2">
+                    <Target className="h-5 w-5 text-tertiary" />
+                    In Progress
+                  </h3>
+                  <p className="text-secondary text-sm">Keep playing to unlock these achievements</p>
+                </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {lockedAchievements.map((achievement) => {
+                  {lockedAchievements.map((achievement, index) => {
                     const Icon = achievement.icon;
                     const progressPercent = (achievement.progress / achievement.maxProgress) * 100;
                     
                     return (
-                      <div 
+                      <motion.div
                         key={achievement.id}
-                        className="p-4 rounded-xl bg-gray-50 border-2 border-gray-200"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="p-4 rounded-xl glass-card border-2 border-white/10"
                       >
                         <div className="flex items-start gap-3 mb-3">
-                          <div className="p-3 bg-gray-200 rounded-xl">
-                            <Icon className="h-6 w-6 text-gray-500" />
+                          <div className="p-3 bg-white/10 rounded-xl">
+                            <Icon className="h-6 w-6 text-tertiary" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 mb-1">{achievement.title}</h4>
-                            <p className="text-sm text-gray-600">{achievement.description}</p>
+                            <h4 className="font-semibold text-primary mb-1">{achievement.title}</h4>
+                            <p className="text-sm text-secondary">{achievement.description}</p>
                           </div>
                         </div>
                         
                         {/* Progress Bar */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">Progress</span>
-                            <span className="font-semibold text-gray-900">
+                            <span className="text-secondary">Progress</span>
+                            <span className="font-semibold text-primary">
                               {achievement.progress} / {achievement.maxProgress}
                             </span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                            <div 
-                              className={`h-2 bg-gradient-to-r ${achievement.color} rounded-full transition-all`}
-                              style={{ width: `${progressPercent}%` }}
-                            ></div>
+                          <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${progressPercent}%` }}
+                              transition={{ duration: 1, ease: 'easeOut' }}
+                              className={`h-2 bg-gradient-to-r ${achievement.color} rounded-full`}
+                            />
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
           )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  color,
+}: {
+  title: string;
+  value: string | number;
+  icon: any;
+  color: string;
+}) {
+  return (
+    <div className="glass-card-intense p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-secondary text-sm mb-1">{title}</div>
+          <div className="text-primary text-3xl font-bold">{value}</div>
+        </div>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color}`}>
+          <Icon className="h-6 w-6 text-white" />
         </div>
       </div>
     </div>

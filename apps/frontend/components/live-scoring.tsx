@@ -1,463 +1,463 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Square, Trophy, Clock, Users, AlertCircle } from 'lucide-react';
-import { Match as BaseMatch } from '@repo/schemas';
+import { 
+  Undo2, 
+  Settings, 
+  BarChart3, 
+  X, 
+  Trophy,
+  Target,
+  Zap,
+  AlertCircle,
+  CheckCircle2,
+  TrendingUp,
+  Award
+} from 'lucide-react';
+import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Dialog, DialogContent, DialogHeader, DialogTitle } from '@repo/ui';
 
-// Extended Match interface with new scoring fields
-interface Match extends BaseMatch {
-  games?: Array<{
-    gameNumber: number;
-    player1Score: number;
-    player2Score: number;
-    winner?: 'player1' | 'player2';
-    duration?: number;
-    completedAt?: string;
-  }>;
-  matchResult?: {
-    player1GamesWon: number;
-    player2GamesWon: number;
-    totalDuration?: number;
-    completedAt?: string;
-  };
+interface Player {
+  name: string;
+  score: number;
+  id: string;
 }
 
-interface ScoringFormat {
-  pointsPerGame: number;
-  gamesPerMatch: number;
-  winBy: number;
-  maxPoints?: number;
-}
-
-interface Game {
-  gameNumber: number;
-  player1Score: number;
-  player2Score: number;
-  winner?: 'player1' | 'player2';
-  duration?: number;
-  completedAt?: string;
+interface PointHistory {
+  player: string;
+  reason: string | null;
+  scoreA: number;
+  scoreB: number;
+  timestamp: Date;
 }
 
 interface LiveScoringProps {
   matchId: string;
-  onScoreUpdate?: (match: Match) => void;
+  playerA: Player;
+  playerB: Player;
+  onScoreUpdate?: (playerA: Player, playerB: Player, history: PointHistory[]) => void;
+  onMatchComplete?: (winner: Player, finalScore: { playerA: number; playerB: number }) => void;
 }
 
-export function LiveScoring({ matchId, onScoreUpdate }: LiveScoringProps) {
-  const [match, setMatch] = useState<Match | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [currentGame, setCurrentGame] = useState(1);
-  const [player1Score, setPlayer1Score] = useState(0);
-  const [player2Score, setPlayer2Score] = useState(0);
-  const [showWalkoverModal, setShowWalkoverModal] = useState(false);
-  const [walkoverReason, setWalkoverReason] = useState('');
-  const [walkoverWinner, setWalkoverWinner] = useState<'player1' | 'player2'>('player1');
+const pointCategories = {
+  winner: [
+    { id: 'smash', label: 'Smash', icon: '🏸', color: 'bg-red-500', description: 'Powerful overhead shot' },
+    { id: 'drop', label: 'Drop Shot', icon: '💧', color: 'bg-blue-500', description: 'Soft shot over net' },
+    { id: 'net', label: 'Net Kill', icon: '🎯', color: 'bg-purple-500', description: 'Quick net shot' },
+    { id: 'clear', label: 'Clear', icon: '🌙', color: 'bg-yellow-500', description: 'High defensive shot' },
+    { id: 'drive', label: 'Drive', icon: '⚡', color: 'bg-orange-500', description: 'Fast flat shot' },
+  ],
+  error: [
+    { id: 'unforced', label: 'Opponent Error', icon: '❌', color: 'bg-gray-500', description: 'Unforced mistake' },
+    { id: 'forced', label: 'Forced Error', icon: '💪', color: 'bg-green-500', description: 'Forced by pressure' },
+  ]
+};
 
-  // Fetch match data
-  useEffect(() => {
-    fetchMatch();
-  }, [matchId]);
+export default function LiveScoring({ 
+  matchId, 
+  playerA: initialPlayerA, 
+  playerB: initialPlayerB,
+  onScoreUpdate,
+  onMatchComplete 
+}: LiveScoringProps) {
+  const [playerA, setPlayerA] = useState<Player>(initialPlayerA);
+  const [playerB, setPlayerB] = useState<Player>(initialPlayerB);
+  const [trackingEnabled, setTrackingEnabled] = useState(true);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [currentPoint, setCurrentPoint] = useState<{ player: string; winner: string } | null>(null);
+  const [history, setHistory] = useState<PointHistory[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
-  const fetchMatch = async () => {
-    try {
-      const response = await fetch(`/api/matches/${matchId}/score`);
-      const result = await response.json();
-      
-      if (result.success) {
-        setMatch(result.match);
-        // Update current game and scores based on match state
-        updateCurrentGameState(result.match);
-      }
-    } catch (error) {
-      console.error('Error fetching match:', error);
+  const handleScore = (player: string) => {
+    if (trackingEnabled) {
+      setCurrentPoint({ player, winner: player });
+      setShowAnalysis(true);
+    } else {
+      addPoint(player, null);
     }
   };
 
-  const updateCurrentGameState = (matchData: Match) => {
-    if (matchData.games && matchData.games.length > 0) {
-      const latestGame = matchData.games[matchData.games.length - 1];
-      if (!latestGame.winner) {
-        setCurrentGame(latestGame.gameNumber);
-        setPlayer1Score(latestGame.player1Score);
-        setPlayer2Score(latestGame.player2Score);
-      } else {
-        // Start next game
-        const nextGameNumber = latestGame.gameNumber + 1;
-        setCurrentGame(nextGameNumber);
-        setPlayer1Score(0);
-        setPlayer2Score(0);
-      }
-    }
-  };
-
-  const updateScore = async (action: string, data?: any) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/matches/${matchId}/score`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action,
-          gameNumber: currentGame,
-          player1Score,
-          player2Score,
-          scoringFormat: match?.scoringFormat,
-          ...data
-        })
+  const addPoint = (player: string, reason: string | null) => {
+    const newHistory: PointHistory = {
+      player,
+      reason,
+      scoreA: player === 'A' ? playerA.score + 1 : playerA.score,
+      scoreB: player === 'B' ? playerB.score + 1 : playerB.score,
+      timestamp: new Date()
+    };
+    
+    const updatedHistory = [...history, newHistory];
+    setHistory(updatedHistory);
+    
+    const updatedPlayerA = player === 'A' ? { ...playerA, score: playerA.score + 1 } : playerA;
+    const updatedPlayerB = player === 'B' ? { ...playerB, score: playerB.score + 1 } : playerB;
+    
+    setPlayerA(updatedPlayerA);
+    setPlayerB(updatedPlayerB);
+    
+    // Check for match completion (21 points)
+    if (updatedPlayerA.score >= 21 || updatedPlayerB.score >= 21) {
+      const winner = updatedPlayerA.score >= 21 ? updatedPlayerA : updatedPlayerB;
+      onMatchComplete?.(winner, { 
+        playerA: updatedPlayerA.score, 
+        playerB: updatedPlayerB.score 
       });
+    }
+    
+    onScoreUpdate?.(updatedPlayerA, updatedPlayerB, updatedHistory);
+    setShowAnalysis(false);
+    setCurrentPoint(null);
+  };
 
-      const result = await response.json();
-      
-      if (result.success) {
-        setMatch(result.match);
-        updateCurrentGameState(result.match);
-        onScoreUpdate?.(result.match);
+  const handleUndo = () => {
+    if (history.length === 0) return;
+    
+    const lastPoint = history[history.length - 1];
+    if (!lastPoint) return;
+    
+    const newHistory = history.slice(0, -1);
+    
+    setHistory(newHistory);
+    
+    if (lastPoint.player === 'A') {
+      setPlayerA({ ...playerA, score: playerA.score - 1 });
+    } else {
+      setPlayerB({ ...playerB, score: playerB.score - 1 });
+    }
+  };
+
+  const handleAnalysisSelect = (reasonId: string) => {
+    if (currentPoint) {
+      addPoint(currentPoint.player, reasonId);
+    }
+  };
+
+  const skipAnalysis = () => {
+    if (currentPoint?.player) {
+      addPoint(currentPoint.player, 'skipped');
+    }
+  };
+
+  const getStats = () => {
+    const stats = { A: {} as Record<string, number>, B: {} as Record<string, number> };
+    
+    history.forEach(point => {
+      if (point.reason && point.reason !== 'skipped' && point.player) {
+        const playerKey = point.player as keyof typeof stats;
+        if (!stats[playerKey][point.reason]) {
+          stats[playerKey][point.reason] = 0;
+        }
+        stats[playerKey][point.reason] = (stats[playerKey][point.reason] || 0) + 1;
       }
-    } catch (error) {
-      console.error('Error updating score:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const incrementScore = (player: 'player1' | 'player2') => {
-    if (match?.status !== 'in_progress') return;
-    
-    if (player === 'player1') {
-      setPlayer1Score(prev => prev + 1);
-    } else {
-      setPlayer2Score(prev => prev + 1);
-    }
-  };
-
-  const decrementScore = (player: 'player1' | 'player2') => {
-    if (match?.status !== 'in_progress') return;
-    
-    if (player === 'player1') {
-      setPlayer1Score(prev => Math.max(0, prev - 1));
-    } else {
-      setPlayer2Score(prev => Math.max(0, prev - 1));
-    }
-  };
-
-  const startMatch = () => updateScore('start_match');
-  const endMatch = () => updateScore('end_match');
-  const cancelMatch = () => updateScore('cancel_match');
-
-  const handleWalkover = () => {
-    updateScore('walkover', {
-      walkoverReason,
-      winner: walkoverWinner
     });
-    setShowWalkoverModal(false);
+    
+    return stats;
   };
 
-  const getGameStatus = () => {
-    if (!match?.scoringFormat) return '';
-    
-    const { pointsPerGame, winBy, maxPoints } = match.scoringFormat;
-    const scoreDiff = Math.abs(player1Score - player2Score);
-    
-    if (player1Score >= pointsPerGame || player2Score >= pointsPerGame) {
-      if (scoreDiff >= winBy) {
-        return 'Game Point';
-      }
-      if (maxPoints && (player1Score >= maxPoints || player2Score >= maxPoints)) {
-        return 'Sudden Death';
-      }
-    }
-    
-    return '';
-  };
-
-  const getMatchStatus = () => {
-    if (!match) return '';
-    
-    switch (match.status) {
-      case 'scheduled': return 'Scheduled';
-      case 'in_progress': return 'In Progress';
-      case 'completed': return 'Completed';
-      case 'walkover': return 'Walkover';
-      case 'cancelled': return 'Cancelled';
-      default: return '';
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (match?.status) {
-      case 'scheduled': return 'text-blue-500';
-      case 'in_progress': return 'text-green-500';
-      case 'completed': return 'text-purple-500';
-      case 'walkover': return 'text-orange-500';
-      case 'cancelled': return 'text-red-500';
-      default: return 'text-gray-500';
-    }
-  };
-
-  if (!match) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="spinner"></div>
-      </div>
-    );
-  }
+  const stats = getStats();
+  const totalPoints = history.length;
+  const playerAPoints = history.filter(p => p.player === 'A').length;
+  const playerBPoints = history.filter(p => p.player === 'B').length;
 
   return (
-    <div className="glass-card rounded-xl p-6 space-y-6">
-      {/* Match Header */}
-      <div className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-2">
-          <Clock className="h-5 w-5 text-gray-400" />
-          <span className={`text-sm font-medium ${getStatusColor()}`}>
-            {getMatchStatus()}
-          </span>
-        </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          {match.player1Name} vs {match.player2Name}
-        </h2>
-        <div className="text-sm text-gray-500 dark:text-gray-400">
-          {match.scoringFormat.pointsPerGame} points per game • Best of {match.scoringFormat.gamesPerMatch}
-        </div>
-      </div>
-
-      {/* Games Summary */}
-      {match.games && match.games.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Games</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {match.games.map((game, index) => (
-              <div
-                key={game.gameNumber}
-                className={`glass-card rounded-lg p-3 text-center ${
-                  game.winner ? 'ring-2 ring-green-500/50' : ''
-                }`}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-sm border-b border-slate-700">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-xl font-bold">Live Scoring</h1>
+              <p className="text-sm text-slate-400">Match ID: {matchId}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettings(!showSettings)}
+                className="text-slate-300 hover:text-white hover:bg-slate-700"
               >
-                <div className="text-xs text-gray-500 dark:text-gray-400">Game {game.gameNumber}</div>
-                <div className="text-sm font-medium">
-                  {game.player1Score} - {game.player2Score}
-                </div>
-                {game.winner && (
-                  <div className="text-xs text-green-600 dark:text-green-400">
-                    {game.winner === 'player1' ? match.player1Name : match.player2Name}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Current Game Score */}
-      {match.status === 'in_progress' && (
-        <div className="space-y-4">
-          <div className="text-center">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-              Game {currentGame} {getGameStatus() && `• ${getGameStatus()}`}
-            </div>
-            
-            <div className="flex items-center justify-center gap-8">
-              {/* Player 1 */}
-              <div className="text-center space-y-2">
-                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {match.player1Name}
-                </div>
-                <div className="text-4xl font-bold text-gray-900 dark:text-white">
-                  {player1Score}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => decrementScore('player1')}
-                    disabled={loading || player1Score === 0}
-                    className="glass-card rounded-lg px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    -
-                  </button>
-                  <button
-                    onClick={() => incrementScore('player1')}
-                    disabled={loading}
-                    className="glass-card rounded-lg px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              {/* VS */}
-              <div className="text-2xl font-bold text-gray-400">VS</div>
-
-              {/* Player 2 */}
-              <div className="text-center space-y-2">
-                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {match.player2Name}
-                </div>
-                <div className="text-4xl font-bold text-gray-900 dark:text-white">
-                  {player2Score}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => decrementScore('player2')}
-                    disabled={loading || player2Score === 0}
-                    className="glass-card rounded-lg px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    -
-                  </button>
-                  <button
-                    onClick={() => incrementScore('player2')}
-                    disabled={loading}
-                    className="glass-card rounded-lg px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+                <Settings className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleUndo}
+                disabled={history.length === 0}
+                className="text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-50"
+              >
+                <Undo2 className="h-4 w-4" />
+              </Button>
+              {trackingEnabled && history.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowStats(!showStats)}
+                  className="text-slate-300 hover:text-white hover:bg-slate-700"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
-
-          {/* Update Score Button */}
-          <div className="flex justify-center">
-            <button
-              onClick={() => updateScore('update_score')}
-              disabled={loading}
-              className="glass-card-intense rounded-lg px-6 py-2 text-sm font-medium text-white hover:bg-green-600/80 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Updating...' : 'Update Score'}
-            </button>
-          </div>
         </div>
-      )}
-
-      {/* Match Result */}
-      {match.status === 'completed' && match.matchResult && (
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2">
-            <Trophy className="h-5 w-5 text-yellow-500" />
-            <span className="text-lg font-bold text-gray-900 dark:text-white">
-              Winner: {match.winnerName}
-            </span>
-          </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {match.matchResult.player1GamesWon} - {match.matchResult.player2GamesWon}
-            {match.matchResult.totalDuration && ` • ${match.matchResult.totalDuration} minutes`}
-          </div>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex justify-center gap-3">
-        {match.status === 'scheduled' && (
-          <button
-            onClick={startMatch}
-            disabled={loading}
-            className="flex items-center gap-2 glass-card-intense rounded-lg px-4 py-2 text-sm font-medium text-white hover:bg-green-600/80 disabled:opacity-50"
-          >
-            <Play className="h-4 w-4" />
-            Start Match
-          </button>
-        )}
-
-        {match.status === 'in_progress' && (
-          <>
-            <button
-              onClick={endMatch}
-              disabled={loading}
-              className="flex items-center gap-2 glass-card rounded-lg px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-50"
-            >
-              <Square className="h-4 w-4" />
-              End Match
-            </button>
-            <button
-              onClick={() => setShowWalkoverModal(true)}
-              disabled={loading}
-              className="flex items-center gap-2 glass-card rounded-lg px-4 py-2 text-sm font-medium text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-50"
-            >
-              <AlertCircle className="h-4 w-4" />
-              Walkover
-            </button>
-          </>
-        )}
-
-        {(match.status === 'scheduled' || match.status === 'in_progress') && (
-          <button
-            onClick={cancelMatch}
-            disabled={loading}
-            className="flex items-center gap-2 glass-card rounded-lg px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
-          >
-            <Pause className="h-4 w-4" />
-            Cancel
-          </button>
-        )}
       </div>
 
-      {/* Walkover Modal */}
+      {/* Settings Panel */}
       <AnimatePresence>
-        {showWalkoverModal && (
+        {showSettings && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-            onClick={() => setShowWalkoverModal(false)}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="max-w-4xl mx-auto px-4 py-4"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card-intense rounded-xl p-6 w-full max-w-md mx-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                Record Walkover
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                    Winner
-                  </label>
-                  <select
-                    value={walkoverWinner}
-                    onChange={(e) => setWalkoverWinner(e.target.value as 'player1' | 'player2')}
-                    className="glass-card w-full rounded-lg px-3 py-2 text-gray-900 dark:text-white outline-none"
+            <Card className="bg-slate-800 border-slate-700">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold mb-1">Point Analysis Tracking</h3>
+                    <p className="text-sm text-slate-400">Record why each point was won/lost</p>
+                  </div>
+                  <button
+                    onClick={() => setTrackingEnabled(!trackingEnabled)}
+                    className={`relative w-14 h-8 rounded-full transition ${
+                      trackingEnabled ? 'bg-green-500' : 'bg-slate-600'
+                    }`}
                   >
-                    <option value="player1">{match.player1Name}</option>
-                    <option value="player2">{match.player2Name}</option>
-                  </select>
+                    <div
+                      className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform ${
+                        trackingEnabled ? 'translate-x-6' : ''
+                      }`}
+                    />
+                  </button>
                 </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                    Reason
-                  </label>
-                  <textarea
-                    value={walkoverReason}
-                    onChange={(e) => setWalkoverReason(e.target.value)}
-                    placeholder="e.g., Player did not show up, injury, etc."
-                    className="glass-card w-full rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 outline-none resize-none"
-                    rows={3}
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowWalkoverModal(false)}
-                  className="flex-1 glass-card rounded-lg px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleWalkover}
-                  disabled={loading || !walkoverReason.trim()}
-                  className="flex-1 glass-card-intense rounded-lg px-4 py-2 text-sm font-medium text-white hover:bg-orange-600/80 disabled:opacity-50"
-                >
-                  Record Walkover
-                </button>
-              </div>
-            </motion.div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Score Display */}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {/* Player A */}
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Card className="bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500 shadow-2xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-semibold text-blue-100">
+                  {playerA.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-6xl font-bold text-center mb-4 text-white">
+                  {playerA.score}
+                </div>
+                <Button
+                  onClick={() => handleScore('A')}
+                  className="w-full bg-white text-blue-700 font-bold py-4 rounded-xl hover:bg-blue-50 transition-colors"
+                  size="lg"
+                >
+                  + Point
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Player B */}
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Card className="bg-gradient-to-br from-emerald-600 to-emerald-700 border-emerald-500 shadow-2xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-semibold text-emerald-100">
+                  {playerB.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-6xl font-bold text-center mb-4 text-white">
+                  {playerB.score}
+                </div>
+                <Button
+                  onClick={() => handleScore('B')}
+                  className="w-full bg-white text-emerald-700 font-bold py-4 rounded-xl hover:bg-emerald-50 transition-colors"
+                  size="lg"
+                >
+                  + Point
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Progress Bar */}
+        {totalPoints > 0 && (
+          <Card className="bg-slate-800 border-slate-700 mb-6">
+            <CardContent className="p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-slate-300">Match Progress</span>
+                <span className="text-sm text-slate-400">{totalPoints} points played</span>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1 bg-slate-700 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-blue-500 h-full transition-all duration-300"
+                    style={{ width: `${(playerAPoints / totalPoints) * 100}%` }}
+                  />
+                </div>
+                <div className="flex-1 bg-slate-700 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-emerald-500 h-full transition-all duration-300"
+                    style={{ width: `${(playerBPoints / totalPoints) * 100}%` }}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-between text-xs text-slate-400 mt-1">
+                <span>{playerAPoints} points</span>
+                <span>{playerBPoints} points</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quick Stats */}
+        {trackingEnabled && history.length > 0 && (
+          <AnimatePresence>
+            {showStats && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-6"
+              >
+                <Card className="bg-slate-800 border-slate-700">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <BarChart3 className="h-5 w-5" />
+                      Match Statistics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                          <Trophy className="h-4 w-4" />
+                          {playerA.name}
+                        </h4>
+                        <div className="space-y-2">
+                          {Object.entries(stats.A).map(([key, value]) => {
+                            const category = [...pointCategories.winner, ...pointCategories.error].find(c => c.id === key);
+                            return (
+                              <div key={key} className="flex justify-between items-center text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg">{category?.icon}</span>
+                                  <span className="text-slate-300">{category?.label || key}</span>
+                                </div>
+                                <Badge variant="secondary" className="bg-slate-700 text-white">
+                                  {value}
+                                </Badge>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-emerald-400 font-semibold mb-3 flex items-center gap-2">
+                          <Trophy className="h-4 w-4" />
+                          {playerB.name}
+                        </h4>
+                        <div className="space-y-2">
+                          {Object.entries(stats.B).map(([key, value]) => {
+                            const category = [...pointCategories.winner, ...pointCategories.error].find(c => c.id === key);
+                            return (
+                              <div key={key} className="flex justify-between items-center text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg">{category?.icon}</span>
+                                  <span className="text-slate-300">{category?.label || key}</span>
+                                </div>
+                                <Badge variant="secondary" className="bg-slate-700 text-white">
+                                  {value}
+                                </Badge>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+      </div>
+
+      {/* Analysis Modal */}
+      <Dialog open={showAnalysis} onOpenChange={setShowAnalysis}>
+        <DialogContent className="bg-slate-800 border-slate-700 max-w-md mx-4">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white">
+              How did {currentPoint?.player === 'A' ? playerA.name : playerB.name} score?
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold text-slate-400 mb-3 flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Winning Shots
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {pointCategories.winner.map(cat => (
+                  <Button
+                    key={cat.id}
+                    onClick={() => handleAnalysisSelect(cat.id)}
+                    className={`${cat.color} hover:opacity-90 transition-all h-auto p-3 flex flex-col items-center gap-1`}
+                    variant="default"
+                  >
+                    <span className="text-lg">{cat.icon}</span>
+                    <span className="text-xs font-semibold">{cat.label}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-slate-600" />
+
+            <div>
+              <h4 className="text-sm font-semibold text-slate-400 mb-3 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                Opponent Mistakes
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {pointCategories.error.map(cat => (
+                  <Button
+                    key={cat.id}
+                    onClick={() => handleAnalysisSelect(cat.id)}
+                    className={`${cat.color} hover:opacity-90 transition-all h-auto p-3 flex flex-col items-center gap-1`}
+                    variant="default"
+                  >
+                    <span className="text-lg">{cat.icon}</span>
+                    <span className="text-xs font-semibold">{cat.label}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <Button
+              onClick={skipAnalysis}
+              variant="outline"
+              className="w-full bg-slate-700 text-slate-300 border-slate-600 hover:bg-slate-600 hover:text-white"
+            >
+              Skip Analysis
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
