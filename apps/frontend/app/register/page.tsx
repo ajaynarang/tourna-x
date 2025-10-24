@@ -38,6 +38,13 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError('');
 
+    // Client-side validation
+    if (!form.phone || form.phone.length < 13) {
+      setError('Please enter a complete 10-digit phone number');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
@@ -175,11 +182,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className="w-full max-w-md lg:max-w-lg">
         {/* Back Button */}
         <div className="mb-6">
-          <Link href="/" className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+          <Link href="/" className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
           </Link>
@@ -187,11 +194,11 @@ export default function RegisterPage() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-lg mb-4">
-            <Trophy className="h-8 w-8 text-primary" />
+          <div className="inline-flex items-center justify-center p-3 bg-white dark:bg-gray-800 rounded-2xl shadow-lg mb-4">
+            <Trophy className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-600 mt-2">Join Tourna-X as a player</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Join Tourna-X as a player</p>
         </div>
 
         <Card>
@@ -218,6 +225,7 @@ export default function RegisterPage() {
                     onChange={(value) => setForm({ ...form, phone: value })}
                     placeholder="9876543210"
                     disabled={false}
+                    showValidation={true}
                   />
                 </div>
 
@@ -345,9 +353,9 @@ export default function RegisterPage() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Already have an account?{' '}
-                <Link href="/login" className="text-primary hover:text-primary/80 font-medium">
+                <Link href="/login" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
                   Sign in here
                 </Link>
               </p>

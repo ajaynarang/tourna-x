@@ -70,7 +70,7 @@ export default function PracticeMatchScoringPage({
   const [isLoading, setIsLoading] = useState(true);
   const [currentGame, setCurrentGame] = useState(1);
   const [showMatchDetails, setShowMatchDetails] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(true); // Start in fullscreen mode
 
   useEffect(() => {
     fetchMatch();
@@ -118,17 +118,16 @@ export default function PracticeMatchScoringPage({
     }
   };
 
-  const handleScoreUpdate = async (playerA: any, playerB: any, history: any[]) => {
+  const handleScoreUpdate = async (matchScore: any, history: any[]) => {
     try {
       const response = await fetch(`/api/practice-matches/${id}/score`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'update_score',
-          player1Score: playerA.score,
-          player2Score: playerB.score,
+          matchScore: matchScore,
           pointHistory: history,
-          scoringFormat: {
+          scoringFormat: match?.scoringFormat || {
             pointsPerGame: 21,
             gamesPerMatch: 3,
             winBy: 2,
@@ -492,28 +491,137 @@ export default function PracticeMatchScoringPage({
                 </CardContent>
               </Card>
             ) : (
-              <div className={`${isFullscreen ? 'fixed inset-0 z-40 bg-black flex items-center justify-center p-4' : ''}`}>
-                <div className={`${isFullscreen ? 'w-full max-w-4xl' : ''}`}>
-                  <LiveScoring
-                    matchId={match._id}
-                    playerA={{ 
-                      name: match.player1Name, 
-                      score: match.games && match.games.length > 0 
-                        ? match.games[match.games.length - 1].player1Score || 0 
-                        : 0, 
-                      id: match.player1Id || 'guest1' 
-                    }}
-                    playerB={{ 
-                      name: match.player2Name, 
-                      score: match.games && match.games.length > 0 
-                        ? match.games[match.games.length - 1].player2Score || 0 
-                        : 0, 
-                      id: match.player2Id || 'guest2' 
-                    }}
-                    onScoreUpdate={handleScoreUpdate}
-                    onMatchComplete={handleMatchComplete}
-                  />
+              <div className={`${isFullscreen ? 'fixed inset-0 z-40 bg-white dark:bg-black flex flex-col' : ''}`}>
+                {/* Mobile-Optimized Player Header for Fullscreen Mode */}
+                {isFullscreen && (
+                  <div className="bg-white/95 dark:bg-gray-900/95 border-b border-gray-200 dark:border-white/20 backdrop-blur-sm">
+                    {/* Mobile Header */}
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        {/* Large Exit Button for Mobile */}
+                        <button
+                          onClick={() => setIsFullscreen(false)}
+                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors font-semibold"
+                        >
+                          <ArrowLeft className="h-5 w-5" />
+                          <span className="hidden sm:inline">Exit Scoring</span>
+                          <span className="sm:hidden">Exit</span>
+                        </button>
+                        
+                        {/* Match Status */}
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
+                            {match.category}
+                          </Badge>
+                          <Badge className={match.status === 'in_progress' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20' : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20'}>
+                            {match.status === 'in_progress' ? 'Live' : 'Scheduled'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {/* Player Names - Mobile Optimized */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10 flex-shrink-0">
+                            {match.player1IsGuest ? (
+                              <UserX className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            ) : (
+                              <UserCheck className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-lg font-bold text-gray-900 dark:text-white truncate">{match.player1Name}</p>
+                            {match.player1IsGuest && match.player1Phone && (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Guest • {match.player1Phone}</p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="text-gray-600 dark:text-gray-400 font-bold mx-4 text-lg">VS</div>
+                        
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="min-w-0 flex-1 text-right">
+                            <p className="text-lg font-bold text-gray-900 dark:text-white truncate">{match.player2Name}</p>
+                            {match.player2IsGuest && match.player2Phone && (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Guest • {match.player2Phone}</p>
+                            )}
+                          </div>
+                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-pink-500/10 flex-shrink-0">
+                            {match.player2IsGuest ? (
+                              <UserX className="h-6 w-6 text-pink-600 dark:text-pink-400" />
+                            ) : (
+                              <UserCheck className="h-6 w-6 text-pink-600 dark:text-pink-400" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Court/Venue Info - Mobile Optimized */}
+                      {(match.court || match.venue) && (
+                        <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-gray-200 dark:border-white/10">
+                          {match.court && (
+                            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                              <Target className="h-4 w-4" />
+                              <span>{match.court}</span>
+                            </div>
+                          )}
+                          {match.venue && (
+                            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                              <MapPin className="h-4 w-4" />
+                              <span className="truncate max-w-32">{match.venue}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Scoring Component */}
+                <div className={`${isFullscreen ? 'flex-1 flex items-center justify-center p-4' : ''}`}>
+                  <div className={`${isFullscreen ? 'w-full max-w-4xl' : ''}`}>
+                    <LiveScoring
+                      matchId={match._id}
+                      playerA={{ 
+                        name: match.player1Name, 
+                        score: match.games && match.games.length > 0 
+                          ? match.games[match.games.length - 1].player1Score || 0 
+                          : 0, 
+                        id: match.player1Id || 'guest1' 
+                      }}
+                      playerB={{ 
+                        name: match.player2Name, 
+                        score: match.games && match.games.length > 0 
+                          ? match.games[match.games.length - 1].player2Score || 0 
+                          : 0, 
+                        id: match.player2Id || 'guest2' 
+                      }}
+                      scoringFormat={match.scoringFormat || {
+                        pointsPerGame: 21,
+                        gamesPerMatch: 3,
+                        winBy: 2,
+                        maxPoints: 30,
+                      }}
+                      onScoreUpdate={handleScoreUpdate}
+                      onMatchComplete={handleMatchComplete}
+                    />
+                  </div>
                 </div>
+                
+                {/* Mobile Bottom Navigation */}
+                {isFullscreen && (
+                  <div className="bg-white/95 dark:bg-gray-900/95 border-t border-gray-200 dark:border-white/20 backdrop-blur-sm p-4">
+                    <div className="max-w-4xl mx-auto">
+                      <button
+                        onClick={() => setIsFullscreen(false)}
+                        className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors font-semibold text-lg"
+                      >
+                        <ArrowLeft className="h-6 w-6" />
+                        Exit Scoring Mode
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </>

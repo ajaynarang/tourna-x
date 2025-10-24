@@ -81,7 +81,7 @@ export default function HomePage() {
               Welcome to <span className="gradient-title">Tourna-X</span>
             </h1>
 
-            <p className="text-secondary mx-auto mb-8 max-w-3xl px-4 text-lg lg:text-xl">
+            <p className="text-primary mx-auto mb-8 max-w-3xl px-4 text-lg lg:text-xl">
               The modern tournament management system for badminton and tennis.
               Create tournaments, manage participants, and track matches with ease.
             </p>
@@ -119,7 +119,7 @@ export default function HomePage() {
             <h2 className="text-primary mb-4 text-3xl font-bold lg:text-4xl">
               Everything you need for tournament management
             </h2>
-            <p className="text-secondary text-lg">
+            <p className="text-primary text-lg">
               Built for organizers and participants alike
             </p>
           </motion.div>
@@ -170,7 +170,7 @@ export default function HomePage() {
             <h2 className="text-primary mb-4 text-3xl font-bold lg:text-4xl">
               Why Choose Tourna-X?
             </h2>
-            <p className="text-secondary text-lg">
+            <p className="text-primary text-lg">
               Built for tournament organizers and players
             </p>
           </motion.div>
@@ -278,7 +278,7 @@ function FeatureCard({
         <Icon className="h-8 w-8" />
       </div>
       <h3 className="text-primary mb-2 text-lg font-semibold">{title}</h3>
-      <p className="text-secondary text-sm">{description}</p>
+      <p className="text-primary text-sm">{description}</p>
     </motion.div>
   );
 }
@@ -316,7 +316,7 @@ function KeyFeature({
         <Icon className="h-8 w-8" />
       </div>
       <h3 className="text-primary mb-2 text-xl font-semibold">{title}</h3>
-      <p className="text-secondary">{description}</p>
+      <p className="text-primary">{description}</p>
     </motion.div>
   );
 }

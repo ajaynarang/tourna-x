@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       court: body.court,
       venue: body.venue,
       notes: body.notes,
-      scoringFormat: {
+      scoringFormat: body.scoringFormat || {
         pointsPerGame: 21,
         gamesPerMatch: 3,
         winBy: 2,

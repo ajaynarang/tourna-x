@@ -32,6 +32,13 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
 
+    // Client-side validation
+    if (!loginForm.phone || loginForm.phone.length < 13) {
+      setError('Please enter a complete 10-digit phone number');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       await sendOtp(loginForm.phone, 'login');
       setOtpSent(true);
@@ -114,16 +121,16 @@ export default function LoginPage() {
 
       {/* Main Content - Perfectly Centered */}
       <div className="flex-1 flex items-center justify-center px-6 lg:px-8 pb-20">
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-md lg:max-w-lg">
           {/* Hero Section */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-6 ring-1 ring-slate-200">
               <Trophy className="h-8 w-8 text-blue-600" />
             </div>
-            <h1 className="text-primary mb-2 text-3xl font-bold">
+            <h1 className="text-gray-900 dark:text-white mb-2 text-3xl font-bold">
               {!otpSent ? 'Welcome Back' : 'Verify Your Phone'}
             </h1>
-            <p className="text-secondary text-lg">
+            <p className="text-gray-600 dark:text-gray-300 text-lg">
               {!otpSent 
                 ? 'Sign in to continue to your account' 
                 : 'Enter the verification code we sent'
@@ -132,29 +139,30 @@ export default function LoginPage() {
           </div>
 
           {/* Login Form */}
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm relative">
+          <Card className="border-0 shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm relative">
             {/* Close Button */}
             <Link 
               href="/" 
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 transition-colors z-10"
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors z-10"
             >
-              <X className="text-tertiary hover:text-primary h-4 w-4" />
+              <X className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 h-4 w-4" />
             </Link>
             <CardContent className="p-8">
               {!otpSent ? (
                 <form onSubmit={handleSendOtp} className="space-y-6">
                   <div className="space-y-3">
-                    <Label htmlFor="phone" className="text-primary text-sm font-semibold">
+                    <Label htmlFor="phone" className="text-gray-900 dark:text-white text-sm font-semibold">
                       Phone Number
                     </Label>
                     <CountryCodeSelector
                       value={loginForm.phone}
                       onChange={(value) => setLoginForm({ ...loginForm, phone: value })}
                       placeholder="9876543210"
-                      className="h-12 text-lg border-slate-200 focus-within:border-blue-500 focus-within:ring-blue-500"
+                      className="h-12 text-lg border-gray-200 dark:border-gray-600 focus-within:border-blue-500 focus-within:ring-blue-500"
                       disabled={false}
+                      showValidation={true}
                     />
-                    <p className="text-tertiary text-sm leading-relaxed">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
                       We'll send you a verification code. Works for both admins and players.
                     </p>
                   </div>
@@ -184,7 +192,7 @@ export default function LoginPage() {
               ) : (
                 <form onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-3">
-                    <Label htmlFor="otp" className="text-primary text-sm font-semibold">
+                    <Label htmlFor="otp" className="text-gray-900 dark:text-white text-sm font-semibold">
                       Verification Code
                     </Label>
                     <Input
@@ -193,15 +201,15 @@ export default function LoginPage() {
                       placeholder="Enter 6-digit code"
                       value={loginForm.otp}
                       onChange={(e) => setLoginForm({ ...loginForm, otp: e.target.value })}
-                      className="h-12 text-lg text-center tracking-widest border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                      className="h-12 text-lg text-center tracking-widest border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500"
                       maxLength={6}
                       required
                     />
-                    <p className="text-tertiary text-sm">
-                      Code sent to <span className="text-primary font-medium">{loginForm.phone}</span>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                      Code sent to <span className="text-gray-900 dark:text-white font-medium">{loginForm.phone}</span>
                     </p>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-sm text-blue-800">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
                         <strong>For testing:</strong> Use verification code <span className="font-mono font-bold">123456</span>
                       </p>
                     </div>
@@ -244,12 +252,12 @@ export default function LoginPage() {
               )}
 
               {/* Footer */}
-              <div className="mt-8 pt-6 border-t border-slate-200">
-                <p className="text-secondary text-center text-sm">
+              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-gray-600 dark:text-gray-400 text-center text-sm">
                   Don't have an account?{' '}
                   <Link 
                     href="/register" 
-                    className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                    className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                   >
                     Create one here
                   </Link>

@@ -11,6 +11,7 @@ interface CountryCodeSelectorProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  showValidation?: boolean;
 }
 
 const COUNTRY_CODES = [
@@ -22,33 +23,43 @@ export const CountryCodeSelector: React.FC<CountryCodeSelectorProps> = ({
   onChange,
   placeholder = 'Enter phone number',
   className,
-  disabled = false
+  disabled = false,
+  showValidation = false
 }) => {
   const [countryCode, setCountryCode] = React.useState('+91');
   const [phoneNumber, setPhoneNumber] = React.useState('');
 
+  // Initialize state from value prop
   React.useEffect(() => {
-    // Parse the current value to extract country code and phone number
     if (value) {
       const match = value.match(/^(\+\d{1,3})(.*)$/);
       if (match) {
-        setCountryCode(match[1] || '+91');
-        setPhoneNumber(match[2] || '');
+        setCountryCode(match[1]);
+        setPhoneNumber(match[2]);
       } else {
         setPhoneNumber(value);
       }
+    } else {
+      setCountryCode('+91');
+      setPhoneNumber('');
     }
-  }, [value]);
+  }, []); // Only run once on mount
 
   const handlePhoneChange = (phone: string) => {
-    setPhoneNumber(phone);
-    onChange(`${countryCode}${phone}`);
+    // Only allow digits
+    const cleanPhone = phone.replace(/\D/g, '');
+    setPhoneNumber(cleanPhone);
+    onChange(`${countryCode}${cleanPhone}`);
   };
 
   const handleCountryCodeChange = (code: string) => {
     setCountryCode(code);
     onChange(`${code}${phoneNumber}`);
   };
+
+  // Check if phone number is complete (10 digits)
+  const isComplete = phoneNumber.length === 10;
+  const isValid = showValidation ? isComplete : true;
 
   return (
     <div className={cn('flex', className)}>
@@ -57,7 +68,7 @@ export const CountryCodeSelector: React.FC<CountryCodeSelectorProps> = ({
         onValueChange={handleCountryCodeChange}
         disabled={disabled}
       >
-        <SelectTrigger className="w-24 border-r-0 rounded-r-none">
+        <SelectTrigger className="w-28 border-r-0 rounded-r-none">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -76,8 +87,13 @@ export const CountryCodeSelector: React.FC<CountryCodeSelectorProps> = ({
         placeholder={placeholder}
         value={phoneNumber}
         onChange={(e) => handlePhoneChange(e.target.value)}
-        className="flex-1 rounded-l-none border-l-0"
+        className={cn(
+          "flex-1 rounded-l-none border-l-0",
+          showValidation && !isValid && phoneNumber.length > 0 && "border-red-500 focus:border-red-500 focus:ring-red-500",
+          showValidation && isComplete && "border-green-500 focus:border-green-500 focus:ring-green-500"
+        )}
         disabled={disabled}
+        maxLength={10}
       />
     </div>
   );

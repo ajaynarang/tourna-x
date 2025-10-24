@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate phone number format (should include country code)
-    if (!phone.startsWith('+91') || phone.length !== 13) {
+    if (!phone.startsWith('+91')) {
       return NextResponse.json(
         { error: 'Please enter a valid Indian phone number with country code (+91)' },
         { status: 400 }
@@ -23,24 +23,39 @@ export async function POST(request: NextRequest) {
 
     // Extract phone number without country code for database storage
     const phoneNumber = phone.replace('+91', '');
+    
+    // Validate Indian phone number (10 digits)
+    if (phoneNumber.length !== 10 || !/^\d{10}$/.test(phoneNumber)) {
+      return NextResponse.json(
+        { error: 'Please enter a valid 10-digit Indian phone number' },
+        { status: 400 }
+      );
+    }
 
     const db = await connectToDatabase();
     const otpsCollection = db.collection(COLLECTIONS.OTPS);
     const usersCollection = db.collection(COLLECTIONS.USERS);
 
     // Verify OTP
-    const otpRecord = await otpsCollection.findOne({
-      phone: phoneNumber,
-      otp,
-      isUsed: false,
-      expiresAt: { $gt: new Date() },
-    });
+    // Allow test OTP 123456 for development/testing
+    const isTestOtp = otp === '123456';
+    
+    let otpRecord = null;
+    if (!isTestOtp) {
+      otpRecord = await otpsCollection.findOne({
+        phone: phoneNumber,
+        countryCode: '+91',
+        otp,
+        isUsed: false,
+        expiresAt: { $gt: new Date() },
+      });
 
-    if (!otpRecord) {
-      return NextResponse.json(
-        { error: 'Invalid or expired OTP' },
-        { status: 400 }
-      );
+      if (!otpRecord) {
+        return NextResponse.json(
+          { error: 'Invalid or expired OTP' },
+          { status: 400 }
+        );
+      }
     }
 
     // Check if user already exists
@@ -56,22 +71,25 @@ export async function POST(request: NextRequest) {
     const userData = insertUserSchema.parse({
       name,
       phone: phoneNumber,
+      countryCode: '+91', // Extract country code from phone
       email: email || undefined,
       age: age || undefined,
       gender: gender || undefined,
       society: society || undefined,
       block: block || undefined,
       flatNumber: flatNumber || undefined,
-      role: 'player',
+      roles: ['player'],
     });
 
     const result = await usersCollection.insertOne(userData);
 
-    // Mark OTP as used
-    await otpsCollection.updateOne(
-      { _id: otpRecord._id },
-      { $set: { isUsed: true } }
-    );
+    // Mark OTP as used (only for real OTPs, not test OTP)
+    if (otpRecord) {
+      await otpsCollection.updateOne(
+        { _id: otpRecord._id },
+        { $set: { isUsed: true } }
+      );
+    }
 
     return NextResponse.json({
       message: 'Registration successful',

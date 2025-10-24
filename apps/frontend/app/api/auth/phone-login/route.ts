@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate phone number format (should include country code)
-    if (!phone.startsWith('+91') || phone.length !== 13) {
+    if (!phone.startsWith('+91')) {
       return NextResponse.json(
         { success: false, error: 'Please enter a valid Indian phone number with country code (+91)' },
         { status: 400 }
@@ -30,6 +30,14 @@ export async function POST(request: NextRequest) {
 
     // Extract phone number without country code for database storage
     const phoneNumber = phone.replace('+91', '');
+    
+    // Validate Indian phone number (10 digits)
+    if (phoneNumber.length !== 10 || !/^\d{10}$/.test(phoneNumber)) {
+      return NextResponse.json(
+        { success: false, error: 'Please enter a valid 10-digit Indian phone number' },
+        { status: 400 }
+      );
+    }
 
     // Verify OTP
     // Allow test OTP 123456 for development/testing
@@ -72,6 +80,7 @@ export async function POST(request: NextRequest) {
       const isAdminPhone = phoneNumber === '9999999999' || phoneNumber === '8888888888'; // Test admin numbers
       const newUser = insertUserSchema.parse({
         phone: phoneNumber,
+        countryCode: '+91', // Store country code separately
         roles: isAdminPhone ? ['admin'] : ['player'],
         name: isAdminPhone ? `Admin ${phoneNumber.slice(-4)}` : `Player ${phoneNumber.slice(-4)}`, // Temporary name
       });

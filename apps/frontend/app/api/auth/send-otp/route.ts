@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const { phone, purpose = 'login' } = await request.json();
 
     // Validate phone number format (should include country code)
-    if (!phone || !phone.startsWith('+91') || phone.length !== 13) {
+    if (!phone || !phone.startsWith('+91')) {
       return NextResponse.json(
         { success: false, error: 'Please enter a valid Indian phone number with country code (+91)' },
         { status: 400 }
@@ -27,6 +27,14 @@ export async function POST(request: NextRequest) {
 
     // Extract phone number without country code for database storage
     const phoneNumber = phone.replace('+91', '');
+    
+    // Validate Indian phone number (10 digits)
+    if (phoneNumber.length !== 10 || !/^\d{10}$/.test(phoneNumber)) {
+      return NextResponse.json(
+        { success: false, error: 'Please enter a valid 10-digit Indian phone number' },
+        { status: 400 }
+      );
+    }
 
     // Check if user exists
     const existingUser = await db.collection(COLLECTIONS.USERS).findOne({ phone: phoneNumber });
@@ -76,6 +84,7 @@ export async function POST(request: NextRequest) {
     // Store OTP
     const otpData = insertOtpSchema.parse({
       phone: phoneNumber,
+      countryCode: '+91', // Store country code separately
       otp,
       expiresAt,
     });

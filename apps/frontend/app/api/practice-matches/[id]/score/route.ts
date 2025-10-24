@@ -166,7 +166,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { action, gameNumber, player1Score, player2Score, scoringFormat, walkoverReason, winner, pointHistory } = body;
+    const { action, gameNumber, player1Score, player2Score, scoringFormat, walkoverReason, winner, pointHistory, matchScore } = body;
 
     if (!action) {
       return NextResponse.json(
@@ -184,17 +184,41 @@ export async function POST(
         break;
 
       case 'update_score':
-        if (player1Score === undefined || player2Score === undefined) {
+        // Handle new matchScore format
+        if (matchScore) {
+          updatedMatch.games = matchScore.games || [];
+          updatedMatch.player1GamesWon = matchScore.player1GamesWon || 0;
+          updatedMatch.player2GamesWon = matchScore.player2GamesWon || 0;
+          
+          // Check if match is complete
+          if (matchScore.isMatchComplete && matchScore.winner) {
+            updatedMatch.status = 'completed';
+            updatedMatch.winnerId = matchScore.winner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id;
+            updatedMatch.winnerName = matchScore.winner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
+            updatedMatch.endTime = new Date();
+            
+            // Update match result
+            updatedMatch.matchResult = {
+              player1GamesWon: matchScore.player1GamesWon,
+              player2GamesWon: matchScore.player2GamesWon,
+              totalDuration: updatedMatch.startTime ? Math.round((new Date().getTime() - new Date(updatedMatch.startTime).getTime()) / 60000) : 0,
+              completedAt: new Date(),
+            };
+            
+            // Update practice stats
+            await updatePracticeStats(db, updatedMatch);
+          }
+        } else if (player1Score === undefined || player2Score === undefined) {
           return NextResponse.json(
             { success: false, error: 'Missing required fields: player1Score, player2Score' },
             { status: 400 }
           );
-        }
-
-        // Initialize games array if empty
-        if (!updatedMatch.games) {
-          updatedMatch.games = [];
-        }
+        } else {
+          // Fallback to old format for backward compatibility
+          // Initialize games array if empty
+          if (!updatedMatch.games) {
+            updatedMatch.games = [];
+          }
 
         // Find or create the current game (default to game 1 if no gameNumber specified)
         const currentGameNumber = gameNumber || 1;
@@ -249,6 +273,7 @@ export async function POST(
 
           // Update practice stats
           await updatePracticeStats(db, updatedMatch);
+        }
         }
 
         break;

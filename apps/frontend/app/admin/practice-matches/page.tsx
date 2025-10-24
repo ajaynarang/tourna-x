@@ -47,6 +47,12 @@ interface PracticeMatch {
   games?: any[];
   winnerId?: string;
   winnerName?: string;
+  matchResult?: {
+    player1GamesWon: number;
+    player2GamesWon: number;
+    totalDuration?: number;
+    completedAt?: string;
+  };
 }
 
 export default function PracticeMatchesPage() {
@@ -146,11 +152,7 @@ export default function PracticeMatchesPage() {
     <div className="min-h-screen">
       {/* Header */}
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-primary">Practice Matches</h1>
-            <p className="text-sm text-tertiary mt-1">Track and score your practice sessions</p>
-          </div>
+        <div className="flex items-center justify-end ">
           <Button
             onClick={() => setIsCreateDialogOpen(true)}
             className="bg-primary hover:bg-primary/90 text-white"
@@ -161,11 +163,11 @@ export default function PracticeMatchesPage() {
         </div>
       </div>
 
-      {/* Mobile-Optimized Filters */}
+      {/* Compact Mobile Filters */}
       <div className="mx-auto max-w-7xl px-4 pb-4 sm:px-6 lg:px-8">
-        <div className="glass-card rounded-xl p-4 mb-6">
-          <div className="space-y-4">
-            {/* Filter Header */}
+        <div className="glass-card rounded-xl p-3 mb-4">
+          <div className="space-y-3">
+            {/* Compact Filter Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-tertiary" />
@@ -175,47 +177,51 @@ export default function PracticeMatchesPage() {
                 variant="outline"
                 size="sm"
                 onClick={fetchMatches}
-                className="border-white/10 hover:bg-white/5 text-tertiary"
+                className="border-white/10 hover:bg-white/5 text-tertiary h-8 px-2"
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="h-3 w-3" />
               </Button>
             </div>
             
-            {/* Status Filter - Mobile Optimized */}
-            <div className="space-y-2">
+            {/* Compact Status Filter */}
+            <div className="space-y-1">
               <span className="text-xs font-medium text-tertiary uppercase tracking-wide">Status</span>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-4 gap-1">
                 {['all', 'scheduled', 'in_progress', 'completed'].map((status) => (
                   <button
                     key={status}
                     onClick={() => setFilter(status as any)}
-                    className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${
                       filter === status
                         ? 'bg-primary text-white shadow-lg'
                         : 'glass-card text-tertiary hover:bg-white/5 border border-white/10'
                     }`}
                   >
-                    {status.replace('_', ' ').charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+                    {status === 'all' ? 'All' : 
+                     status === 'scheduled' ? 'Scheduled' :
+                     status === 'in_progress' ? 'Live' : 'Done'}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Category Filter - Mobile Optimized */}
-            <div className="space-y-2">
+            {/* Compact Category Filter */}
+            <div className="space-y-1">
               <span className="text-xs font-medium text-tertiary uppercase tracking-wide">Type</span>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-4 gap-1">
                 {['all', 'singles', 'doubles', 'mixed'].map((category) => (
                   <button
                     key={category}
                     onClick={() => setCategoryFilter(category as any)}
-                    className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${
                       categoryFilter === category
                         ? 'bg-primary text-white shadow-lg'
                         : 'glass-card text-tertiary hover:bg-white/5 border border-white/10'
                     }`}
                   >
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                    {category === 'all' ? 'All' : 
+                     category === 'singles' ? 'Singles' :
+                     category === 'doubles' ? 'Doubles' : 'Mixed'}
                   </button>
                 ))}
               </div>
@@ -248,6 +254,15 @@ export default function PracticeMatchesPage() {
             {matches.map((match) => {
               const StatusIcon = getStatusIcon(match.status);
               
+              // Debug: Log match data to see what's available
+              console.log('Match data:', {
+                id: match._id,
+                status: match.status,
+                winnerName: match.winnerName,
+                matchResult: match.matchResult,
+                games: match.games
+              });
+              
               return (
                 <Card 
                   key={match._id} 
@@ -275,6 +290,22 @@ export default function PracticeMatchesPage() {
                               {match.player2Name}
                             </span>
                           </div>
+                          
+                          {/* Show match result for completed matches */}
+                          {match.status === 'completed' && (
+                            <div className="flex items-center gap-2 mb-1">
+                              <Trophy className="h-3 w-3 text-yellow-500" />
+                              <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                                {match.winnerName ? `${match.winnerName} won` : 'Match completed'}
+                              </span>
+                              {match.matchResult && (
+                                <span className="text-xs text-tertiary">
+                                  ({match.matchResult.player1GamesWon}-{match.matchResult.player2GamesWon})
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
                           <div className="flex items-center gap-2 text-xs text-tertiary">
                             <Calendar className="h-3 w-3" />
                             <span>{new Date(match.createdAt).toLocaleDateString()}</span>
@@ -304,16 +335,16 @@ export default function PracticeMatchesPage() {
         )}
       </div>
 
-      {/* Match Details Modal */}
+      {/* Improved Match Details Modal */}
       {showMatchDetails && selectedMatch && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="glass-card-intense border border-white/10 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-md">
+          <div className="bg-white/95 dark:bg-gray-900/95 border border-gray-200 dark:border-white/20 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-primary">Match Details</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Match Details</h2>
                 <button
                   onClick={() => setShowMatchDetails(false)}
-                  className="text-tertiary hover:text-primary transition-colors"
+                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
                   <XCircle className="h-6 w-6" />
                 </button>
@@ -340,17 +371,17 @@ export default function PracticeMatchesPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-primary truncate">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                         {selectedMatch.player1Name}
                       </p>
                       {selectedMatch.player1IsGuest && selectedMatch.player1Phone && (
-                        <p className="text-xs text-tertiary">Guest • {selectedMatch.player1Phone}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Guest • {selectedMatch.player1Phone}</p>
                       )}
                     </div>
                   </div>
 
                   <div className="flex items-center justify-center">
-                    <div className="text-xs text-tertiary">vs</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">vs</div>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -362,49 +393,100 @@ export default function PracticeMatchesPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-primary truncate">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                         {selectedMatch.player2Name}
                       </p>
                       {selectedMatch.player2IsGuest && selectedMatch.player2Phone && (
-                        <p className="text-xs text-tertiary">Guest • {selectedMatch.player2Phone}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Guest • {selectedMatch.player2Phone}</p>
                       )}
                     </div>
                   </div>
                 </div>
 
                 {selectedMatch.court && (
-                  <div className="flex items-center gap-2 text-sm text-tertiary">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <Target className="h-4 w-4" />
                     <span>{selectedMatch.court}</span>
                   </div>
                 )}
 
                 {selectedMatch.venue && (
-                  <div className="flex items-center gap-2 text-sm text-tertiary">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <MapPin className="h-4 w-4" />
                     <span className="truncate">{selectedMatch.venue}</span>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-sm text-tertiary">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <Calendar className="h-4 w-4" />
                   <span>{new Date(selectedMatch.createdAt).toLocaleDateString()}</span>
                 </div>
 
                 {selectedMatch.notes && (
-                  <div className="pt-3 border-t border-white/10">
-                    <p className="text-sm text-tertiary mb-1">Notes</p>
-                    <p className="text-sm text-primary">{selectedMatch.notes}</p>
+                  <div className="pt-3 border-t border-gray-200 dark:border-white/20">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Notes</p>
+                    <p className="text-sm text-gray-900 dark:text-white">{selectedMatch.notes}</p>
                   </div>
                 )}
 
-                {selectedMatch.status === 'completed' && selectedMatch.winnerName && (
-                  <div className="pt-3 border-t border-white/10">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Trophy className="h-4 w-4 text-yellow-400" />
-                      <span className="text-tertiary">Winner:</span>
-                      <span className="text-primary font-medium">{selectedMatch.winnerName}</span>
+                {selectedMatch.status === 'completed' && (
+                  <div className="pt-3 border-t border-gray-200 dark:border-white/20">
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Trophy className="h-5 w-5 text-yellow-500" />
+                        <span className="text-lg font-bold text-green-700 dark:text-green-300">Match Complete!</span>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                          🏆 {selectedMatch.winnerName ? `${selectedMatch.winnerName} Wins!` : 'Match Completed!'} 🏆
+                        </p>
+                        {selectedMatch.matchResult && (
+                          <div className="flex justify-center items-center gap-4 mt-2">
+                            <div className="text-center">
+                              <div className="text-sm text-gray-600 dark:text-gray-400">{selectedMatch.player1Name}</div>
+                              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                                {selectedMatch.matchResult.player1GamesWon}
+                              </div>
+                            </div>
+                            <div className="text-gray-500 dark:text-gray-400 text-lg font-bold">-</div>
+                            <div className="text-center">
+                              <div className="text-sm text-gray-600 dark:text-gray-400">{selectedMatch.player2Name}</div>
+                              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                                {selectedMatch.matchResult.player2GamesWon}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
+                    
+                    {/* Match Duration */}
+                    {selectedMatch.matchResult?.totalDuration && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        <Clock className="h-4 w-4" />
+                        <span>Duration: {selectedMatch.matchResult.totalDuration} minutes</span>
+                      </div>
+                    )}
+                    
+                    {/* Game Details */}
+                    {selectedMatch.games && selectedMatch.games.length > 0 && (
+                      <div className="mt-3">
+                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Game Results</h4>
+                        <div className="space-y-1">
+                          {selectedMatch.games.map((game: any, index: number) => (
+                            <div key={index} className="flex justify-between items-center bg-gray-100 dark:bg-gray-700/30 rounded-lg p-2">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">Game {index + 1}</span>
+                              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                {game.player1Score} - {game.player2Score}
+                              </span>
+                              <span className="text-xs text-gray-600 dark:text-gray-400">
+                                {game.winner === 'player1' ? selectedMatch.player1Name : selectedMatch.player2Name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -416,7 +498,7 @@ export default function PracticeMatchesPage() {
                     className="flex-1"
                   >
                     <Button
-                      className="w-full bg-primary hover:bg-primary/90 text-white"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3"
                     >
                       <Play className="mr-2 h-4 w-4" />
                       {selectedMatch.status === 'in_progress' ? 'Continue Scoring' : 'Start Scoring'}
@@ -426,7 +508,7 @@ export default function PracticeMatchesPage() {
                 <Button
                   variant="outline"
                   onClick={() => setShowMatchDetails(false)}
-                  className="flex-1 border-white/10 hover:bg-white/5"
+                  className="flex-1 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 py-3"
                 >
                   Close
                 </Button>
@@ -466,6 +548,12 @@ function CreatePracticeMatchDialog({
     court: '',
     venue: '',
     notes: '',
+    scoringFormat: {
+      pointsPerGame: 21,
+      gamesPerMatch: 3,
+      winBy: 2,
+      maxPoints: 30,
+    },
   });
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -547,6 +635,8 @@ function CreatePracticeMatchDialog({
         return formData.player2.name && formData.player2.phone;
       case 4:
         return true;
+      case 5:
+        return true;
       default:
         return false;
     }
@@ -568,7 +658,7 @@ function CreatePracticeMatchDialog({
 
           {/* Step Indicator */}
           <div className="flex items-center justify-center mb-8 gap-2">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3, 4, 5].map((s) => (
               <div
                 key={s}
                 className={`h-2 rounded-full transition-all ${
@@ -868,8 +958,124 @@ function CreatePracticeMatchDialog({
             </div>
           )}
 
-          {/* Step 4: Match Details */}
+          {/* Step 4: Scoring Format */}
           {step === 4 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-primary mb-4">Scoring Format</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-2">Points per Game</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[11, 15, 21].map((points) => (
+                      <button
+                        key={points}
+                        onClick={() => setFormData({
+                          ...formData,
+                          scoringFormat: { ...formData.scoringFormat, pointsPerGame: points }
+                        })}
+                        className={`p-3 rounded-lg text-center font-medium transition-all ${
+                          formData.scoringFormat.pointsPerGame === points
+                            ? 'bg-primary text-white'
+                            : 'glass-card border border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        {points}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-2">Games per Match</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[1, 3].map((games) => (
+                      <button
+                        key={games}
+                        onClick={() => setFormData({
+                          ...formData,
+                          scoringFormat: { ...formData.scoringFormat, gamesPerMatch: games }
+                        })}
+                        className={`p-3 rounded-lg text-center font-medium transition-all ${
+                          formData.scoringFormat.gamesPerMatch === games
+                            ? 'bg-primary text-white'
+                            : 'glass-card border border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        {games === 1 ? 'Single Game' : 'Best of 3'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-2">Win by (Deuce Rule)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[1, 2].map((winBy) => (
+                      <button
+                        key={winBy}
+                        onClick={() => setFormData({
+                          ...formData,
+                          scoringFormat: { ...formData.scoringFormat, winBy }
+                        })}
+                        className={`p-3 rounded-lg text-center font-medium transition-all ${
+                          formData.scoringFormat.winBy === winBy
+                            ? 'bg-primary text-white'
+                            : 'glass-card border border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        {winBy === 1 ? 'Win by 1' : 'Win by 2'}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-tertiary mt-1">
+                    {formData.scoringFormat.winBy === 1 
+                      ? 'First to reach target points wins' 
+                      : 'Must win by 2 points (deuce at 20-20 for 21-point games)'
+                    }
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-2">Maximum Points</label>
+                  <input
+                    type="number"
+                    min="20"
+                    max="50"
+                    value={formData.scoringFormat.maxPoints}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      scoringFormat: { ...formData.scoringFormat, maxPoints: parseInt(e.target.value) }
+                    })}
+                    className="w-full px-4 py-2 rounded-lg glass-card border border-white/10 text-primary focus:border-primary focus:outline-none"
+                  />
+                  <p className="text-xs text-tertiary mt-1">
+                    Maximum points before game ends (prevents infinite deuce)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <Button
+                  onClick={() => setStep(3)}
+                  variant="outline"
+                  className="flex-1 border-white/10 hover:bg-white/5"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={() => setStep(5)}
+                  disabled={!canProceed()}
+                  className="flex-1 bg-primary hover:bg-primary/90"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Match Details */}
+          {step === 5 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-primary mb-4">Match Details</h3>
               
@@ -910,7 +1116,7 @@ function CreatePracticeMatchDialog({
 
               <div className="flex gap-3 mt-6">
                 <Button
-                  onClick={() => setStep(3)}
+                  onClick={() => setStep(4)}
                   variant="outline"
                   className="flex-1 border-white/10 hover:bg-white/5"
                 >

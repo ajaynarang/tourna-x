@@ -12,6 +12,7 @@ export const userSchema = z.object({
   roles: z.array(z.enum(["admin", "player"])).default(["player"]), // Support multiple roles
   name: z.string().min(1).max(100),
   phone: z.string().min(10).max(15), // Required for all users
+  countryCode: z.string().min(2).max(5).default("+91"), // Country code (e.g., +91, +1)
   email: z.string().email().optional(), // Optional for players, required for admin
   society: z.string().max(100).optional(), // Society/Apartment name
   block: z.string().max(50).optional(), // Block/Tower name
@@ -78,6 +79,7 @@ export const participantSchema = z.object({
   userId: objectIdSchema, // Reference to user
   name: z.string().min(1).max(100),
   phone: z.string().min(10).max(15),
+  countryCode: z.string().min(2).max(5).default("+91"), // Country code
   email: z.string().email().optional(),
   age: z.number().min(1).max(100),
   gender: z.enum(["male", "female", "other"]).optional(),
@@ -89,6 +91,7 @@ export const participantSchema = z.object({
   partnerId: objectIdSchema.optional(), // For doubles/mixed
   partnerName: z.string().max(100).optional(),
   partnerPhone: z.string().max(15).optional(),
+  partnerCountryCode: z.string().min(2).max(5).default("+91").optional(), // Partner's country code
   partnerAge: z.number().min(1).max(100).optional(),
   partnerGender: z.enum(["male", "female", "other"]).optional(),
   paymentStatus: z.enum(["pending", "paid"]).default("pending"),
@@ -192,6 +195,7 @@ export const matchSchema = z.object({
 export const otpSchema = z.object({
   _id: objectIdSchema.optional(),
   phone: z.string().min(10).max(15),
+  countryCode: z.string().min(2).max(5).default("+91"), // Country code
   otp: z.string().length(6),
   expiresAt: z.date(),
   isUsed: z.boolean().default(false),
