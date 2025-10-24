@@ -341,40 +341,53 @@ export default function PracticeMatchDetailsPage({
           </Badge>
         </div>
 
-        {/* Match Completion Card */}
+        {/* Match Completion Card - Apple-like Design */}
         {match.status === 'completed' && (
-          <div className="mb-8 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-2xl border-2 border-green-500/20 dark:border-green-500/30 p-8">
-            <div className="flex items-center justify-center mb-6">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 dark:bg-green-500/10">
-                <Trophy className="h-8 w-8 text-green-600 dark:text-green-400" />
+          <div className="mb-8 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-3xl border border-green-200/50 dark:border-green-800/50 p-8 shadow-lg">
+            {/* Header with Trophy */}
+            <div className="flex items-center justify-center mb-8">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg">
+                <Trophy className="h-10 w-10 text-white" />
               </div>
             </div>
             
-            <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-3">
-              🏆 Match Complete! 🏆
-            </h2>
+            {/* Match Type Badge */}
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 rounded-full border border-green-200 dark:border-green-700">
+                <Dumbbell className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-green-700 dark:text-green-300 capitalize">
+                  {match.category} Practice Match
+                </span>
+              </div>
+            </div>
             
-            {(match.winnerName || match.matchResult) && (
-              <p className="text-center text-lg text-green-700 dark:text-green-300 font-semibold mb-6">
-                {match.winnerName 
-                  ? `${match.winnerName} wins!` 
-                  : match.matchResult && match.matchResult.player1GamesWon > match.matchResult.player2GamesWon
-                    ? `${players.team1} wins!`
-                    : `${players.team2} wins!`
-                }
-              </p>
-            )}
+            {/* Winner Announcement */}
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Match Complete!
+              </h2>
+              {(match.winnerName || match.matchResult) && (
+                <div className="text-xl text-green-700 dark:text-green-300 font-semibold">
+                  {match.winnerName 
+                    ? `${match.winnerName} wins!` 
+                    : match.matchResult && match.matchResult.player1GamesWon > match.matchResult.player2GamesWon
+                      ? `${players.team1} wins!`
+                      : `${players.team2} wins!`
+                  }
+                </div>
+              )}
+            </div>
             
-            {/* Final Score */}
+            {/* Final Score Display */}
             {match.matchResult && (
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 text-center mb-4">
-                  FINAL SCORE
+              <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-green-100 dark:border-green-800 mb-8">
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 text-center mb-6 uppercase tracking-wider">
+                  Final Score
                 </h3>
-                <div className="flex items-center justify-center gap-8">
+                <div className="flex items-center justify-center gap-12">
                   <div className="text-center">
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{players.team1}</div>
-                    <div className={`text-4xl font-bold ${
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-3 font-medium">{players.team1}</div>
+                    <div className={`text-5xl font-bold ${
                       match.matchResult.player1GamesWon > match.matchResult.player2GamesWon
                         ? 'text-green-600 dark:text-green-400'
                         : 'text-gray-500 dark:text-gray-400'
@@ -383,11 +396,11 @@ export default function PracticeMatchDetailsPage({
                     </div>
                   </div>
                   
-                  <div className="text-2xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                  <div className="text-3xl font-bold text-gray-300 dark:text-gray-600">-</div>
                   
                   <div className="text-center">
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{players.team2}</div>
-                    <div className={`text-4xl font-bold ${
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-3 font-medium">{players.team2}</div>
+                    <div className={`text-5xl font-bold ${
                       match.matchResult.player2GamesWon > match.matchResult.player1GamesWon
                         ? 'text-green-600 dark:text-green-400'
                         : 'text-gray-500 dark:text-gray-400'
@@ -396,6 +409,84 @@ export default function PracticeMatchDetailsPage({
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+            
+            {/* Game-by-Game Breakdown */}
+            {match.games && match.games.length > 0 && (
+              <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-green-100 dark:border-green-800">
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 text-center mb-6 uppercase tracking-wider">
+                  Game Breakdown
+                </h3>
+                <div className="space-y-4">
+                  {match.games.map((game: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
+                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            {game.gameNumber}
+                          </span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                          Game {game.gameNumber}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-6">
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{players.team1}</div>
+                          <div className={`text-lg font-bold ${
+                            game.winner === 'player1' 
+                              ? 'text-green-600 dark:text-green-400' 
+                              : 'text-gray-500 dark:text-gray-400'
+                          }`}>
+                            {game.player1Score}
+                          </div>
+                        </div>
+                        
+                        <div className="text-lg font-bold text-gray-300 dark:text-gray-600">-</div>
+                        
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{players.team2}</div>
+                          <div className={`text-lg font-bold ${
+                            game.winner === 'player2' 
+                              ? 'text-green-600 dark:text-green-400' 
+                              : 'text-gray-500 dark:text-gray-400'
+                          }`}>
+                            {game.player2Score}
+                          </div>
+                        </div>
+                        
+                        {game.winner && (
+                          <div className="flex items-center gap-1">
+                            <Trophy className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                              {game.winner === 'player1' ? players.team1 : players.team2}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Match Duration and Completion Time */}
+            {(match.matchResult?.totalDuration || match.matchResult?.completedAt) && (
+              <div className="mt-6 flex justify-center gap-8 text-sm text-gray-600 dark:text-gray-400">
+                {match.matchResult?.totalDuration && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span>Duration: {Math.floor(match.matchResult.totalDuration / 60)}m {match.matchResult.totalDuration % 60}s</span>
+                  </div>
+                )}
+                {match.matchResult?.completedAt && (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Completed: {new Date(match.matchResult.completedAt).toLocaleTimeString()}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>

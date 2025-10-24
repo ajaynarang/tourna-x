@@ -84,18 +84,18 @@ export default function LiveScoring({
 
   const pointCategories = {
     winner: [
-      { id: 'smash', label: '🏸 Smash', color: 'bg-red-600 hover:bg-red-700', description: 'Power shot' },
-      { id: 'drop', label: '💧 Drop', color: 'bg-blue-600 hover:bg-blue-700', description: 'Soft shot' },
-      { id: 'net', label: '🎯 Net Kill', color: 'bg-purple-600 hover:bg-purple-700', description: 'At net' },
-      { id: 'clear', label: '🌙 Clear', color: 'bg-amber-600 hover:bg-amber-700', description: 'Deep shot' },
-      { id: 'drive', label: '⚡ Drive', color: 'bg-orange-600 hover:bg-orange-700', description: 'Fast & flat' },
-      { id: 'lob', label: '🎈 Lob', color: 'bg-teal-600 hover:bg-teal-700', description: 'High defensive' },
+      { id: 'smash', label: 'Smash', color: 'bg-red-600 hover:bg-red-700', description: 'Power shot' },
+      { id: 'drop', label: 'Drop', color: 'bg-blue-600 hover:bg-blue-700', description: 'Soft shot' },
+      { id: 'net', label: 'Net Kill', color: 'bg-purple-600 hover:bg-purple-700', description: 'At net' },
+      { id: 'clear', label: 'Clear', color: 'bg-amber-600 hover:bg-amber-700', description: 'Deep shot' },
+      { id: 'drive', label: 'Drive', color: 'bg-orange-600 hover:bg-orange-700', description: 'Fast & flat' },
+      { id: 'lob', label: 'Lob', color: 'bg-teal-600 hover:bg-teal-700', description: 'High defensive' },
     ],
     error: [
-      { id: 'net_error', label: '🕸️ Net Error', color: 'bg-gray-600 hover:bg-gray-700', description: 'Hit net' },
-      { id: 'out', label: '📤 Out', color: 'bg-slate-600 hover:bg-slate-700', description: 'Out of bounds' },
-      { id: 'service_fault', label: '🚫 Service Fault', color: 'bg-zinc-600 hover:bg-zinc-700', description: 'Bad serve' },
-      { id: 'forced_error', label: '💪 Forced Error', color: 'bg-green-600 hover:bg-green-700', description: 'Pressure play' },
+      { id: 'net_error', label: 'Net Error', color: 'bg-gray-600 hover:bg-gray-700', description: 'Hit net' },
+      { id: 'out', label: 'Out', color: 'bg-slate-600 hover:bg-slate-700', description: 'Out of bounds' },
+      { id: 'service_fault', label: 'Service Fault', color: 'bg-zinc-600 hover:bg-zinc-700', description: 'Bad serve' },
+      { id: 'forced_error', label: 'Forced Error', color: 'bg-green-600 hover:bg-green-700', description: 'Pressure play' },
     ]
   };
 
@@ -511,7 +511,7 @@ export default function LiveScoring({
                           <span className="text-base sm:text-lg">{cat.label}</span>
                           <span className="text-xs bg-white/20 rounded px-1.5 py-0.5 font-mono">{index + 1}</span>
                         </div>
-                        <div className="text-[10px] sm:text-xs opacity-90">{cat.description}</div>
+                        {/* <div className="text-[10px] sm:text-xs opacity-90">{cat.description}</div> */}
                       </div>
                       <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
                     </button>
@@ -540,7 +540,7 @@ export default function LiveScoring({
                             <span className="text-base sm:text-lg">{cat.label}</span>
                             <span className="text-xs bg-white/20 rounded px-1.5 py-0.5 font-mono">{keyNumber}</span>
                           </div>
-                          <div className="text-[10px] sm:text-xs opacity-90">{cat.description}</div>
+                          {/* <div className="text-[10px] sm:text-xs opacity-90">{cat.description}</div> */}
                         </div>
                         <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
                       </button>

@@ -73,7 +73,6 @@ export default function PracticeMatchesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'singles' | 'doubles' | 'mixed'>('all');
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{
     isOpen: boolean;
@@ -113,6 +112,7 @@ export default function PracticeMatchesPage() {
   };
 
   const handleDeleteMatch = (matchId: string, matchName: string, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setDeleteConfirmDialog({
       isOpen: true,
@@ -241,7 +241,7 @@ export default function PracticeMatchesPage() {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setIsCreateDialogOpen(true);
+                  router.push('/admin/practice-matches/create');
                 }}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25"
               >
@@ -360,7 +360,7 @@ export default function PracticeMatchesPage() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setIsCreateDialogOpen(true);
+                router.push('/admin/practice-matches/create');
               }}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25"
             >
@@ -440,6 +440,14 @@ export default function PracticeMatchesPage() {
                             <Button
                               type="button"
                               onClick={(e) => handleDeleteMatch(match._id, formatPlayers(match), e)}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              onPointerDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
                               variant="outline"
                               size="sm"
                               className="border-gray-300 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-300 dark:hover:border-red-800 hover:text-red-600 dark:hover:text-red-400"
@@ -458,17 +466,6 @@ export default function PracticeMatchesPage() {
           </div>
         )}
       </div>
-
-      {/* Create Match Dialog */}
-      {isCreateDialogOpen && (
-        <CreatePracticeMatchDialog
-          onClose={() => setIsCreateDialogOpen(false)}
-          onSuccess={() => {
-            setIsCreateDialogOpen(false);
-            fetchMatches();
-          }}
-        />
-      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog 
@@ -525,529 +522,6 @@ export default function PracticeMatchesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-// Create Practice Match Dialog Component
-function CreatePracticeMatchDialog({ 
-  onClose, 
-  onSuccess 
-}: { 
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    category: 'singles',
-    team1Player1: { type: 'registered', userId: '', name: '', phone: '', gender: '', isGuest: false },
-    team1Player2: { type: 'registered', userId: '', name: '', phone: '', gender: '', isGuest: false },
-    team2Player1: { type: 'registered', userId: '', name: '', phone: '', gender: '', isGuest: false },
-    team2Player2: { type: 'registered', userId: '', name: '', phone: '', gender: '', isGuest: false },
-    court: '',
-    venue: '',
-    notes: '',
-    scoringFormat: {
-      pointsPerGame: 21,
-      gamesPerMatch: 3,
-      winBy: 2,
-      maxPoints: 30,
-    },
-  });
-  const [users, setUsers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [searchTerms, setSearchTerms] = useState({
-    team1Player1: '',
-    team1Player2: '',
-    team2Player1: '',
-    team2Player2: ''
-  });
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch('/api/admin/users');
-      const data = await response.json();
-      if (data.success) {
-        setUsers(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
-
-  const getFilteredUsers = (searchTerm: string, excludeUserIds: string[] = []) => {
-    let filtered = users.filter(user => 
-      (user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone?.includes(searchTerm)) &&
-      !excludeUserIds.includes(user._id)
-    );
-
-    // For mixed doubles, apply gender filtering
-    if (formData.category === 'mixed' && step > 1) {
-      const playerKeys = ['team1Player1', 'team1Player2', 'team2Player1', 'team2Player2'];
-      const currentKey = playerKeys[step - 2];
-      
-      // Get genders of selected players
-      const selectedGenders = playerKeys
-        .filter(key => formData[key as keyof typeof formData] && typeof formData[key as keyof typeof formData] === 'object')
-        .map(key => (formData[key as keyof typeof formData] as any).gender)
-        .filter(Boolean);
-      
-      // For team partners, ensure opposite gender
-      if (currentKey === 'team1Player2' && formData.team1Player1.gender) {
-        filtered = filtered.filter(user => user.gender && user.gender !== formData.team1Player1.gender);
-      } else if (currentKey === 'team2Player2' && formData.team2Player1.gender) {
-        filtered = filtered.filter(user => user.gender && user.gender !== formData.team2Player1.gender);
-      }
-    }
-
-    return filtered;
-  };
-
-  const handleSubmit = async () => {
-    setIsLoading(true);
-    try {
-      // Build the request body based on category
-      let body: any = {
-        category: formData.category,
-        court: formData.court,
-        venue: formData.venue,
-        notes: formData.notes,
-        scoringFormat: formData.scoringFormat,
-      };
-
-      if (formData.category === 'singles') {
-        body.player1 = formData.team1Player1;
-        body.player2 = formData.team2Player1;
-      } else {
-        // Doubles or Mixed
-        body.player1 = formData.team1Player1;
-        body.player2 = formData.team2Player1;
-        body.player3 = formData.team1Player2;
-        body.player4 = formData.team2Player2;
-      }
-
-      const response = await fetch('/api/practice-matches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (response.ok) {
-        onSuccess();
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Failed to create practice match');
-      }
-    } catch (error) {
-      console.error('Error creating practice match:', error);
-      alert('Failed to create practice match');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const canProceed = () => {
-    switch (step) {
-      case 1:
-        return formData.category;
-      case 2:
-        return formData.team1Player1.name && formData.team1Player1.phone;
-      case 3:
-        if (formData.category === 'singles') return true;
-        return formData.team1Player2.name && formData.team1Player2.phone;
-      case 4:
-        return formData.team2Player1.name && formData.team2Player1.phone;
-      case 5:
-        if (formData.category === 'singles') return true;
-        return formData.team2Player2.name && formData.team2Player2.phone;
-      case 6:
-        return true;
-      case 7:
-        return true;
-      default:
-        return false;
-    }
-  };
-
-  const totalSteps = formData.category === 'singles' ? 5 : 7;
-
-  const renderPlayerSelection = (
-    playerKey: 'team1Player1' | 'team1Player2' | 'team2Player1' | 'team2Player2',
-    title: string
-  ) => {
-    const player = formData[playerKey];
-    const searchTerm = searchTerms[playerKey];
-    const excludeIds = Object.keys(searchTerms)
-      .filter(key => key !== playerKey)
-      .map(key => formData[key as keyof typeof formData] as any)
-      .filter(p => p && p.userId)
-      .map(p => p.userId);
-    
-    const filteredUsers = getFilteredUsers(searchTerm, excludeIds);
-
-    return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{title}</h3>
-        
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setFormData({ 
-              ...formData, 
-              [playerKey]: { ...player, type: 'registered', isGuest: false } 
-            })}
-            className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
-              player.type === 'registered'
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Registered Player
-          </button>
-          <button
-            onClick={() => setFormData({ 
-              ...formData, 
-              [playerKey]: { ...player, type: 'guest', isGuest: true, userId: '' } 
-            })}
-            className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
-              player.type === 'guest'
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Guest Player
-          </button>
-        </div>
-
-        {player.type === 'registered' ? (
-          <div className="space-y-3">
-            <input
-              type="text"
-              placeholder="Search by name or phone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerms({ ...searchTerms, [playerKey]: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
-            <div className="max-h-64 overflow-y-auto space-y-2 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-2">
-              {filteredUsers.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  No users found
-                </div>
-              ) : (
-                filteredUsers.map((user) => (
-                  <button
-                    key={user._id}
-                    onClick={() => {
-                      setFormData({
-                        ...formData,
-                        [playerKey]: {
-                          ...player,
-                          userId: user._id,
-                          name: user.name,
-                          phone: user.phone,
-                          gender: user.gender || '',
-                        }
-                      });
-                    }}
-                    className={`w-full p-4 rounded-xl text-left transition-all ${
-                      player.userId === user._id
-                        ? 'bg-blue-500/10 border-2 border-blue-500'
-                        : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-blue-500/50'
-                    }`}
-                  >
-                    <p className="text-gray-900 dark:text-white font-medium">{user.name}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{user.phone}</p>
-                    {user.gender && (
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        {user.gender.charAt(0).toUpperCase() + user.gender.slice(1)}
-                      </p>
-                    )}
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <input
-              type="text"
-              placeholder="Player Name"
-              value={player.name}
-              onChange={(e) => setFormData({
-                ...formData,
-                [playerKey]: { ...player, name: e.target.value }
-              })}
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
-            <input
-              type="tel"
-              placeholder="Phone Number"
-              value={player.phone}
-              onChange={(e) => setFormData({
-                ...formData,
-                [playerKey]: { ...player, phone: e.target.value }
-              })}
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
-            {formData.category === 'mixed' && (
-              <select
-                value={player.gender}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  [playerKey]: { ...player, gender: e.target.value }
-                })}
-                className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Practice Match</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-            >
-              <XCircle className="h-6 w-6" />
-            </button>
-          </div>
-
-          {/* Progress Indicator */}
-          <div className="flex items-center justify-center mb-8 gap-1">
-            {Array.from({ length: totalSteps }).map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 rounded-full transition-all ${
-                  i + 1 === step
-                    ? 'w-8 bg-gradient-to-r from-blue-600 to-purple-600'
-                    : i + 1 < step
-                    ? 'w-1.5 bg-blue-600'
-                    : 'w-1.5 bg-gray-300 dark:bg-gray-700'
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Step 1: Category */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select Match Type</h3>
-              <div className="grid gap-3">
-                {[
-                  { id: 'singles', label: 'Singles', description: '1 vs 1 match', icon: Users },
-                  { id: 'doubles', label: 'Doubles', description: '2 vs 2 match (same gender)', icon: Users },
-                  { id: 'mixed', label: 'Mixed Doubles', description: 'Male + Female vs Male + Female', icon: Users }
-                ].map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setFormData({ ...formData, category: cat.id })}
-                    className={`p-5 rounded-xl text-left transition-all ${
-                      formData.category === cat.id
-                        ? 'bg-blue-500/10 border-2 border-blue-500'
-                        : 'bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500/50'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <cat.icon className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-gray-900 dark:text-white font-semibold">{cat.label}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{cat.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <Button
-                onClick={() => setStep(2)}
-                disabled={!canProceed()}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg mt-6 h-12"
-              >
-                Next
-              </Button>
-            </div>
-          )}
-
-          {/* Player Selection Steps */}
-          {step === 2 && renderPlayerSelection('team1Player1', `Select Team 1 Player ${formData.category === 'singles' ? '' : '1'}`)}
-          {step === 3 && formData.category !== 'singles' && renderPlayerSelection('team1Player2', 'Select Team 1 Player 2')}
-          {step === (formData.category === 'singles' ? 3 : 4) && renderPlayerSelection('team2Player1', `Select Team 2 Player ${formData.category === 'singles' ? '' : '1'}`)}
-          {step === 5 && formData.category !== 'singles' && renderPlayerSelection('team2Player2', 'Select Team 2 Player 2')}
-
-          {/* Scoring Format Step */}
-          {step === (formData.category === 'singles' ? 4 : 6) && (
-            <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Scoring Format</h3>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Points per Game</label>
-                <div className="grid grid-cols-3 gap-3">
-                  {[11, 15, 21].map((points) => (
-                    <button
-                      key={points}
-                      onClick={() => setFormData({
-                        ...formData,
-                        scoringFormat: { ...formData.scoringFormat, pointsPerGame: points }
-                      })}
-                      className={`p-4 rounded-xl text-center font-semibold transition-all ${
-                        formData.scoringFormat.pointsPerGame === points
-                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      {points}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Games per Match</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[1, 3].map((games) => (
-                    <button
-                      key={games}
-                      onClick={() => setFormData({
-                        ...formData,
-                        scoringFormat: { ...formData.scoringFormat, gamesPerMatch: games }
-                      })}
-                      className={`p-4 rounded-xl text-center font-semibold transition-all ${
-                        formData.scoringFormat.gamesPerMatch === games
-                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      {games === 1 ? 'Single Game' : 'Best of 3'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Win by (Deuce Rule)</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[1, 2].map((winBy) => (
-                    <button
-                      key={winBy}
-                      onClick={() => setFormData({
-                        ...formData,
-                        scoringFormat: { ...formData.scoringFormat, winBy }
-                      })}
-                      className={`p-4 rounded-xl text-center font-semibold transition-all ${
-                        formData.scoringFormat.winBy === winBy
-                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      {winBy === 1 ? 'Win by 1' : 'Win by 2'}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                  {formData.scoringFormat.winBy === 1 
-                    ? 'First to reach target points wins' 
-                    : 'Must win by 2 points (deuce at 20-20 for 21-point games)'
-                  }
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Match Details Step */}
-          {step === (formData.category === 'singles' ? 5 : 7) && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Match Details (Optional)</h3>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Court</label>
-                <input
-                  type="text"
-                  placeholder="Court number or name"
-                  value={formData.court}
-                  onChange={(e) => setFormData({ ...formData, court: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Venue</label>
-                <input
-                  type="text"
-                  placeholder="Venue name"
-                  value={formData.venue}
-                  onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Notes</label>
-                <textarea
-                  placeholder="Any additional notes..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Navigation Buttons */}
-          {step > 1 && (
-            <div className="flex gap-3 mt-6">
-              <Button
-                onClick={() => {
-                  // Skip team2Player2 step if category is singles
-                  if (step === 4 && formData.category === 'singles') {
-                    setStep(3);
-                  } else if (step === 3 && formData.category === 'singles') {
-                    setStep(2);
-                  } else {
-                    setStep(step - 1);
-                  }
-                }}
-                variant="outline"
-                className="flex-1 border-gray-300 dark:border-gray-700 h-12"
-              >
-                Back
-              </Button>
-              <Button
-                onClick={() => {
-                  if (step === totalSteps) {
-                    handleSubmit();
-                  } else {
-                    // Skip team1Player2 step if category is singles
-                    if (step === 2 && formData.category === 'singles') {
-                      setStep(3);
-                    } else {
-                      setStep(step + 1);
-                    }
-                  }
-                }}
-                disabled={!canProceed() || isLoading}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg h-12"
-              >
-                {step === totalSteps ? (isLoading ? 'Creating...' : 'Create Match') : 'Next'}
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
