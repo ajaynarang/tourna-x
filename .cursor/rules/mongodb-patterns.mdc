@@ -1,0 +1,412 @@
+---
+description: MongoDB database operations and patterns
+---
+
+# MongoDB Database Patterns for Tourna-X
+
+## Database Connection
+
+### Connection Management
+```typescript
+import { connectToDatabase, getCollections } from '@/lib/mongodb';
+import { COLLECTIONS } from '@repo/schemas';
+
+// Always use the connection helper
+export async function getTournament(id: string) {
+  const db = await connectToDatabase();
+  const collections = await getCollections();
+  
+  return await collections.tournaments.findOne({
+    _id: new ObjectId(id)
+  });
+}
+```
+
+### Collection Access Pattern
+```typescript
+// Use getCollections() helper for type-safe collection access
+const collections = await getCollections();
+
+// Available collections:
+// - collections.users
+// - collections.tournaments  
+// - collections.participants
+// - collections.matches
+// - collections.whatsappGroups
+// - collections.otps
+```
+
+## Schema Validation
+
+### Pre-Insert Validation
+```typescript
+import { insertTournamentSchema, Tournament } from '@repo/schemas';
+
+export async function createTournament(data: unknown): Promise<Tournament> {
+  // Validate data before insertion
+  const validatedData = insertTournamentSchema.parse(data);
+  
+  const collections = await getCollections();
+  const result = await collections.tournaments.insertOne({
+    ...validatedData,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+  
+  // Return the created document
+  const created = await collections.tournaments.findOne({
+    _id: result.insertedId
+  });
+  
+  return created as Tournament;
+}
+```
+
+### Update Validation
+```typescript
+import { tournamentSchema } from '@repo/schemas';
+
+export async function updateTournament(id: string, updates: Partial<Tournament>) {
+  // Validate updates against schema
+  const validatedUpdates = tournamentSchema.partial().parse(updates);
+  
+  const collections = await getCollections();
+  const result = await collections.tournaments.updateOne(
+    { _id: new ObjectId(id) },
+    { 
+      $set: {
+        ...validatedUpdates,
+        updatedAt: new Date()
+      }
+    }
+  );
+  
+  return result.modifiedCount > 0;
+}
+```
+
+## ObjectId Handling
+
+### String to ObjectId Conversion
+```typescript
+import { ObjectId } from 'mongodb';
+import { objectIdSchema } from '@repo/schemas';
+
+// Validate and convert string IDs
+export async function getTournamentById(idString: string) {
+  // Validate ObjectId format
+  const validId = objectIdSchema.parse(idString);
+  const objectId = new ObjectId(validId);
+  
+  const collections = await getCollections();
+  return await collections.tournaments.findOne({ _id: objectId });
+}
+
+// Handle multiple ObjectIds
+export async function getTournamentsByIds(idStrings: string[]) {
+  const objectIds = idStrings.map(id => new ObjectId(id));
+  
+  const collections = await getCollections();
+  return await collections.tournaments.find({
+    _id: { $in: objectIds }
+  }).toArray();
+}
+```
+
+### ObjectId in Queries
+```typescript
+// Proper ObjectId usage in queries
+export async function getTournamentParticipants(tournamentId: string) {
+  const collections = await getCollections();
+  
+  return await collections.participants.find({
+    tournamentId: new ObjectId(tournamentId),
+    isApproved: true
+  }).toArray();
+}
+```
+
+## Query Patterns
+
+### Basic Find Operations
+```typescript
+// Simple find with filters
+export async function getActiveTournaments() {
+  const collections = await getCollections();
+  
+  return await collections.tournaments.find({
+    status: { $in: ['published', 'registration_open', 'ongoing'] },
+    isPublished: true
+  }).sort({ createdAt: -1 }).toArray();
+}
+
+// Find with pagination
+export async function getTournamentsPaginated(page: number = 1, limit: number = 10) {
+  const collections = await getCollections();
+  const skip = (page - 1) * limit;
+  
+  const [data, total] = await Promise.all([
+    collections.tournaments
+      .find({})
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .toArray(),
+    collections.tournaments.countDocuments({})
+  ]);
+  
+  return {
+    data,
+    total,
+    page,
+    limit,
+    hasMore: skip + data.length < total
+  };
+}
+```
+
+### Aggregation Patterns
+```typescript
+// Complex aggregation for analytics
+export async function getTournamentStats(tournamentId: string) {
+  const collections = await getCollections();
+  
+  const stats = await collections.participants.aggregate([
+    { $match: { tournamentId: new ObjectId(tournamentId) } },
+    {
+      $group: {
+        _id: '$category',
+        count: { $sum: 1 },
+        approvedCount: {
+          $sum: { $cond: ['$isApproved', 1, 0] }
+        },
+        paidCount: {
+          $sum: { $cond: [{ $eq: ['$paymentStatus', 'paid'] }, 1, 0] }
+        }
+      }
+    }
+  ]).toArray();
+  
+  return stats;
+}
+```
+
+### Lookup Operations
+```typescript
+// Join collections using aggregation
+export async function getTournamentsWithParticipants() {
+  const collections = await getCollections();
+  
+  return await collections.tournaments.aggregate([
+    {
+      $lookup: {
+        from: COLLECTIONS.PARTICIPANTS,
+        localField: '_id',
+        foreignField: 'tournamentId',
+        as: 'participants'
+      }
+    },
+    {
+      $addFields: {
+        participantCount: { $size: '$participants' },
+        approvedCount: {
+          $size: {
+            $filter: {
+              input: '$participants',
+              cond: { $eq: ['$$this.isApproved', true] }
+            }
+          }
+        }
+      }
+    }
+  ]).toArray();
+}
+```
+
+## Index Usage
+
+### Query Optimization
+```typescript
+// Use indexed fields for better performance
+export async function getTournamentsByCreator(createdBy: string) {
+  const collections = await getCollections();
+  
+  // Uses index on createdBy field
+  return await collections.tournaments.find({
+    createdBy: new ObjectId(createdBy)
+  }).sort({ createdAt: -1 }).toArray();
+}
+
+// Use compound indexes
+export async function getTournamentsByStatusAndSport(status: string, sport: string) {
+  const collections = await getCollections();
+  
+  // Uses compound index on status and sport
+  return await collections.tournaments.find({
+    status,
+    sport
+  }).toArray();
+}
+```
+
+## Transaction Patterns
+
+### Multi-Collection Updates
+```typescript
+export async function createTournamentWithParticipants(
+  tournamentData: InsertTournament,
+  participantsData: InsertParticipant[]
+) {
+  const session = await getDatabase();
+  
+  try {
+    await session.withTransaction(async () => {
+      const collections = await getCollections();
+      
+      // Insert tournament
+      const tournamentResult = await collections.tournaments.insertOne({
+        ...tournamentData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      // Insert participants with tournament reference
+      const participantsWithTournamentId = participantsData.map(participant => ({
+        ...participant,
+        tournamentId: tournamentResult.insertedId,
+        registeredAt: new Date()
+      }));
+      
+      await collections.participants.insertMany(participantsWithTournamentId);
+      
+      // Update tournament participant count
+      await collections.tournaments.updateOne(
+        { _id: tournamentResult.insertedId },
+        { 
+          $set: { 
+            participantCount: participantsData.length,
+            updatedAt: new Date()
+          }
+        }
+      );
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Transaction failed:', error);
+    throw error;
+  }
+}
+```
+
+## Error Handling
+
+### Database Error Patterns
+```typescript
+export async function safeDatabaseOperation<T>(
+  operation: () => Promise<T>
+): Promise<{ success: boolean; data?: T; error?: string }> {
+  try {
+    const data = await operation();
+    return { success: true, data };
+  } catch (error) {
+    console.error('Database operation failed:', error);
+    
+    // Handle specific MongoDB errors
+    if (error.code === 11000) {
+      return { success: false, error: 'Duplicate entry' };
+    }
+    
+    if (error.name === 'ValidationError') {
+      return { success: false, error: 'Validation failed' };
+    }
+    
+    return { success: false, error: 'Database operation failed' };
+  }
+}
+
+// Usage
+const result = await safeDatabaseOperation(async () => {
+  const collections = await getCollections();
+  return await collections.tournaments.findOne({ _id: new ObjectId(id) });
+});
+```
+
+## Data Migration Patterns
+
+### Schema Updates
+```typescript
+// Add new fields to existing documents
+export async function migrateTournamentSchema() {
+  const collections = await getCollections();
+  
+  const result = await collections.tournaments.updateMany(
+    { participantCount: { $exists: false } },
+    { 
+      $set: { 
+        participantCount: 0,
+        updatedAt: new Date()
+      }
+    }
+  );
+  
+  console.log(`Updated ${result.modifiedCount} tournaments`);
+  return result;
+}
+```
+
+## Performance Optimization
+
+### Bulk Operations
+```typescript
+// Bulk insert for better performance
+export async function bulkInsertParticipants(participants: InsertParticipant[]) {
+  const collections = await getCollections();
+  
+  const bulkOps = participants.map(participant => ({
+    insertOne: {
+      document: {
+        ...participant,
+        registeredAt: new Date()
+      }
+    }
+  }));
+  
+  const result = await collections.participants.bulkWrite(bulkOps);
+  return result.insertedCount;
+}
+
+// Bulk update
+export async function bulkApproveParticipants(participantIds: string[]) {
+  const collections = await getCollections();
+  
+  const bulkOps = participantIds.map(id => ({
+    updateOne: {
+      filter: { _id: new ObjectId(id) },
+      update: { 
+        $set: { 
+          isApproved: true,
+          approvedAt: new Date()
+        }
+      }
+    }
+  }));
+  
+  const result = await collections.participants.bulkWrite(bulkOps);
+  return result.modifiedCount;
+}
+```
+
+## Best Practices
+- Always use `getCollections()` helper for collection access
+- Validate data with Zod schemas before database operations
+- Use proper ObjectId conversion for string IDs
+- Implement proper error handling for database operations
+- Use transactions for multi-collection updates
+- Leverage database indexes for query optimization
+- Use aggregation pipelines for complex queries
+- Implement bulk operations for better performance
+- Log database errors for debugging
+- Use proper TypeScript types from schemas package
+
+Reference: [mongodb.ts](mdc:apps/frontend/lib/mongodb.ts) for connection patterns and [schemas](mdc:packages/schemas/src/index.ts) for data validation.

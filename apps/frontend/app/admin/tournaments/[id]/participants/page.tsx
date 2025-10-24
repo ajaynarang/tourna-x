@@ -1,93 +1,62 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/lib/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
-import { Button } from '@repo/ui';
-import { Badge } from '@repo/ui';
+import { useRouter, useParams } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { 
   ArrowLeft,
-  Search,
-  Filter,
+  Users,
   CheckCircle,
   XCircle,
   Clock,
-  Users,
   Phone,
   Mail,
-  Home,
-  DollarSign,
   Trophy,
-  User,
-  UserPlus,
-  AlertCircle,
+  Send,
+  Calendar,
+  MapPin,
+  DollarSign,
   Eye,
-  MoreVertical,
-  Download,
-  Send
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
-
-interface Participant {
-  _id: string;
-  tournamentId: string;
-  userId: string;
-  name: string;
-  phone: string;
-  email?: string;
-  age: number;
-  gender: string;
-  society: string;
-  block?: string;
-  flatNumber?: string;
-  category: string;
-  ageGroup?: string;
-  partnerName?: string;
-  partnerPhone?: string;
-  partnerAge?: number;
-  partnerGender?: string;
-  paymentStatus: string;
-  paymentMethod?: string;
-  transactionId?: string;
-  isApproved: boolean;
-  isEligible: boolean;
-  rejectionReason?: string;
-  registeredAt: string;
-  approvedAt?: string;
-  approvedBy?: string;
-}
 
 interface Tournament {
   _id: string;
   name: string;
   sport: string;
-  entryFee: number;
+  venue: string;
+  location: string;
+  startDate: string;
+  status: string;
+  isPublished: boolean;
   maxParticipants: number;
   participantCount: number;
-  status: string;
+  entryFee: number;
 }
 
-export default function ParticipantManagementPage({ params }: { params: Promise<{ id: string }> }) {
-  const { user } = useAuth();
+interface Participant {
+  _id: string;
+  userId: string;
+  name: string;
+  phone: string;
+  email?: string;
+  category: string;
+  gender: string;
+  isApproved: boolean;
+  paymentStatus: 'pending' | 'paid';
+  registeredAt: string;
+}
+
+export default function TournamentParticipantsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [tournamentId, setTournamentId] = useState<string>('');
+  const params = useParams();
+  const tournamentId = params?.id as string;
+
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [filteredParticipants, setFilteredParticipants] = useState<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  useEffect(() => {
-    params.then(p => {
-      setTournamentId(p.id);
-    });
-  }, [params]);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   useEffect(() => {
     if (tournamentId) {
@@ -95,28 +64,22 @@ export default function ParticipantManagementPage({ params }: { params: Promise<
     }
   }, [tournamentId]);
 
-  useEffect(() => {
-    filterParticipants();
-  }, [participants, searchTerm, statusFilter, categoryFilter]);
-
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      
+
       // Fetch tournament details
-      const tournamentResponse = await fetch(`/api/tournaments/${tournamentId}`);
-      const tournamentResult = await tournamentResponse.json();
-      
-      if (tournamentResult.success) {
-        setTournament(tournamentResult.data);
+      const tournamentRes = await fetch(`/api/tournaments/${tournamentId}`);
+      const tournamentData = await tournamentRes.json();
+      if (tournamentData.success) {
+        setTournament(tournamentData.data);
       }
 
       // Fetch participants
-      const participantsResponse = await fetch(`/api/participants?tournamentId=${tournamentId}`);
-      const participantsResult = await participantsResponse.json();
-      
-      if (participantsResult.success) {
-        setParticipants(participantsResult.data);
+      const participantsRes = await fetch(`/api/participants?tournamentId=${tournamentId}`);
+      const participantsData = await participantsRes.json();
+      if (participantsData.success) {
+        setParticipants(participantsData.data || []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -125,456 +88,293 @@ export default function ParticipantManagementPage({ params }: { params: Promise<
     }
   };
 
-  const filterParticipants = () => {
-    let filtered = participants;
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(participant =>
-        participant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        participant.phone.includes(searchTerm) ||
-        participant.partnerName?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      if (statusFilter === 'pending') {
-        filtered = filtered.filter(p => !p.isApproved && !p.rejectionReason);
-      } else if (statusFilter === 'approved') {
-        filtered = filtered.filter(p => p.isApproved);
-      } else if (statusFilter === 'rejected') {
-        filtered = filtered.filter(p => !p.isApproved && p.rejectionReason);
-      }
-    }
-
-    // Category filter
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(p => p.category === categoryFilter);
-    }
-
-    setFilteredParticipants(filtered);
-  };
-
   const handleApprove = async (participantId: string) => {
     try {
-      const response = await fetch(`/api/participants/${participantId}/approve`, {
-        method: 'POST',
+      const response = await fetch(`/api/participants/${participantId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isApproved: true }),
       });
-      const result = await response.json();
-      
-      if (result.success) {
-        fetchData(); // Refresh the list
+
+      if (response.ok) {
+        fetchData();
       }
     } catch (error) {
       console.error('Error approving participant:', error);
     }
   };
 
-  const handleReject = async (participantId: string, reason: string) => {
+  const handleReject = async (participantId: string) => {
+    if (!confirm('Are you sure you want to reject this participant?')) return;
+
     try {
-      const response = await fetch(`/api/participants/${participantId}/reject`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reason }),
+      const response = await fetch(`/api/participants/${participantId}`, {
+        method: 'DELETE',
       });
-      const result = await response.json();
-      
-      if (result.success) {
-        fetchData(); // Refresh the list
+
+      if (response.ok) {
+        fetchData();
       }
     } catch (error) {
       console.error('Error rejecting participant:', error);
     }
   };
 
-  const handleBulkApprove = async () => {
-    if (selectedParticipants.length === 0) return;
-    
-    setIsProcessing(true);
+  const handlePublish = async () => {
+    if (!confirm('Publish this tournament? Participants will be able to register.')) return;
+
+    setIsPublishing(true);
     try {
-      const promises = selectedParticipants.map(id => 
-        fetch(`/api/participants/${id}/approve`, { method: 'POST' })
-      );
-      
-      await Promise.all(promises);
-      setSelectedParticipants([]);
-      fetchData(); // Refresh the list
+      const response = await fetch(`/api/tournaments/${tournamentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          isPublished: true, 
+          status: 'published'
+        }),
+      });
+
+      if (response.ok) {
+        fetchData();
+      }
     } catch (error) {
-      console.error('Error bulk approving participants:', error);
+      console.error('Error publishing tournament:', error);
     } finally {
-      setIsProcessing(false);
+      setIsPublishing(false);
     }
-  };
-
-  const handleBulkReject = async (reason: string) => {
-    if (selectedParticipants.length === 0) return;
-    
-    setIsProcessing(true);
-    try {
-      const promises = selectedParticipants.map(id => 
-        fetch(`/api/participants/${id}/reject`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reason }),
-        })
-      );
-      
-      await Promise.all(promises);
-      setSelectedParticipants([]);
-      fetchData(); // Refresh the list
-    } catch (error) {
-      console.error('Error bulk rejecting participants:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const toggleParticipantSelection = (participantId: string) => {
-    setSelectedParticipants(prev => 
-      prev.includes(participantId) 
-        ? prev.filter(id => id !== participantId)
-        : [...prev, participantId]
-    );
-  };
-
-  const getStatusBadge = (participant: Participant) => {
-    if (participant.isApproved) {
-      return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Approved</Badge>;
-    } else if (participant.rejectionReason) {
-      return <Badge className="bg-red-100 text-red-800"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
-    } else {
-      return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
-    }
-  };
-
-  const getPaymentBadge = (paymentStatus: string) => {
-    const statusConfig = {
-      pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      paid: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      failed: { color: 'bg-red-100 text-red-800', icon: XCircle },
-    };
-
-    const config = statusConfig[paymentStatus as keyof typeof statusConfig] || statusConfig.pending;
-    const Icon = config.icon;
-
-    return (
-      <Badge className={config.color}>
-        <Icon className="h-3 w-3 mr-1" />
-        {paymentStatus}
-      </Badge>
-    );
-  };
-
-  const getStats = () => {
-    const total = participants.length;
-    const approved = participants.filter(p => p.isApproved).length;
-    const pending = participants.filter(p => !p.isApproved && !p.rejectionReason).length;
-    const rejected = participants.filter(p => !p.isApproved && p.rejectionReason).length;
-    
-    return { total, approved, pending, rejected };
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="spinner"></div>
       </div>
     );
   }
 
   if (!tournament) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Tournament Not Found</h2>
-          <p className="text-gray-600 mb-6">The tournament you're looking for doesn't exist.</p>
-          <Button asChild>
-            <Link href="/admin/tournaments">Back to Tournaments</Link>
-          </Button>
+          <h2 className="text-primary text-xl font-semibold">Tournament not found</h2>
+          <Link href="/admin/tournaments" className="text-tertiary mt-4 inline-block text-sm">
+            Back to Tournaments
+          </Link>
         </div>
       </div>
     );
   }
 
-  const stats = getStats();
+  const pendingCount = participants.filter(p => !p.isApproved).length;
+  const approvedCount = participants.filter(p => p.isApproved).length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="relative z-10 min-h-screen p-8">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Button asChild variant="outline" size="sm">
-              <Link href="/admin/tournaments">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Tournaments
-              </Link>
-            </Button>
+          <Link
+            href="/admin/tournaments"
+            className="text-tertiary hover:text-primary mb-4 inline-flex items-center gap-2 text-sm transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Tournaments
+          </Link>
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                Participant Management
-              </h1>
-              <p className="text-gray-600">
-                {tournament.name} - Manage registrations and approvals
-              </p>
-            </div>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <Users className="h-8 w-8 text-blue-600" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-600">Total</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-600">Approved</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.approved}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <Clock className="h-8 w-8 text-yellow-600" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-600">Pending</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <XCircle className="h-8 w-8 text-red-600" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-600">Rejected</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.rejected}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Filters and Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search participants..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <h1 className="text-primary text-3xl font-bold">{tournament.name}</h1>
+              <div className="text-secondary mt-2 flex flex-wrap items-center gap-4 text-sm">
+                <span className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4" />
+                  {tournament.sport}
+                </span>
+                <span className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {tournament.venue}, {tournament.location}
+                </span>
+                <span className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  {new Date(tournament.startDate).toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </span>
               </div>
             </div>
-            
-            <div className="flex gap-2">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+
+            {!tournament.isPublished && (
+              <button
+                onClick={handlePublish}
+                disabled={isPublishing}
+                className="bg-primary flex items-center gap-2 rounded-lg px-6 py-3 font-semibold text-white transition-transform hover:scale-105 disabled:opacity-50"
               >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-              
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Categories</option>
-                <option value="singles">Singles</option>
-                <option value="doubles">Doubles</option>
-                <option value="mixed">Mixed</option>
-              </select>
-              
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-1" />
-                Export
-              </Button>
+                {isPublishing ? (
+                  <>
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Publishing...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-5 w-5" />
+                    Publish Tournament
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="mb-8 grid gap-6 sm:grid-cols-3">
+          <div className="glass-card-intense p-6">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="text-primary text-2xl font-bold">{approvedCount}</div>
+                <div className="text-secondary text-sm">Approved</div>
+              </div>
             </div>
           </div>
 
-          {/* Bulk Actions */}
-          {selectedParticipants.length > 0 && (
-            <Card className="mb-6">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-600">
-                    {selectedParticipants.length} participant(s) selected
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleBulkApprove}
-                      disabled={isProcessing}
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Approve All
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        const reason = prompt('Enter rejection reason:');
-                        if (reason) handleBulkReject(reason);
-                      }}
-                      disabled={isProcessing}
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Reject All
-                    </Button>
-                  </div>
+          <div className="glass-card-intense p-6">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-500">
+                <Clock className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="text-primary text-2xl font-bold">{pendingCount}</div>
+                <div className="text-secondary text-sm">Pending</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card-intense p-6">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500">
+                <Trophy className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="text-primary text-2xl font-bold">
+                  {participants.length} / {tournament.maxParticipants}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <div className="text-secondary text-sm">Total Registrations</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Participants List */}
-        {filteredParticipants.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {searchTerm || statusFilter !== 'all' || categoryFilter !== 'all' 
-                  ? 'No participants found' 
-                  : 'No participants yet'
-                }
-              </h3>
-              <p className="text-gray-600">
-                {searchTerm || statusFilter !== 'all' || categoryFilter !== 'all'
-                  ? 'Try adjusting your search or filters'
-                  : 'Participants will appear here once they register'
-                }
+        <div className="glass-card-intense p-6">
+          <h2 className="text-primary mb-6 text-xl font-semibold">Participants</h2>
+
+          {participants.length > 0 ? (
+            <div className="space-y-3">
+              {participants.map((participant, index) => (
+                <motion.div
+                  key={participant._id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <ParticipantCard
+                    participant={participant}
+                    onApprove={() => handleApprove(participant._id)}
+                    onReject={() => handleReject(participant._id)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-500/20 to-blue-500/20">
+                <Users className="h-8 w-8 text-green-400" />
+              </div>
+              <h3 className="text-primary mb-2 text-lg font-semibold">No participants yet</h3>
+              <p className="text-secondary text-sm">
+                {tournament.isPublished
+                  ? 'Waiting for participants to register'
+                  : 'Publish the tournament to start accepting registrations'}
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ParticipantCard({
+  participant,
+  onApprove,
+  onReject,
+}: {
+  participant: Participant;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  return (
+    <div className="glass-card flex items-center justify-between p-4 transition-all hover:bg-white/5">
+      <div className="flex flex-1 items-center gap-4">
+        {/* Avatar */}
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-blue-500">
+          <span className="text-lg font-bold text-white">
+            {participant.name.charAt(0).toUpperCase()}
+          </span>
+        </div>
+
+        {/* Info */}
+        <div className="flex-1">
+          <h3 className="text-primary font-semibold">{participant.name}</h3>
+          <div className="text-tertiary mt-1 flex flex-wrap items-center gap-4 text-sm">
+            <span className="flex items-center gap-1">
+              <Phone className="h-3 w-3" />
+              {participant.phone}
+            </span>
+            <span>{participant.category}</span>
+            <span>{participant.gender}</span>
+            <span className={participant.paymentStatus === 'paid' ? 'text-green-400' : 'text-orange-400'}>
+              {participant.paymentStatus === 'paid' ? 'Paid' : 'Payment Pending'}
+            </span>
+          </div>
+        </div>
+
+        {/* Status */}
+        {participant.isApproved ? (
+          <div className="flex items-center gap-2 rounded-full bg-green-500/10 px-3 py-1 text-sm font-medium text-green-400">
+            <CheckCircle className="h-4 w-4" />
+            Approved
+          </div>
         ) : (
-          <div className="space-y-4">
-            {filteredParticipants.map((participant) => (
-              <Card key={participant._id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4 mb-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedParticipants.includes(participant._id)}
-                          onChange={() => toggleParticipantSelection(participant._id)}
-                          className="rounded"
-                        />
-                        <h3 className="text-lg font-semibold">{participant.name}</h3>
-                        {getStatusBadge(participant)}
-                        {getPaymentBadge(participant.paymentStatus)}
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-3">
-                        <div className="flex items-center">
-                          <Phone className="h-4 w-4 mr-2" />
-                          {participant.phone}
-                        </div>
-                        <div className="flex items-center">
-                          <User className="h-4 w-4 mr-2" />
-                          {participant.age} years, {participant.gender}
-                        </div>
-                        <div className="flex items-center">
-                          <Home className="h-4 w-4 mr-2" />
-                          {participant.society}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <Trophy className="h-4 w-4 mr-2" />
-                          {participant.category} {participant.ageGroup && `(${participant.ageGroup})`}
-                        </div>
-                        {participant.partnerName && (
-                          <div className="flex items-center">
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            Partner: {participant.partnerName}
-                          </div>
-                        )}
-                        <div className="flex items-center">
-                          <DollarSign className="h-4 w-4 mr-2" />
-                          {participant.paymentMethod} {participant.transactionId && `(${participant.transactionId})`}
-                        </div>
-                      </div>
-                      
-                      {participant.rejectionReason && (
-                        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
-                          <p className="text-sm text-red-700">
-                            <strong>Rejection Reason:</strong> {participant.rejectionReason}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {!participant.isApproved && !participant.rejectionReason && (
-                        <>
-                          <Button
-                            onClick={() => handleApprove(participant._id)}
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              const reason = prompt('Enter rejection reason:');
-                              if (reason) handleReject(participant._id, reason);
-                            }}
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Reject
-                          </Button>
-                        </>
-                      )}
-                      
-                      <Button size="sm" variant="outline">
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="flex items-center gap-2 rounded-full bg-orange-500/10 px-3 py-1 text-sm font-medium text-orange-400">
+            <Clock className="h-4 w-4" />
+            Pending
           </div>
         )}
       </div>
+
+      {/* Actions */}
+      {!participant.isApproved && (
+        <div className="ml-4 flex items-center gap-2">
+          <button
+            onClick={onApprove}
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/20 text-green-400 transition-all hover:bg-green-500/30"
+            title="Approve"
+          >
+            <CheckCircle className="h-5 w-5" />
+          </button>
+          <button
+            onClick={onReject}
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/20 text-red-400 transition-all hover:bg-red-500/30"
+            title="Reject"
+          >
+            <XCircle className="h-5 w-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

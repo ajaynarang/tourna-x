@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS, insertTournamentSchema, tournamentSchema } from '@repo/schemas';
+import { ObjectId } from 'mongodb';
 
 // Helper function to get authenticated user
 async function getAuthenticatedUser(request: NextRequest) {
@@ -21,7 +22,7 @@ async function getAuthenticatedUser(request: NextRequest) {
   }
 
   const user = await db.collection(COLLECTIONS.USERS).findOne({
-    _id: session.userId
+    _id: new ObjectId(session.userId)
   });
 
   return user;
@@ -93,6 +94,8 @@ export async function POST(request: NextRequest) {
     const db = await connectToDatabase();
     const user = await getAuthenticatedUser(request);
 
+    console.log('User:', user);
+
     if (!user || !user.roles?.includes('admin')) {
       return NextResponse.json(
         { success: false, error: 'Admin access required' },
@@ -102,13 +105,19 @@ export async function POST(request: NextRequest) {
 
     const tournamentData = await request.json();
     
-    // Validate tournament data
-    const validatedData = insertTournamentSchema.parse({
+    // Convert date strings to Date objects
+    const processedData = {
       ...tournamentData,
+      startDate: tournamentData.startDate ? new Date(tournamentData.startDate) : undefined,
+      endDate: tournamentData.endDate ? new Date(tournamentData.endDate) : undefined,
+      registrationDeadline: tournamentData.registrationDeadline ? new Date(tournamentData.registrationDeadline) : undefined,
       createdBy: user._id.toString(),
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
+    };
+    
+    // Validate tournament data
+    const validatedData = insertTournamentSchema.parse(processedData);
 
     const result = await db.collection(COLLECTIONS.TOURNAMENTS).insertOne(validatedData);
     

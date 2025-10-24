@@ -94,12 +94,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col">
+    <div className="flex min-h-screen flex-col">
       {/* Header */}
       <div className="flex items-center justify-center p-6 lg:p-8">
-        <div className="flex items-center gap-2 text-slate-600">
+        <div className="flex items-center gap-2 text-primary">
           <Trophy className="h-5 w-5" />
-          <span className="font-semibold text-slate-900">Tourna-X</span>
+          <span className="gradient-title font-semibold">Tourna-X</span>
         </div>
       </div>
 
@@ -111,10 +111,10 @@ export default function LoginPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-6 ring-1 ring-slate-200">
               <Trophy className="h-8 w-8 text-blue-600" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            <h1 className="text-primary mb-2 text-3xl font-bold">
               {!otpSent ? 'Welcome Back' : 'Verify Your Phone'}
             </h1>
-            <p className="text-slate-600 text-lg">
+            <p className="text-secondary text-lg">
               {!otpSent 
                 ? 'Sign in to continue to your account' 
                 : 'Enter the verification code we sent'
@@ -129,13 +129,13 @@ export default function LoginPage() {
               href="/" 
               className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 transition-colors z-10"
             >
-              <X className="h-4 w-4 text-slate-500 hover:text-slate-700" />
+              <X className="text-tertiary hover:text-primary h-4 w-4" />
             </Link>
             <CardContent className="p-8">
               {!otpSent ? (
                 <form onSubmit={handleSendOtp} className="space-y-6">
                   <div className="space-y-3">
-                    <Label htmlFor="phone" className="text-sm font-semibold text-slate-700">
+                    <Label htmlFor="phone" className="text-primary text-sm font-semibold">
                       Phone Number
                     </Label>
                     <Input
@@ -147,7 +147,7 @@ export default function LoginPage() {
                       className="h-12 text-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       required
                     />
-                    <p className="text-sm text-slate-500 leading-relaxed">
+                    <p className="text-tertiary text-sm leading-relaxed">
                       We'll send you a verification code. Works for both admins and players.
                     </p>
                   </div>
@@ -160,7 +160,8 @@ export default function LoginPage() {
 
                   <Button 
                     type="submit" 
-                    className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700 transition-colors" 
+                    variant="default"
+                    className="w-full h-12 text-lg font-semibold" 
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -176,7 +177,7 @@ export default function LoginPage() {
               ) : (
                 <form onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-3">
-                    <Label htmlFor="otp" className="text-sm font-semibold text-slate-700">
+                    <Label htmlFor="otp" className="text-primary text-sm font-semibold">
                       Verification Code
                     </Label>
                     <Input
@@ -189,8 +190,8 @@ export default function LoginPage() {
                       maxLength={6}
                       required
                     />
-                    <p className="text-sm text-slate-500">
-                      Code sent to <span className="font-medium text-slate-700">{loginForm.phone}</span>
+                    <p className="text-tertiary text-sm">
+                      Code sent to <span className="text-primary font-medium">{loginForm.phone}</span>
                     </p>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <p className="text-sm text-blue-800">
@@ -207,7 +208,8 @@ export default function LoginPage() {
 
                   <Button 
                     type="submit" 
-                    className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700 transition-colors" 
+                    variant="default"
+                    className="w-full h-12 text-lg font-semibold" 
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -221,21 +223,22 @@ export default function LoginPage() {
                   </Button>
 
                   <div className="text-center pt-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="secondary"
                       onClick={resendOtp}
                       disabled={otpTimer > 0}
-                      className="text-sm font-medium text-blue-600 hover:text-blue-700 disabled:text-slate-400 transition-colors"
+                      className="text-sm font-medium"
                     >
                       {otpTimer > 0 ? `Resend code in ${otpTimer}s` : 'Resend verification code'}
-                    </button>
+                    </Button>
                   </div>
                 </form>
               )}
 
               {/* Footer */}
               <div className="mt-8 pt-6 border-t border-slate-200">
-                <p className="text-sm text-slate-600 text-center">
+                <p className="text-secondary text-center text-sm">
                   Don't have an account?{' '}
                   <Link 
                     href="/register" 

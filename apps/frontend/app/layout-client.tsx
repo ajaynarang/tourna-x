@@ -6,9 +6,16 @@ import { CommandPalette } from '@/components/command-palette';
 import Providers from '@/components/providers';
 import { Toaster } from 'sonner';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { usePageTitle } from '@/hooks/use-page-title';
 
 export function RootLayoutClient({ children }: { children: React.ReactNode }) {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const pathname = usePathname();
+  const { title, subtitle } = usePageTitle();
+
+  // Check if we're on landing page or auth pages (no header)
+  const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/register';
 
   // Cmd+K keyboard shortcut
   useEffect(() => {
@@ -23,13 +30,26 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('keydown', down);
   }, []);
 
+  if (isPublicPage) {
+    return (
+      <Providers>
+        <div className="relative min-h-screen">
+          <main className="relative z-10 w-full">{children}</main>
+        </div>
+        <Toaster position="top-right" richColors />
+      </Providers>
+    );
+  }
+
   return (
     <Providers>
       <div className="relative min-h-screen">
         <AppHeader
           onCommandPaletteToggle={() => setIsCommandPaletteOpen(true)}
+          pageTitle={title}
+          pageSubtitle={subtitle}
         />
-        <main className="relative z-10 pb-20 lg:pb-0">{children}</main>
+        <main className="relative z-10 w-full pb-20 lg:pb-0">{children}</main>
         <MobileBottomNavigation />
       </div>
       <CommandPalette

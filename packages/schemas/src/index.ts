@@ -40,10 +40,29 @@ export const tournamentSchema = z.object({
   participantCount: z.number().min(0).default(0), // Current participant count
   rules: z.string().optional(),
   prizes: z.object({
-    winner: z.number().min(0).default(0),
-    runnerUp: z.number().min(0).default(0),
-    semiFinalist: z.number().min(0).default(0),
-  }).default({ winner: 0, runnerUp: 0, semiFinalist: 0 }),
+    winner: z.object({
+      type: z.enum(["money", "trophy", "medal", "certificate", "voucher", "merchandise", "other"]).default("money"),
+      value: z.number().min(0).default(0), // Amount for money, quantity for others
+      description: z.string().optional(), // e.g., "Gold Trophy", "₹5000 Cash Prize", "Certificate of Excellence"
+      currency: z.string().default("INR"), // For money prizes
+    }).default({ type: "money", value: 0, currency: "INR" }),
+    runnerUp: z.object({
+      type: z.enum(["money", "trophy", "medal", "certificate", "voucher", "merchandise", "other"]).default("money"),
+      value: z.number().min(0).default(0),
+      description: z.string().optional(),
+      currency: z.string().default("INR"),
+    }).default({ type: "money", value: 0, currency: "INR" }),
+    semiFinalist: z.object({
+      type: z.enum(["money", "trophy", "medal", "certificate", "voucher", "merchandise", "other"]).default("money"),
+      value: z.number().min(0).default(0),
+      description: z.string().optional(),
+      currency: z.string().default("INR"),
+    }).default({ type: "money", value: 0, currency: "INR" }),
+  }).default({
+    winner: { type: "money", value: 0, currency: "INR" },
+    runnerUp: { type: "money", value: 0, currency: "INR" },
+    semiFinalist: { type: "money", value: 0, currency: "INR" },
+  }),
   tournamentType: z.enum(["society_only", "open"]).default("open"),
   allowedSociety: z.string().optional(), // Required if tournamentType is "society_only"
   status: z.enum(["draft", "published", "registration_open", "ongoing", "completed", "cancelled"]).default("draft"),

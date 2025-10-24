@@ -1,0 +1,452 @@
+---
+globs: components/**/*.tsx
+---
+
+# Component Standards for Tourna-X
+
+## Component Architecture
+
+### Client vs Server Components
+```tsx
+// Server Component (default)
+export default function TournamentCard({ tournament }: { tournament: Tournament }) {
+  return (
+    <div className="glass-card p-6">
+      <h3 className="text-title">{tournament.name}</h3>
+      <p className="text-secondary">{tournament.description}</p>
+    </div>
+  );
+}
+
+// Client Component (when needed)
+'use client';
+
+import { useState } from 'react';
+
+export function InteractiveButton({ onClick }: { onClick: () => void }) {
+  const [isLoading, setIsLoading] = useState(false);
+  
+  return (
+    <button 
+      onClick={onClick}
+      disabled={isLoading}
+      className="btn-glow bg-primary text-white px-6 py-3 rounded-lg"
+    >
+      {isLoading ? 'Loading...' : 'Submit'}
+    </button>
+  );
+}
+```
+
+### Component Composition
+```tsx
+// Compose components from smaller pieces
+export function TournamentDashboard() {
+  return (
+    <div className="min-h-screen">
+      <TournamentHeader />
+      <div className="container mx-auto px-4 py-8">
+        <TournamentStats />
+        <TournamentList />
+      </div>
+    </div>
+  );
+}
+
+// Break down into smaller components
+function TournamentHeader() {
+  return (
+    <header className="glass-card p-6 mb-8">
+      <h1 className="text-heading gradient-title">Tournament Dashboard</h1>
+    </header>
+  );
+}
+```
+
+## shadcn/ui Integration
+
+### Using shadcn/ui Components
+```tsx
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+export function TournamentForm() {
+  return (
+    <Card className="glass-card">
+      <CardHeader>
+        <CardTitle>Create Tournament</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label htmlFor="name">Tournament Name</Label>
+          <Input id="name" placeholder="Enter tournament name" />
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="default">Create</Button>
+          <Button variant="outline">Cancel</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### Customizing shadcn/ui Components
+```tsx
+// Extend shadcn/ui components with custom styling
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+interface GlowButtonProps extends React.ComponentProps<typeof Button> {
+  glowColor?: 'green' | 'blue' | 'purple';
+}
+
+export function GlowButton({ 
+  className, 
+  glowColor = 'green', 
+  ...props 
+}: GlowButtonProps) {
+  return (
+    <Button
+      className={cn(
+        'btn-glow',
+        {
+          'hover:shadow-glow': glowColor === 'green',
+          'hover:shadow-glow-blue': glowColor === 'blue',
+          'hover:shadow-glow-purple': glowColor === 'purple',
+        },
+        className
+      )}
+      {...props}
+    />
+  );
+}
+```
+
+## Layout Components
+
+### App Header Pattern
+```tsx
+// components/layout/app-header.tsx
+'use client';
+
+import { CommandPalette } from '@/components/command-palette';
+
+interface AppHeaderProps {
+  onCommandPaletteToggle: () => void;
+  pageTitle: string;
+  pageSubtitle?: string;
+}
+
+export function AppHeader({ 
+  onCommandPaletteToggle, 
+  pageTitle, 
+  pageSubtitle 
+}: AppHeaderProps) {
+  return (
+    <header className="glass-card p-4 mb-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-heading gradient-title">{pageTitle}</h1>
+          {pageSubtitle && (
+            <p className="text-secondary">{pageSubtitle}</p>
+          )}
+        </div>
+        
+        <button
+          onClick={onCommandPaletteToggle}
+          className="glass-card p-2 rounded-lg hover-lift"
+        >
+          <span className="text-small">⌘K</span>
+        </button>
+      </div>
+    </header>
+  );
+}
+```
+
+### Mobile Navigation
+```tsx
+// components/layout/mobile-bottom-navigation.tsx
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+const navigationItems = [
+  { href: '/admin/dashboard', label: 'Dashboard', icon: '🏠' },
+  { href: '/admin/tournaments', label: 'Tournaments', icon: '🏆' },
+  { href: '/admin/participants', label: 'Players', icon: '👥' },
+  { href: '/admin/scoring', label: 'Scoring', icon: '📊' },
+];
+
+export function MobileBottomNavigation() {
+  const pathname = usePathname();
+  
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 glass-card border-t border-glass-border lg:hidden">
+      <div className="flex justify-around py-2">
+        {navigationItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+              pathname === item.href 
+                ? 'text-primary bg-color-nebula' 
+                : 'text-secondary hover:text-primary'
+            }`}
+          >
+            <span className="text-lg">{item.icon}</span>
+            <span className="text-micro">{item.label}</span>
+          </Link>
+        ))}
+      </div>
+    </nav>
+  );
+}
+```
+
+## Custom Hooks
+
+### Data Fetching Hooks
+```tsx
+// hooks/use-tournaments.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Tournament, InsertTournament } from '@repo/schemas';
+
+export function useTournaments() {
+  return useQuery<Tournament[]>({
+    queryKey: ['tournaments'],
+    queryFn: async () => {
+      const response = await fetch('/api/tournaments');
+      const data = await response.json();
+      return data.data || [];
+    },
+  });
+}
+
+export function useCreateTournament() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: InsertTournament) => {
+      const response = await fetch('/api/tournaments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+    },
+  });
+}
+```
+
+### Page Title Hook
+```tsx
+// hooks/use-page-title.ts
+import { usePathname } from 'next/navigation';
+
+const pageTitles: Record<string, { title: string; subtitle?: string }> = {
+  '/admin/dashboard': { title: 'Dashboard', subtitle: 'Tournament Overview' },
+  '/admin/tournaments': { title: 'Tournaments', subtitle: 'Manage Events' },
+  '/admin/participants': { title: 'Participants', subtitle: 'Player Management' },
+  '/admin/scoring': { title: 'Scoring', subtitle: 'Live Match Updates' },
+};
+
+export function usePageTitle() {
+  const pathname = usePathname();
+  const pageInfo = pageTitles[pathname] || { title: 'Tourna-X' };
+  
+  return pageInfo;
+}
+```
+
+## Form Components
+
+### Form with Validation
+```tsx
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { insertTournamentSchema, InsertTournament } from '@repo/schemas';
+import { useCreateTournament } from '@/hooks/use-tournaments';
+
+export function TournamentForm() {
+  const createTournament = useCreateTournament();
+  
+  const form = useForm<InsertTournament>({
+    resolver: zodResolver(insertTournamentSchema),
+    defaultValues: {
+      name: '',
+      sport: 'badminton',
+      categories: ['singles'],
+      format: 'knockout',
+      entryFee: 0,
+      maxParticipants: 32,
+    },
+  });
+  
+  const onSubmit = (data: InsertTournament) => {
+    createTournament.mutate(data);
+  };
+  
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)} className="glass-card p-8 space-y-6">
+      <div>
+        <Label htmlFor="name">Tournament Name</Label>
+        <Input
+          id="name"
+          {...form.register('name')}
+          className={form.formState.errors.name ? 'border-destructive' : ''}
+        />
+        {form.formState.errors.name && (
+          <p className="text-small text-destructive">
+            {form.formState.errors.name.message}
+          </p>
+        )}
+      </div>
+      
+      <Button 
+        type="submit" 
+        disabled={createTournament.isPending}
+        className="btn-glow bg-primary text-white px-8 py-3 rounded-lg"
+      >
+        {createTournament.isPending ? 'Creating...' : 'Create Tournament'}
+      </Button>
+    </form>
+  );
+}
+```
+
+## Loading and Error States
+
+### Loading Components
+```tsx
+export function LoadingSpinner() {
+  return (
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="spinner"></div>
+    </div>
+  );
+}
+
+export function LoadingCard() {
+  return (
+    <div className="glass-card p-6 animate-pulse">
+      <div className="h-4 bg-color-nebula rounded mb-4"></div>
+      <div className="h-3 bg-color-nebula rounded mb-2"></div>
+      <div className="h-3 bg-color-nebula rounded w-2/3"></div>
+    </div>
+  );
+}
+```
+
+### Error Boundaries
+```tsx
+'use client';
+
+import { ErrorBoundary } from 'react-error-boundary';
+
+function ErrorFallback({ error, resetErrorBoundary }: { 
+  error: Error; 
+  resetErrorBoundary: () => void; 
+}) {
+  return (
+    <div className="glass-card p-8 text-center">
+      <h2 className="text-title text-destructive mb-4">Something went wrong</h2>
+      <p className="text-secondary mb-6">{error.message}</p>
+      <Button onClick={resetErrorBoundary} variant="outline">
+        Try again
+      </Button>
+    </div>
+  );
+}
+
+export function AppErrorBoundary({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      {children}
+    </ErrorBoundary>
+  );
+}
+```
+
+## Animation Components
+
+### Framer Motion Integration
+```tsx
+'use client';
+
+import { motion } from 'framer-motion';
+
+export function AnimatedCard({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ y: -4 }}
+      className="glass-card p-6"
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+export function StaggeredList({ items }: { items: React.ReactNode[] }) {
+  return (
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: { opacity: 0 },
+        visible: {
+          opacity: 1,
+          transition: {
+            staggerChildren: 0.1
+          }
+        }
+      }}
+    >
+      {items.map((item, index) => (
+        <motion.div
+          key={index}
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+          }}
+        >
+          {item}
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+}
+```
+
+## Best Practices
+- Use 'use client' directive only when necessary
+- Compose components from smaller, reusable pieces
+- Leverage shadcn/ui components as base building blocks
+- Implement proper TypeScript interfaces for props
+- Use custom hooks for data fetching and state management
+- Follow the glassmorphism design system consistently
+- Implement proper loading and error states
+- Use Framer Motion for smooth animations
+- Maintain consistent spacing and typography
+- Implement proper accessibility attributes
+- Use semantic HTML elements
+- Follow mobile-first responsive design principles
+
+Reference: [ui components](mdc:packages/ui/src) for available shadcn/ui components and [layout components](mdc:apps/frontend/components/layout) for layout patterns.

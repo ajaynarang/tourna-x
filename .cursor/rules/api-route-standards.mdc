@@ -1,0 +1,442 @@
+---
+globs: app/api/**/*.ts
+---
+
+# API Route Standards for Tourna-X
+
+## Next.js API Route Structure
+All API routes follow Next.js 15 App Router conventions with proper TypeScript typing and error handling.
+
+## Standard API Route Pattern
+
+### Basic Route Structure
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase, getCollections } from '@/lib/mongodb';
+import { COLLECTIONS } from '@repo/schemas';
+import { ObjectId } from 'mongodb';
+
+// GET endpoint
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required parameter' },
+        { status: 400 }
+      );
+    }
+    
+    const db = await connectToDatabase();
+    const collections = await getCollections();
+    
+    const result = await collections.tournaments.findOne({
+      _id: new ObjectId(id)
+    });
+    
+    if (!result) {
+      return NextResponse.json(
+        { success: false, error: 'Resource not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json({ success: true, data: result });
+  } catch (error) {
+    console.error('API Error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST endpoint
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    
+    // Validate request body with Zod schemas
+    const validatedData = insertTournamentSchema.parse(body);
+    
+    const db = await connectToDatabase();
+    const collections = await getCollections();
+    
+    const result = await collections.tournaments.insertOne({
+      ...validatedData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    return NextResponse.json(
+      { success: true, data: { id: result.insertedId } },
+      { status: 201 }
+    );
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: 'Validation error', details: error.errors },
+        { status: 400 }
+      );
+    }
+    
+    console.error('API Error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Authentication Patterns
+
+### Admin Authentication Check
+```typescript
+import { getServerSession } from '@/lib/auth-utils';
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(request);
+    
+    if (!session || !session.user || !session.user.roles?.includes('admin')) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    // Admin-only logic here
+    const db = await connectToDatabase();
+    // ... rest of implementation
+  } catch (error) {
+    // Error handling
+  }
+}
+```
+
+### Player Authentication Check
+```typescript
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(request);
+    
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
+    // Player logic here
+  } catch (error) {
+    // Error handling
+  }
+}
+```
+
+## Request Validation
+
+### Query Parameters
+```typescript
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    
+    // Extract and validate query parameters
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const status = searchParams.get('status');
+    
+    // Validate parameters
+    if (page < 1 || limit < 1 || limit > 100) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid pagination parameters' },
+        { status: 400 }
+      );
+    }
+    
+    // Build query
+    const query: any = {};
+    if (status) {
+      query.status = status;
+    }
+    
+    // Execute query with pagination
+    const db = await connectToDatabase();
+    const collections = await getCollections();
+    
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      collections.tournaments
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .toArray(),
+      collections.tournaments.countDocuments(query)
+    ]);
+    
+    return NextResponse.json({
+      success: true,
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: skip + data.length < total
+      }
+    });
+  } catch (error) {
+    // Error handling
+  }
+}
+```
+
+### Request Body Validation
+```typescript
+import { z } from 'zod';
+import { insertTournamentSchema } from '@repo/schemas';
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    
+    // Validate with Zod schema
+    const validatedData = insertTournamentSchema.parse(body);
+    
+    // Additional business logic validation
+    if (validatedData.startDate >= validatedData.endDate) {
+      return NextResponse.json(
+        { success: false, error: 'End date must be after start date' },
+        { status: 400 }
+      );
+    }
+    
+    // Process validated data
+    const db = await connectToDatabase();
+    const collections = await getCollections();
+    
+    const result = await collections.tournaments.insertOne({
+      ...validatedData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    return NextResponse.json({
+      success: true,
+      data: { id: result.insertedId }
+    }, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Validation failed', 
+          details: error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        },
+        { status: 400 }
+      );
+    }
+    
+    console.error('API Error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Database Operations
+
+### Collection Access Pattern
+```typescript
+export async function GET(request: NextRequest) {
+  try {
+    // Always use the getCollections helper
+    const collections = await getCollections();
+    
+    // Use proper ObjectId conversion
+    const tournamentId = new ObjectId(id);
+    
+    // Execute database operations
+    const tournament = await collections.tournaments.findOne({
+      _id: tournamentId
+    });
+    
+    if (!tournament) {
+      return NextResponse.json(
+        { success: false, error: 'Tournament not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json({ success: true, data: tournament });
+  } catch (error) {
+    console.error('Database error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Database error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### Transaction Support
+```typescript
+export async function POST(request: NextRequest) {
+  const session = await getDatabase();
+  
+  try {
+    await session.withTransaction(async () => {
+      const collections = await getCollections();
+      
+      // Multiple operations in transaction
+      await collections.tournaments.insertOne(tournamentData);
+      await collections.participants.insertMany(participantsData);
+      await collections.matches.insertMany(matchesData);
+    });
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Transaction error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Transaction failed' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Error Handling Standards
+
+### Standard Error Responses
+```typescript
+// Validation errors
+return NextResponse.json(
+  { success: false, error: 'Validation failed', details: error.errors },
+  { status: 400 }
+);
+
+// Authentication errors
+return NextResponse.json(
+  { success: false, error: 'Unauthorized' },
+  { status: 401 }
+);
+
+// Not found errors
+return NextResponse.json(
+  { success: false, error: 'Resource not found' },
+  { status: 404 }
+);
+
+// Server errors
+return NextResponse.json(
+  { success: false, error: 'Internal server error' },
+  { status: 500 }
+);
+```
+
+### Logging Pattern
+```typescript
+export async function POST(request: NextRequest) {
+  try {
+    // Log request details for debugging
+    console.log('API Request:', {
+      method: 'POST',
+      url: request.url,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Process request
+    const result = await processRequest();
+    
+    console.log('API Success:', { resultId: result.id });
+    return NextResponse.json({ success: true, data: result });
+  } catch (error) {
+    console.error('API Error:', {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+    
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Response Format Standards
+
+### Success Response
+```typescript
+// Single resource
+return NextResponse.json({
+  success: true,
+  data: resource
+});
+
+// List of resources
+return NextResponse.json({
+  success: true,
+  data: resources,
+  pagination: {
+    page: 1,
+    limit: 10,
+    total: 100,
+    hasMore: true
+  }
+});
+```
+
+### Error Response
+```typescript
+return NextResponse.json({
+  success: false,
+  error: 'Error message',
+  details: 'Additional error details' // Optional
+}, { status: 400 });
+```
+
+## File Organization
+
+### API Route Structure
+```
+app/api/
+├── auth/
+│   ├── login/route.ts
+│   ├── phone-login/route.ts
+│   └── logout/route.ts
+├── tournaments/
+│   ├── route.ts
+│   ├── [id]/
+│   │   ├── route.ts
+│   │   └── fixtures/
+│   │       └── generate/route.ts
+│   └── [id]/register/route.ts
+└── admin/
+    ├── dashboard/route.ts
+    └── analytics/route.ts
+```
+
+## Best Practices
+- Always validate input data with Zod schemas
+- Use proper HTTP status codes
+- Implement consistent error handling
+- Log errors for debugging
+- Use transactions for multi-operation updates
+- Follow RESTful conventions
+- Implement proper authentication checks
+- Use the getCollections() helper for database access
+- Convert string IDs to ObjectId properly
+- Return consistent response formats
+
+Reference: [mongodb.ts](mdc:apps/frontend/lib/mongodb.ts) for database patterns.

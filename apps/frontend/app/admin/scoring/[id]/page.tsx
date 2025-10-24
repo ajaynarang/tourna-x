@@ -330,8 +330,8 @@ export default function LiveScoringPage({ params }: { params: Promise<{ id: stri
   const matchWinner = getMatchWinner();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="relative z-10 min-h-screen p-8">
+      <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">

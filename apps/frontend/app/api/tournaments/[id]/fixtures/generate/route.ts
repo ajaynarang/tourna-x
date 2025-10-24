@@ -22,7 +22,7 @@ async function getAuthenticatedUser(request: NextRequest) {
   }
 
   const user = await db.collection(COLLECTIONS.USERS).findOne({
-    _id: session.userId
+    _id: new ObjectId(session.userId)
   });
 
   return user;

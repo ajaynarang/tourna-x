@@ -1,0 +1,353 @@
+---
+globs: app/**/*.tsx,components/**/*.tsx
+---
+
+# UI/UX Design System for Tourna-X
+
+## Design Philosophy
+Tourna-X uses an Apple-inspired glassmorphism design system with dark theme as default, featuring full-screen layouts and smooth animations.
+
+## Layout Standards
+
+### Full-Screen Layout Pattern
+```tsx
+// All pages should use min-h-screen for full coverage
+export default function TournamentPage() {
+  return (
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 py-8">
+        {/* Page content */}
+      </div>
+    </div>
+  );
+}
+```
+
+### Glass Card Components
+```tsx
+// Use glass-card class for main content containers
+<div className="glass-card p-6">
+  <h1 className="text-heading gradient-title">Tournament Dashboard</h1>
+  <p className="text-secondary">Manage your tournaments</p>
+</div>
+
+// Use glass-card-intense for prominent elements
+<div className="glass-card-intense p-8">
+  <h2 className="text-title">Live Matches</h2>
+  {/* Important content */}
+</div>
+```
+
+## Theme System
+
+### CSS Variables Usage
+```tsx
+// Use theme-aware CSS variables
+<div className="bg-background text-foreground">
+  <h1 className="text-primary">Title</h1>
+  <p className="text-secondary">Subtitle</p>
+  <span className="text-muted">Muted text</span>
+</div>
+```
+
+### Dark Theme Implementation
+```tsx
+// Dark theme is default - use proper contrast
+<div className="bg-color-deep-space text-text-primary">
+  {/* Content automatically adapts to theme */}
+</div>
+```
+
+## Typography Scale
+
+### Text Classes
+```tsx
+// Use semantic text classes
+<h1 className="text-display">Main Heading</h1>
+<h2 className="text-heading">Section Heading</h2>
+<h3 className="text-title">Card Title</h3>
+<p className="text-body">Body text</p>
+<span className="text-small">Small text</span>
+<span className="text-micro">Micro text</span>
+```
+
+### Gradient Text
+```tsx
+// Use gradient-title for prominent headings
+<h1 className="text-display gradient-title">
+  Tournament Management
+</h1>
+```
+
+## Component Patterns
+
+### Status Badges
+```tsx
+// Use status badge classes
+<span className="status-badge status-open">Registration Open</span>
+<span className="status-badge status-ongoing">Live</span>
+<span className="status-badge status-completed">Completed</span>
+```
+
+### Button Styles
+```tsx
+// Primary button with glow effect
+<button className="btn-glow bg-primary text-white px-6 py-3 rounded-lg">
+  Create Tournament
+</button>
+
+// Secondary button
+<button className="glass-card px-6 py-3 rounded-lg hover-lift">
+  View Details
+</button>
+```
+
+### Loading States
+```tsx
+// Use spinner class for loading
+<div className="flex justify-center items-center min-h-screen">
+  <div className="spinner"></div>
+</div>
+```
+
+## Animation Patterns
+
+### Framer Motion Integration
+```tsx
+import { motion } from 'framer-motion';
+
+// Page transitions
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.3 }}
+  className="min-h-screen"
+>
+  {/* Page content */}
+</motion.div>
+
+// Card hover effects
+<motion.div
+  whileHover={{ y: -4 }}
+  className="glass-card p-6"
+>
+  {/* Card content */}
+</motion.div>
+```
+
+### CSS Animations
+```tsx
+// Use built-in animation classes
+<div className="animate-fade-in">
+  <div className="animate-slide-up">
+    <div className="animate-bounce-gentle">
+      {/* Animated content */}
+    </div>
+  </div>
+</div>
+```
+
+## Layout Components
+
+### App Header Pattern
+```tsx
+// Use AppHeader component consistently
+import { AppHeader } from '@/components/layout/app-header';
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen">
+      <AppHeader 
+        onCommandPaletteToggle={() => setCommandOpen(true)}
+        pageTitle="Tournaments"
+        pageSubtitle="Manage your tournaments"
+      />
+      <main className="pb-20 lg:pb-0">
+        {children}
+      </main>
+    </div>
+  );
+}
+```
+
+### Mobile Navigation
+```tsx
+// Include mobile bottom navigation
+import MobileBottomNavigation from '@/components/layout/mobile-bottom-navigation';
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen">
+      {/* Main content */}
+      <main className="pb-20 lg:pb-0">
+        {children}
+      </main>
+      <MobileBottomNavigation />
+    </div>
+  );
+}
+```
+
+## Form Design
+
+### Form Layout
+```tsx
+// Use glass cards for forms
+<form className="glass-card p-8 max-w-2xl mx-auto">
+  <div className="space-y-6">
+    <div>
+      <label className="text-small text-secondary block mb-2">
+        Tournament Name
+      </label>
+      <input 
+        className="w-full px-4 py-3 glass-card rounded-lg"
+        placeholder="Enter tournament name"
+      />
+    </div>
+    
+    <button 
+      type="submit"
+      className="btn-glow bg-primary text-white px-8 py-3 rounded-lg w-full"
+    >
+      Create Tournament
+    </button>
+  </div>
+</form>
+```
+
+## Data Display
+
+### Stats Cards
+```tsx
+// Use stat-card class for metrics
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div className="stat-card">
+    <h3 className="text-title text-primary">Total Tournaments</h3>
+    <p className="text-display text-secondary">24</p>
+  </div>
+  
+  <div className="stat-card">
+    <h3 className="text-title text-primary">Active Players</h3>
+    <p className="text-display text-secondary">156</p>
+  </div>
+  
+  <div className="stat-card">
+    <h3 className="text-title text-primary">Matches Played</h3>
+    <p className="text-display text-secondary">342</p>
+  </div>
+</div>
+```
+
+### Table Design
+```tsx
+// Use glass cards for tables
+<div className="glass-card overflow-hidden">
+  <table className="w-full">
+    <thead className="bg-color-nebula">
+      <tr>
+        <th className="text-left p-4 text-small text-secondary">Name</th>
+        <th className="text-left p-4 text-small text-secondary">Status</th>
+        <th className="text-left p-4 text-small text-secondary">Players</th>
+      </tr>
+    </thead>
+    <tbody>
+      {tournaments.map((tournament) => (
+        <tr key={tournament.id} className="border-t border-glass-border">
+          <td className="p-4 text-body text-primary">{tournament.name}</td>
+          <td className="p-4">
+            <span className="status-badge status-open">Open</span>
+          </td>
+          <td className="p-4 text-body text-secondary">{tournament.playerCount}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+```
+
+## Responsive Design
+
+### Mobile-First Approach
+```tsx
+// Use responsive classes
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div className="glass-card p-4 md:p-6">
+    {/* Responsive content */}
+  </div>
+</div>
+
+// Mobile-specific spacing
+<div className="px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
+  {/* Content with responsive padding */}
+</div>
+```
+
+### Breakpoint Usage
+```tsx
+// Common responsive patterns
+<div className="flex flex-col md:flex-row gap-4">
+  <div className="flex-1">
+    {/* Content */}
+  </div>
+  <div className="w-full md:w-64">
+    {/* Sidebar */}
+  </div>
+</div>
+```
+
+## Command Palette Integration
+
+### Keyboard Shortcuts
+```tsx
+// Implement Cmd+K for command palette
+useEffect(() => {
+  const down = (e: KeyboardEvent) => {
+    if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      setIsCommandPaletteOpen(prev => !prev);
+    }
+  };
+
+  document.addEventListener('keydown', down);
+  return () => document.removeEventListener('keydown', down);
+}, []);
+```
+
+## Accessibility Standards
+
+### Semantic HTML
+```tsx
+// Use proper semantic elements
+<main className="min-h-screen">
+  <header className="glass-card p-6">
+    <h1 className="text-heading gradient-title">Tournament Dashboard</h1>
+  </header>
+  
+  <section className="container mx-auto px-4 py-8">
+    <h2 className="text-title mb-6">Active Tournaments</h2>
+    {/* Content */}
+  </section>
+</main>
+```
+
+### Focus States
+```tsx
+// Ensure proper focus indicators
+<button className="btn-glow focus:outline-none focus:ring-2 focus:ring-primary">
+  Action Button
+</button>
+```
+
+## Best Practices
+- Always use `min-h-screen` for full-page layouts
+- Prefer glass-card classes over custom backgrounds
+- Use semantic text classes for consistent typography
+- Implement proper loading states with spinner class
+- Use Framer Motion for smooth animations
+- Follow mobile-first responsive design
+- Maintain proper contrast ratios in dark theme
+- Use status badges for consistent state indication
+- Implement hover effects with hover-lift class
+- Use gradient-title for prominent headings
+
+Reference: [globals.css](mdc:apps/frontend/app/globals.css) for complete design system.

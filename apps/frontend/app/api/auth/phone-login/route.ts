@@ -21,28 +21,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify OTP
-    console.log('Looking for OTP record...');
-    const otpRecord = await db.collection(COLLECTIONS.OTPS).findOne({
-      phone,
-      otp,
-      isUsed: false
-    });
+    // Allow test OTP 123456 for development/testing
+    const isTestOtp = otp === '123456';
+    
+    if (!isTestOtp) {
+      console.log('Looking for OTP record...');
+      const otpRecord = await db.collection(COLLECTIONS.OTPS).findOne({
+        phone,
+        otp,
+        isUsed: false
+      });
 
-    console.log('OTP record found:', !!otpRecord);
+      console.log('OTP record found:', !!otpRecord);
 
-    if (!otpRecord) {
-      console.log('Invalid or expired OTP');
-      return NextResponse.json(
-        { success: false, error: 'Invalid or expired OTP' },
-        { status: 401 }
+      if (!otpRecord) {
+        console.log('Invalid or expired OTP');
+        return NextResponse.json(
+          { success: false, error: 'Invalid or expired OTP' },
+          { status: 401 }
+        );
+      }
+
+      // Mark OTP as used
+      await db.collection(COLLECTIONS.OTPS).updateOne(
+        { _id: otpRecord._id },
+        { $set: { isUsed: true } }
       );
+    } else {
+      console.log('Using test OTP 123456');
     }
-
-    // Mark OTP as used
-    await db.collection(COLLECTIONS.OTPS).updateOne(
-      { _id: otpRecord._id },
-      { $set: { isUsed: true } }
-    );
 
     // Find or create user
     console.log('Looking for user...');
@@ -50,11 +57,12 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       console.log('Creating new user...');
-      // Create new player user
+      // Create new user - admin for specific test numbers, player otherwise
+      const isAdminPhone = phone === '9999999999' || phone === '8888888888'; // Test admin numbers
       const newUser = insertUserSchema.parse({
         phone,
-        roles: ['player'],
-        name: `Player ${phone.slice(-4)}`, // Temporary name
+        roles: isAdminPhone ? ['admin'] : ['player'],
+        name: isAdminPhone ? `Admin ${phone.slice(-4)}` : `Player ${phone.slice(-4)}`, // Temporary name
       });
 
       const result = await db.collection(COLLECTIONS.USERS).insertOne(newUser);

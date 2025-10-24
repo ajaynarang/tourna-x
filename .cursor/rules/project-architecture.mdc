@@ -1,0 +1,61 @@
+---
+alwaysApply: true
+---
+
+# Tourna-X Project Architecture Guide
+
+## Project Overview
+Tourna-X is a comprehensive badminton tournament management system built as a monorepo with Next.js 15, MongoDB, and TypeScript.
+
+## Monorepo Structure
+```
+tourna-x/
+├── apps/
+│   ├── frontend/          # Next.js 15 App Router application
+│   └── backend/           # Standalone backend service
+├── packages/
+│   ├── schemas/           # Zod v4 schemas and types
+│   ├── ui/                # shadcn/ui components
+│   ├── eslint-config/     # Shared ESLint configuration
+│   └── typescript-config/ # Shared TypeScript configuration
+└── turbo.json            # Turbo build configuration
+```
+
+## Key Technologies
+- **Frontend**: Next.js 15 with App Router, React 18, TypeScript 5.9.2
+- **Backend**: Next.js API Routes, MongoDB native driver
+- **Database**: MongoDB with comprehensive indexing
+- **Validation**: Zod v4 schemas
+- **Styling**: Tailwind CSS with custom design system
+- **UI Components**: shadcn/ui with glassmorphism design
+- **State Management**: React Context + Zustand
+- **Data Fetching**: TanStack Query
+- **Build System**: Turbo monorepo
+- **Package Manager**: pnpm 9.0.0
+
+## Core Features
+- **Admin Features**: Tournament management, participant approval, fixture generation, live scoring, analytics
+- **Player Features**: Registration, match tracking, statistics, tournament discovery
+- **Authentication**: Admin (username/password) + Player (phone/OTP)
+- **Tournament Formats**: Knockout and Round-robin
+- **Scoring System**: Badminton rules (21-point games, best of 3 sets)
+
+## File Organization Principles
+- All API routes in `apps/frontend/app/api/`
+- Shared schemas in `packages/schemas/src/`
+- Reusable UI components in `packages/ui/src/`
+- Page components follow App Router conventions
+- Database utilities in `apps/frontend/lib/mongodb.ts`
+
+## Build and Development
+- Use `pnpm dev` for development with Turbopack
+- Use `turbo run build` for production builds
+- All packages use workspace dependencies (`workspace:*`)
+- TypeScript strict mode enforced across all packages
+
+## Environment Requirements
+- Node.js >= 20.x
+- MongoDB connection via `MONGODB_URI`
+- Database name via `MONGODB_DATABASE` (defaults to 'tourna-x')
+
+Reference: [SPECIFICATION.md](mdc:SPECIFICATION.md) for complete project details.

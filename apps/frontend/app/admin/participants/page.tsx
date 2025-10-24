@@ -1,337 +1,365 @@
 'use client';
 
-import { useState } from 'react';
-import { useTournaments } from '@/hooks/use-tournaments';
-import { useParticipants, useUpdateParticipant } from '@/hooks/use-participants';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
-import { Button } from '@repo/ui';
-import { Input } from '@repo/ui';
-import { Badge } from '@repo/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@repo/ui';
-import { Alert, AlertDescription } from '@repo/ui';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { 
-  Users, 
-  Search, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  DollarSign,
+  Users,
+  Search,
+  CheckCircle,
+  XCircle,
+  Clock,
   Phone,
-  Mail,
-  User,
+  Trophy,
   Filter,
-  Download
+  Download,
 } from 'lucide-react';
 
+interface Participant {
+  _id: string;
+  userId: string;
+  tournamentId: string;
+  tournamentName: string;
+  name: string;
+  phone: string;
+  email?: string;
+  category: string;
+  gender: string;
+  isApproved: boolean;
+  paymentStatus: 'pending' | 'paid';
+  registeredAt: string;
+}
+
 export default function AdminParticipantsPage() {
-  const { data: tournaments } = useTournaments();
-  const [selectedTournament, setSelectedTournament] = useState<string>('');
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [filteredParticipants, setFilteredParticipants] = useState<Participant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  
-  const { data: participants, isLoading } = useParticipants(selectedTournament);
-  const updateMutation = useUpdateParticipant();
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
 
-  const filteredParticipants = participants?.filter(participant => {
-    const matchesSearch = participant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         participant.phone.includes(searchTerm);
-    const matchesStatus = filterStatus === 'all' || participant.paymentStatus === filterStatus;
-    return matchesSearch && matchesStatus;
-  }) || [];
+  useEffect(() => {
+    fetchParticipants();
+  }, []);
 
-  const handleApproveParticipant = async (participantId: string) => {
+  useEffect(() => {
+    filterParticipants();
+  }, [participants, searchTerm, statusFilter, paymentFilter]);
+
+  const fetchParticipants = async () => {
     try {
-      await updateMutation.mutateAsync({
-        id: participantId,
-        data: { isApproved: true }
-      });
+      setIsLoading(true);
+      const response = await fetch('/api/participants');
+      const result = await response.json();
+      
+      if (result.success) {
+        setParticipants(result.data || []);
+      }
     } catch (error) {
-      console.error('Failed to approve participant:', error);
+      console.error('Error fetching participants:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleRejectParticipant = async (participantId: string) => {
-    try {
-      await updateMutation.mutateAsync({
-        id: participantId,
-        data: { isApproved: false }
-      });
-    } catch (error) {
-      console.error('Failed to reject participant:', error);
-    }
-  };
+  const filterParticipants = () => {
+    let filtered = participants;
 
-  const handlePaymentStatusChange = async (participantId: string, status: 'pending' | 'paid') => {
-    try {
-      await updateMutation.mutateAsync({
-        id: participantId,
-        data: { paymentStatus: status }
-      });
-    } catch (error) {
-      console.error('Failed to update payment status:', error);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      paid: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    const Icon = config.icon;
-
-    return (
-      <Badge className={`${config.color} flex items-center gap-1`}>
-        <Icon className="h-3 w-3" />
-        {status}
-      </Badge>
-    );
-  };
-
-  const getApprovalBadge = (isApproved: boolean) => {
-    if (isApproved) {
-      return (
-        <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
-          <CheckCircle className="h-3 w-3" />
-          Approved
-        </Badge>
+    if (searchTerm) {
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.phone.includes(searchTerm) ||
+        p.tournamentName.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(p =>
+        statusFilter === 'approved' ? p.isApproved : !p.isApproved
+      );
+    }
+
+    if (paymentFilter !== 'all') {
+      filtered = filtered.filter(p => p.paymentStatus === paymentFilter);
+    }
+
+    setFilteredParticipants(filtered);
+  };
+
+  const handleApprove = async (participantId: string) => {
+    try {
+      const response = await fetch(`/api/participants/${participantId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isApproved: true }),
+      });
+
+      if (response.ok) {
+        fetchParticipants();
+      }
+    } catch (error) {
+      console.error('Error approving participant:', error);
+    }
+  };
+
+  const handleReject = async (participantId: string) => {
+    if (!confirm('Are you sure you want to reject this participant?')) return;
+
+    try {
+      const response = await fetch(`/api/participants/${participantId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        fetchParticipants();
+      }
+    } catch (error) {
+      console.error('Error rejecting participant:', error);
+    }
+  };
+
+  const handlePaymentUpdate = async (participantId: string, status: 'pending' | 'paid') => {
+    try {
+      const response = await fetch(`/api/participants/${participantId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentStatus: status }),
+      });
+
+      if (response.ok) {
+        fetchParticipants();
+      }
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+    }
+  };
+
+  if (isLoading) {
     return (
-      <Badge className="bg-yellow-100 text-yellow-800 flex items-center gap-1">
-        <Clock className="h-3 w-3" />
-        Pending
-      </Badge>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="spinner"></div>
+      </div>
     );
-  };
+  }
 
-  const exportToCSV = () => {
-    if (!filteredParticipants.length) return;
-
-    const headers = [
-      'Name', 'Phone', 'Email', 'Age', 'Gender', 'Partner Name', 'Partner Phone',
-      'Payment Status', 'Approved', 'Registered At'
-    ];
-
-    const csvContent = [
-      headers.join(','),
-      ...filteredParticipants.map(participant => [
-        participant.name,
-        participant.phone,
-        participant.email || '',
-        participant.age,
-        participant.gender || '',
-        participant.partnerName || '',
-        participant.partnerPhone || '',
-        participant.paymentStatus,
-        participant.isApproved ? 'Yes' : 'No',
-        new Date(participant.registeredAt).toLocaleDateString()
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `participants-${selectedTournament}-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  const pendingCount = participants.filter(p => !p.isApproved).length;
+  const approvedCount = participants.filter(p => p.isApproved).length;
+  const pendingPaymentCount = participants.filter(p => p.paymentStatus === 'pending').length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-primary rounded-lg">
-                <Users className="h-6 w-6 text-primary-foreground" />
+    <div className="relative z-10 min-h-screen p-8">
+      <div className="mx-auto max-w-7xl">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-primary text-3xl font-bold">Participant Management</h1>
+          <p className="text-secondary mt-1">Manage all tournament participants</p>
+        </div>
+
+        {/* Stats */}
+        <div className="mb-8 grid gap-6 sm:grid-cols-3">
+          <div className="glass-card-intense p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
+                <CheckCircle className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">Manage Participants</h1>
-                <p className="text-sm text-gray-500">Approve registrations and manage participants</p>
+                <div className="text-primary text-2xl font-bold">{approvedCount}</div>
+                <div className="text-secondary text-sm">Approved</div>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" onClick={exportToCSV} disabled={!filteredParticipants.length}>
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
+          </div>
+
+          <div className="glass-card-intense p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-500">
+                <Clock className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <div className="text-primary text-2xl font-bold">{pendingCount}</div>
+                <div className="text-secondary text-sm">Pending Approval</div>
+              </div>
             </div>
+          </div>
+
+          <div className="glass-card-intense p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <div className="text-primary text-2xl font-bold">{pendingPaymentCount}</div>
+                <div className="text-secondary text-sm">Pending Payment</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row">
+          <div className="glass-card flex flex-1 items-center gap-3 px-4 py-3">
+            <Search className="text-tertiary h-5 w-5" />
+            <input
+              type="text"
+              placeholder="Search by name, phone, or tournament..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="text-primary flex-1 bg-transparent outline-none placeholder:text-tertiary"
+            />
+          </div>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="glass-card rounded-lg px-4 py-3 text-primary outline-none"
+          >
+            <option value="all">All Status</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending</option>
+          </select>
+
+          <select
+            value={paymentFilter}
+            onChange={(e) => setPaymentFilter(e.target.value)}
+            className="glass-card rounded-lg px-4 py-3 text-primary outline-none"
+          >
+            <option value="all">All Payments</option>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+
+        {/* Participants List */}
+        <div className="glass-card-intense p-6">
+          {filteredParticipants.length > 0 ? (
+            <div className="space-y-3">
+              {filteredParticipants.map((participant, index) => (
+                <motion.div
+                  key={participant._id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.02 }}
+                >
+                  <ParticipantCard
+                    participant={participant}
+                    onApprove={() => handleApprove(participant._id)}
+                    onReject={() => handleReject(participant._id)}
+                    onPaymentUpdate={(status) => handlePaymentUpdate(participant._id, status)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-500/20 to-blue-500/20">
+                <Users className="h-8 w-8 text-green-400" />
+              </div>
+              <h3 className="text-primary mb-2 text-lg font-semibold">
+                {searchTerm || statusFilter !== 'all' || paymentFilter !== 'all'
+                  ? 'No participants found'
+                  : 'No participants yet'}
+              </h3>
+              <p className="text-secondary text-sm">
+                {searchTerm || statusFilter !== 'all' || paymentFilter !== 'all'
+                  ? 'Try adjusting your filters'
+                  : 'Participants will appear here once tournaments are published'}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ParticipantCard({
+  participant,
+  onApprove,
+  onReject,
+  onPaymentUpdate,
+}: {
+  participant: Participant;
+  onApprove: () => void;
+  onReject: () => void;
+  onPaymentUpdate: (status: 'pending' | 'paid') => void;
+}) {
+  return (
+    <div className="glass-card flex flex-col gap-4 p-4 transition-all hover:bg-white/5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-1 items-center gap-4">
+        {/* Avatar */}
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-blue-500">
+          <span className="text-lg font-bold text-white">
+            {participant.name.charAt(0).toUpperCase()}
+          </span>
+        </div>
+
+        {/* Info */}
+        <div className="min-w-0 flex-1">
+          <h3 className="text-primary truncate font-semibold">{participant.name}</h3>
+          <div className="text-tertiary mt-1 flex flex-wrap items-center gap-3 text-sm">
+            <span className="flex items-center gap-1">
+              <Phone className="h-3 w-3" />
+              {participant.phone}
+            </span>
+            <span className="flex items-center gap-1">
+              <Trophy className="h-3 w-3" />
+              {participant.tournamentName}
+            </span>
+          </div>
+          <div className="text-tertiary mt-1 flex flex-wrap items-center gap-3 text-xs">
+            <span>{participant.category}</span>
+            <span>•</span>
+            <span>{participant.gender}</span>
+            <span>•</span>
+            <span>{new Date(participant.registeredAt).toLocaleDateString()}</span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filters */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filters & Search
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Tournament</label>
-                <Select value={selectedTournament} onValueChange={setSelectedTournament}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select tournament" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tournaments?.map((tournament) => (
-                      <SelectItem key={tournament._id} value={tournament._id || ''}>
-                        {tournament.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      {/* Status & Actions */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Approval Status */}
+        {participant.isApproved ? (
+          <div className="flex items-center gap-2 rounded-full bg-green-500/10 px-3 py-1 text-sm font-medium text-green-400">
+            <CheckCircle className="h-4 w-4" />
+            Approved
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 rounded-full bg-orange-500/10 px-3 py-1 text-sm font-medium text-orange-400">
+            <Clock className="h-4 w-4" />
+            Pending
+          </div>
+        )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Payment Status</label>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* Payment Status */}
+        <button
+          onClick={() => onPaymentUpdate(participant.paymentStatus === 'paid' ? 'pending' : 'paid')}
+          className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+            participant.paymentStatus === 'paid'
+              ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+              : 'bg-gray-500/10 text-gray-400 hover:bg-gray-500/20'
+          }`}
+        >
+          {participant.paymentStatus === 'paid' ? 'Paid' : 'Not Paid'}
+        </button>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Search</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search by name or phone..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Participants List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Participants ({filteredParticipants.length})</CardTitle>
-            <CardDescription>
-              Manage participant registrations and approvals
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="h-20 bg-gray-200 rounded-lg"></div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredParticipants.length > 0 ? (
-              <div className="space-y-4">
-                {filteredParticipants.map((participant) => (
-                  <div key={participant._id} className="p-6 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-gray-100 rounded-full">
-                          <User className="h-5 w-5 text-gray-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-gray-900">{participant.name}</h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <Phone className="h-4 w-4" />
-                              {participant.phone}
-                            </div>
-                            {participant.email && (
-                              <div className="flex items-center gap-1">
-                                <Mail className="h-4 w-4" />
-                                {participant.email}
-                              </div>
-                            )}
-                            <div>Age: {participant.age}</div>
-                            {participant.gender && <div>Gender: {participant.gender}</div>}
-                          </div>
-                          {participant.partnerName && (
-                            <div className="text-sm text-gray-600 mt-1">
-                              Partner: {participant.partnerName} ({participant.partnerPhone})
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          {getStatusBadge(participant.paymentStatus)}
-                          {getApprovalBadge(participant.isApproved)}
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          {!participant.isApproved && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleApproveParticipant(participant._id!)}
-                                disabled={updateMutation.isPending}
-                                className="text-green-600 border-green-600 hover:bg-green-50"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleRejectParticipant(participant._id!)}
-                                disabled={updateMutation.isPending}
-                                className="text-red-600 border-red-600 hover:bg-red-50"
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                            </>
-                          )}
-
-                          <Select
-                            value={participant.paymentStatus}
-                            onValueChange={(value) => handlePaymentStatusChange(participant._id!, value as 'pending' | 'paid')}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="paid">Paid</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No participants found</h3>
-                <p className="text-gray-500">
-                  {selectedTournament ? 'No participants match your filters.' : 'Select a tournament to view participants.'}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Actions */}
+        {!participant.isApproved && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onApprove}
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/20 text-green-400 transition-all hover:bg-green-500/30"
+              title="Approve"
+            >
+              <CheckCircle className="h-5 w-5" />
+            </button>
+            <button
+              onClick={onReject}
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/20 text-red-400 transition-all hover:bg-red-500/30"
+              title="Reject"
+            >
+              <XCircle className="h-5 w-5" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
