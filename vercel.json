@@ -4,15 +4,10 @@
   "installCommand": "pnpm install",
   "framework": "nextjs",
   "outputDirectory": "apps/frontend/.next",
-  "functions": {
-    "apps/frontend/app/api/**/*.ts": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "env": {
     "NODE_ENV": "production",
-      "MONGODB_URI": "mongodb-uri",
-      "MONGODB_DATABASE": "tourna-x"
+    "MONGODB_URI": "mongodb-uri",
+    "MONGODB_DATABASE": "tourna-x"
   },
   "build": {
     "env": {
