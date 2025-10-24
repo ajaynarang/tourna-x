@@ -140,6 +140,14 @@ export const matchSchema = z.object({
     winner: z.enum(["player1", "player2"]).optional(),
     duration: z.number().optional(), // Duration in minutes
     completedAt: z.date().optional(),
+    // Point analysis for each game
+    pointHistory: z.array(z.object({
+      player: z.enum(["player1", "player2"]),
+      reason: z.string().optional(), // smash, drop, net, clear, drive, unforced, forced, skipped
+      scoreA: z.number(),
+      scoreB: z.number(),
+      timestamp: z.date(),
+    })).optional(),
   })).default([]),
   
   // Legacy support - keep for backward compatibility

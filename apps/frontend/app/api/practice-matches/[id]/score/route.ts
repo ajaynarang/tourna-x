@@ -166,7 +166,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { action, gameNumber, player1Score, player2Score, scoringFormat, walkoverReason, winner } = body;
+    const { action, gameNumber, player1Score, player2Score, scoringFormat, walkoverReason, winner, pointHistory } = body;
 
     if (!action) {
       return NextResponse.json(
@@ -184,9 +184,9 @@ export async function POST(
         break;
 
       case 'update_score':
-        if (!gameNumber || player1Score === undefined || player2Score === undefined) {
+        if (player1Score === undefined || player2Score === undefined) {
           return NextResponse.json(
-            { success: false, error: 'Missing required fields: gameNumber, player1Score, player2Score' },
+            { success: false, error: 'Missing required fields: player1Score, player2Score' },
             { status: 400 }
           );
         }
@@ -196,13 +196,15 @@ export async function POST(
           updatedMatch.games = [];
         }
 
-        // Find or create the game
-        let game = updatedMatch.games.find((g: any) => g.gameNumber === gameNumber);
+        // Find or create the current game (default to game 1 if no gameNumber specified)
+        const currentGameNumber = gameNumber || 1;
+        let game = updatedMatch.games.find((g: any) => g.gameNumber === currentGameNumber);
         if (!game) {
           game = {
-            gameNumber,
+            gameNumber: currentGameNumber,
             player1Score: 0,
             player2Score: 0,
+            pointHistory: [],
           };
           updatedMatch.games.push(game);
         }
@@ -210,6 +212,11 @@ export async function POST(
         // Update scores
         game.player1Score = player1Score;
         game.player2Score = player2Score;
+
+        // Add point history if provided
+        if (pointHistory && Array.isArray(pointHistory)) {
+          game.pointHistory = pointHistory;
+        }
 
         // Check if game is won
         const gameWinner = determineGameWinner(player1Score, player2Score, scoringFormat || updatedMatch.scoringFormat);

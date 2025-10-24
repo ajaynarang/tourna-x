@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
+  Dumbbell,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -123,7 +124,24 @@ function AdminDashboardContent() {
         className="mx-auto max-w-7xl"
       >
         {/* Quick Actions */}
-        <motion.div variants={item} className="mb-8">
+        <motion.div variants={item} className="mb-8 flex flex-col lg:flex-row gap-4">
+        <button
+            onClick={() => router.push('/admin/practice-matches')}
+            className="glass-card-intense group flex w-full items-center justify-between p-6 transition-all hover:scale-[1.02] sm:w-auto"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl 
+              bg-primary">
+                <Dumbbell className="h-6 w-6 text-white" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-primary text-lg font-semibold">Practice Match</h3>
+                <p className="text-tertiary text-sm">Record daily practice sessions</p>
+              </div>
+            </div>
+            <ArrowRight className="text-tertiary h-5 w-5 transition-transform group-hover:translate-x-1" />
+          </button>
+
           <button
             onClick={() => router.push('/admin/tournaments/create')}
             className="glass-card-intense group flex w-full items-center justify-between p-6 transition-all hover:scale-[1.02] sm:w-auto"
@@ -139,6 +157,7 @@ function AdminDashboardContent() {
             </div>
             <ArrowRight className="text-tertiary h-5 w-5 transition-transform group-hover:translate-x-1" />
           </button>
+        
         </motion.div>
 
         {/* Stats Grid */}

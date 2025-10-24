@@ -2,12 +2,8 @@
 
 import React, { useState } from 'react';
 import { Undo2, Settings, BarChart3, X } from 'lucide-react';
-
-interface Player {
-  name: string;
-  score: number;
-  id: string;
-}
+import { Button } from '@repo/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui';
 
 interface PointHistory {
   player: string;
@@ -17,28 +13,28 @@ interface PointHistory {
   timestamp: Date;
 }
 
-interface LiveScoringProps {
-  matchId: string;
-  playerA: Player;
-  playerB: Player;
-  onScoreUpdate?: (playerA: Player, playerB: Player, history: PointHistory[]) => void;
-  onMatchComplete?: (winner: Player, finalScore: { playerA: number; playerB: number }) => void;
+interface BadmintonScorerProps {
+  playerA: { name: string; score: number };
+  playerB: { name: string; score: number };
+  onScoreUpdate: (player: string, reason?: string) => void;
+  onUndo: () => void;
+  history: PointHistory[];
+  trackingEnabled?: boolean;
+  onToggleTracking?: (enabled: boolean) => void;
 }
 
-export default function LiveScoring({ 
-  matchId, 
-  playerA: initialPlayerA, 
-  playerB: initialPlayerB,
+export default function BadmintonScorer({
+  playerA,
+  playerB,
   onScoreUpdate,
-  onMatchComplete 
-}: LiveScoringProps) {
-  const [playerA, setPlayerA] = useState({ name: initialPlayerA.name, score: initialPlayerA.score });
-  const [playerB, setPlayerB] = useState({ name: initialPlayerB.name, score: initialPlayerB.score });
-  const [trackingEnabled, setTrackingEnabled] = useState(true);
+  onUndo,
+  history,
+  trackingEnabled = true,
+  onToggleTracking
+}: BadmintonScorerProps) {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [currentPoint, setCurrentPoint] = useState<{ player: string; winner: string } | null>(null);
-  const [history, setHistory] = useState<PointHistory[]>([]);
-  const [showSettings, setShowSettings] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
 
   const pointCategories = {
     winner: [
@@ -59,62 +55,20 @@ export default function LiveScoring({
       setCurrentPoint({ player, winner: player });
       setShowAnalysis(true);
     } else {
-      addPoint(player, null);
+      onScoreUpdate(player);
     }
-  };
-
-  const addPoint = (player: string, reason: string | null) => {
-    const newHistory = [...history, {
-      player,
-      reason,
-      scoreA: player === 'A' ? playerA.score + 1 : playerA.score,
-      scoreB: player === 'B' ? playerB.score + 1 : playerB.score,
-      timestamp: new Date()
-    }];
-    
-    setHistory(newHistory);
-    
-    if (player === 'A') {
-      setPlayerA({ ...playerA, score: playerA.score + 1 });
-    } else {
-      setPlayerB({ ...playerB, score: playerB.score + 1 });
-    }
-    
-    setShowAnalysis(false);
-    setCurrentPoint(null);
-    
-    // Notify parent component
-    const newPlayerA = { ...playerA, score: player === 'A' ? playerA.score + 1 : playerA.score };
-    const newPlayerB = { ...playerB, score: player === 'B' ? playerB.score + 1 : playerB.score };
-    onScoreUpdate?.(newPlayerA, newPlayerB, newHistory);
-  };
-
-  const handleUndo = () => {
-    if (history.length === 0) return;
-    
-    const lastPoint = history[history.length - 1];
-    const newHistory = history.slice(0, -1);
-    
-    setHistory(newHistory);
-    
-    if (lastPoint.player === 'A') {
-      setPlayerA({ ...playerA, score: playerA.score - 1 });
-    } else {
-      setPlayerB({ ...playerB, score: playerB.score - 1 });
-    }
-    
-    // Notify parent component
-    const newPlayerA = { ...playerA, score: lastPoint.player === 'A' ? playerA.score - 1 : playerA.score };
-    const newPlayerB = { ...playerB, score: lastPoint.player === 'B' ? playerB.score - 1 : playerB.score };
-    onScoreUpdate?.(newPlayerA, newPlayerB, newHistory);
   };
 
   const handleAnalysisSelect = (reasonId: string) => {
-    addPoint(currentPoint!.player, reasonId);
+    onScoreUpdate(currentPoint!.player, reasonId);
+    setShowAnalysis(false);
+    setCurrentPoint(null);
   };
 
   const skipAnalysis = () => {
-    addPoint(currentPoint!.player, 'skipped');
+    onScoreUpdate(currentPoint!.player, 'skipped');
+    setShowAnalysis(false);
+    setCurrentPoint(null);
   };
 
   const getStats = () => {
@@ -138,29 +92,31 @@ export default function LiveScoring({
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="max-w-4xl mx-auto mb-6 p-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">Badminton Scorer</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 glass-card rounded-lg hover:bg-white/5 transition"
-            >
-              <Settings size={20} className="text-tertiary" />
-            </button>
-            <button
-              onClick={handleUndo}
-              disabled={history.length === 0}
-              className="p-2 glass-card rounded-lg hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Undo2 size={20} className="text-tertiary" />
-            </button>
+      <div className="glass-card-intense border-b">
+        <div className="max-w-4xl mx-auto mb-6 p-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-primary">Badminton Scorer</h1>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 glass-card rounded-lg hover:bg-white/5 transition"
+              >
+                <Settings size={20} className="text-tertiary" />
+              </button>
+              <button
+                onClick={onUndo}
+                disabled={history.length === 0}
+                className="p-2 glass-card rounded-lg hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Undo2 size={20} className="text-tertiary" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Settings Panel */}
-      {showSettings && (
+      {showSettings && onToggleTracking && (
         <div className="max-w-4xl mx-auto mb-6 glass-card rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -168,7 +124,7 @@ export default function LiveScoring({
               <p className="text-sm text-tertiary">Record why each point was won/lost</p>
             </div>
             <button
-              onClick={() => setTrackingEnabled(!trackingEnabled)}
+              onClick={() => onToggleTracking(!trackingEnabled)}
               className={`relative w-14 h-8 rounded-full transition ${
                 trackingEnabled ? 'bg-primary' : 'bg-gray-600'
               }`}

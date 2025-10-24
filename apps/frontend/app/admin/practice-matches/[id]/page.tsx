@@ -112,16 +112,16 @@ export default function PracticeMatchScoringPage({
     }
   };
 
-  const handleScoreUpdate = async (gameNumber: number, player1Score: number, player2Score: number) => {
+  const handleScoreUpdate = async (playerA: any, playerB: any, history: any[]) => {
     try {
       const response = await fetch(`/api/practice-matches/${id}/score`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'update_score',
-          gameNumber,
-          player1Score,
-          player2Score,
+          player1Score: playerA.score,
+          player2Score: playerB.score,
+          pointHistory: history,
           scoringFormat: {
             pointsPerGame: 21,
             gamesPerMatch: 3,
@@ -144,6 +144,31 @@ export default function PracticeMatchScoringPage({
       }
     } catch (error) {
       console.error('Error updating score:', error);
+    }
+  };
+
+  const handleMatchComplete = async (winner: any, finalScore: any) => {
+    try {
+      const response = await fetch(`/api/practice-matches/${id}/score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'end_match',
+          winnerId: winner.id,
+          winnerName: winner.name,
+          finalScore,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMatch(data.match);
+        setTimeout(() => {
+          router.push('/admin/practice-matches');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Error completing match:', error);
     }
   };
 
@@ -181,20 +206,20 @@ export default function PracticeMatchScoringPage({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <Card className="glass-card border-white/10 max-w-md">
           <CardContent className="p-8 text-center">
             <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-white mb-2">Match Not Found</h2>
-            <p className="text-gray-400 mb-6">The practice match you're looking for doesn't exist.</p>
+            <h2 className="text-xl font-semibold text-primary mb-2">Match Not Found</h2>
+            <p className="text-tertiary mb-6">The practice match you're looking for doesn't exist.</p>
             <Link href="/admin/practice-matches">
               <Button>Back to Practice Matches</Button>
             </Link>
@@ -205,9 +230,9 @@ export default function PracticeMatchScoringPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="glass-card-intense border-b border-white/10">
+      <div className="glass-card-intense border-b">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -217,17 +242,17 @@ export default function PracticeMatchScoringPage({
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
                   <Dumbbell className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">Practice Match</h1>
+                  <h1 className="text-2xl font-bold text-primary">Practice Match</h1>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge className={getCategoryBadge(match.category)}>
                       {match.category}
                     </Badge>
-                    <span className="text-sm text-gray-400">•</span>
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-tertiary">•</span>
+                    <span className="text-sm text-tertiary">
                       {new Date(match.createdAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -424,11 +449,24 @@ export default function PracticeMatchScoringPage({
                 </CardContent>
               </Card>
             ) : (
-              <SimpleLiveScoring
-                match={match}
-                currentGame={currentGame}
+              <LiveScoring
+                matchId={match._id}
+                playerA={{ 
+                  name: match.player1Name, 
+                  score: match.games && match.games.length > 0 
+                    ? match.games[match.games.length - 1].player1Score || 0 
+                    : 0, 
+                  id: match.player1Id || 'guest1' 
+                }}
+                playerB={{ 
+                  name: match.player2Name, 
+                  score: match.games && match.games.length > 0 
+                    ? match.games[match.games.length - 1].player2Score || 0 
+                    : 0, 
+                  id: match.player2Id || 'guest2' 
+                }}
                 onScoreUpdate={handleScoreUpdate}
-                onWalkover={handleWalkover}
+                onMatchComplete={handleMatchComplete}
               />
             )}
           </>
@@ -450,196 +488,4 @@ export default function PracticeMatchScoringPage({
   );
 }
 
-// Simplified Live Scoring Component for Practice Matches
-function SimpleLiveScoring({
-  match,
-  currentGame,
-  onScoreUpdate,
-  onWalkover,
-}: {
-  match: PracticeMatch;
-  currentGame: number;
-  onScoreUpdate: (gameNumber: number, player1Score: number, player2Score: number) => void;
-  onWalkover: (winner: 'player1' | 'player2', reason: string) => void;
-}) {
-  const [player1Score, setPlayer1Score] = useState(0);
-  const [player2Score, setPlayer2Score] = useState(0);
-  const [showWalkoverDialog, setShowWalkoverDialog] = useState(false);
-
-  // Load current game scores if available
-  useEffect(() => {
-    if (match.games && match.games.length > 0) {
-      const currentGameData = match.games.find((g: any) => g.gameNumber === currentGame);
-      if (currentGameData && !currentGameData.winner) {
-        setPlayer1Score(currentGameData.player1Score || 0);
-        setPlayer2Score(currentGameData.player2Score || 0);
-      }
-    }
-  }, [match.games, currentGame]);
-
-  const handleScoreChange = (player: 'player1' | 'player2', delta: number) => {
-    if (player === 'player1') {
-      const newScore = Math.max(0, player1Score + delta);
-      setPlayer1Score(newScore);
-      onScoreUpdate(currentGame, newScore, player2Score);
-    } else {
-      const newScore = Math.max(0, player2Score + delta);
-      setPlayer2Score(newScore);
-      onScoreUpdate(currentGame, player1Score, newScore);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <Card className="glass-card border-white/10">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-white">Game {currentGame}</CardTitle>
-            <Badge className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
-              <AlertCircle className="mr-1 h-3 w-3" />
-              In Progress
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-6">
-            {/* Player 1 Score */}
-            <div className="space-y-4">
-              <div className="text-center">
-                <p className="text-sm text-gray-400 mb-2">{match.player1Name}</p>
-                <div className="text-6xl font-bold text-blue-400 mb-4">{player1Score}</div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleScoreChange('player1', 1)}
-                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
-                    size="lg"
-                  >
-                    +1
-                  </Button>
-                  <Button
-                    onClick={() => handleScoreChange('player1', -1)}
-                    variant="outline"
-                    className="border-blue-500/20 hover:bg-blue-500/10"
-                    size="lg"
-                    disabled={player1Score === 0}
-                  >
-                    -1
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Player 2 Score */}
-            <div className="space-y-4">
-              <div className="text-center">
-                <p className="text-sm text-gray-400 mb-2">{match.player2Name}</p>
-                <div className="text-6xl font-bold text-pink-400 mb-4">{player2Score}</div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleScoreChange('player2', 1)}
-                    className="flex-1 bg-pink-500 hover:bg-pink-600 text-white"
-                    size="lg"
-                  >
-                    +1
-                  </Button>
-                  <Button
-                    onClick={() => handleScoreChange('player2', -1)}
-                    variant="outline"
-                    className="border-pink-500/20 hover:bg-pink-500/10"
-                    size="lg"
-                    disabled={player2Score === 0}
-                  >
-                    -1
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Walkover Button */}
-          <div className="mt-6 pt-6 border-t border-white/10">
-            <Button
-              variant="outline"
-              onClick={() => setShowWalkoverDialog(true)}
-              className="w-full border-red-500/20 hover:bg-red-500/10 text-red-400"
-            >
-              Record Walkover
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Previous Games */}
-      {match.games && match.games.filter((g: any) => g.winner).length > 0 && (
-        <Card className="glass-card border-white/10">
-          <CardHeader>
-            <CardTitle className="text-sm text-gray-400">Previous Games</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {match.games
-              .filter((g: any) => g.winner)
-              .map((game: any) => (
-                <div key={game.gameNumber} className="flex items-center justify-between glass-card p-3 rounded-lg">
-                  <span className="text-sm text-gray-400">Game {game.gameNumber}</span>
-                  <div className="flex items-center gap-4">
-                    <span className={`text-sm font-medium ${game.winner === 'player1' ? 'text-blue-400' : 'text-gray-500'}`}>
-                      {game.player1Score}
-                    </span>
-                    <span className="text-gray-600">-</span>
-                    <span className={`text-sm font-medium ${game.winner === 'player2' ? 'text-pink-400' : 'text-gray-500'}`}>
-                      {game.player2Score}
-                    </span>
-                  </div>
-                  <Badge className={game.winner === 'player1' ? 'bg-blue-500/10 text-blue-400' : 'bg-pink-500/10 text-pink-400'}>
-                    {game.winner === 'player1' ? match.player1Name.split(' ')[0] : match.player2Name.split(' ')[0]}
-                  </Badge>
-                </div>
-              ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Walkover Dialog */}
-      {showWalkoverDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <Card className="glass-card-intense border border-white/10 w-full max-w-md">
-            <CardHeader>
-              <CardTitle className="text-white">Record Walkover</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-gray-400">Select the winner of the walkover:</p>
-              <div className="space-y-2">
-                <Button
-                  onClick={() => {
-                    onWalkover('player1', 'Walkover');
-                    setShowWalkoverDialog(false);
-                  }}
-                  className="w-full bg-blue-500 hover:bg-blue-600"
-                >
-                  {match.player1Name}
-                </Button>
-                <Button
-                  onClick={() => {
-                    onWalkover('player2', 'Walkover');
-                    setShowWalkoverDialog(false);
-                  }}
-                  className="w-full bg-pink-500 hover:bg-pink-600"
-                >
-                  {match.player2Name}
-                </Button>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setShowWalkoverDialog(false)}
-                className="w-full border-white/10"
-              >
-                Cancel
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
-  );
-}
 

@@ -50,7 +50,7 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
           pageSubtitle={subtitle}
         />
         <main className="relative z-10 w-full pb-20 lg:pb-0">{children}</main>
-        <MobileBottomNavigation />
+        {/* <MobileBottomNavigation /> */}
       </div>
       <CommandPalette
         isOpen={isCommandPaletteOpen}
