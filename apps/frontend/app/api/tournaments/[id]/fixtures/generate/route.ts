@@ -148,11 +148,41 @@ export async function POST(
       );
     }
 
-    // Get approved participants grouped by category and age group
-    const participants = await db.collection(COLLECTIONS.PARTICIPANTS).find({
-      tournamentId: new ObjectId(id),
-      isApproved: true
-    }).toArray();
+    // Get approved participants with user details
+    const participants = await db.collection(COLLECTIONS.PARTICIPANTS)
+      .aggregate([
+        {
+          $match: {
+            tournamentId: new ObjectId(id),
+            isApproved: true
+          }
+        },
+        {
+          $lookup: {
+            from: COLLECTIONS.USERS,
+            localField: 'userId',
+            foreignField: '_id',
+            as: 'userDetails'
+          }
+        },
+        {
+          $unwind: {
+            path: '$userDetails',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $project: {
+            userId: 1,
+            category: 1,
+            gender: 1,
+            ageGroup: 1,
+            name: '$userDetails.name',
+            phone: '$userDetails.phone'
+          }
+        }
+      ])
+      .toArray();
 
     if (participants.length < 2) {
       return NextResponse.json(
@@ -217,6 +247,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: `Generated ${allMatches.length} matches successfully`,
+      matchesCreated: allMatches.length,
       data: { matchCount: allMatches.length }
     });
 

@@ -1,10 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
 import { Button } from '@repo/ui';
 import { Badge } from '@repo/ui';
+import { Label } from '@repo/ui';
+import { Input } from '@repo/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@repo/ui';
+import { Alert, AlertDescription } from '@repo/ui';
 import { 
   Trophy, 
   Calendar, 
@@ -12,13 +17,14 @@ import {
   Users,
   DollarSign,
   ArrowLeft,
-  Plus,
   CheckCircle,
   XCircle,
   Clock,
-  Phone,
-  Mail,
-  Home
+  Info,
+  Loader2,
+  Sparkles,
+  Target,
+  Award
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -37,83 +43,128 @@ interface Tournament {
   maxParticipants: number;
   tournamentType: string;
   allowedSociety?: string;
-  isPublished: boolean;
-  participantCount: number;
+  format: string;
+  description?: string;
   rules?: string;
-  prizes?: {
-    winner: number;
-    runnerUp: number;
-    semiFinalist: number;
-  };
+  prizes?: string;
+  contactPerson?: string;
+  contactPhone?: string;
+  participantCount: number;
+  registrationDeadline?: string;
 }
 
-interface Participant {
-  _id: string;
-  name: string;
-  phone: string;
-  category: string;
-  paymentStatus: string;
-  isApproved: boolean;
-  registeredAt: string;
-}
-
-export default function TournamentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function TournamentDetailPage() {
+  const { id } = useParams();
+  const router = useRouter();
   const { user } = useAuth();
   const [tournament, setTournament] = useState<Tournament | null>(null);
-  const [participants, setParticipants] = useState<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [error, setError] = useState('');
-  const [tournamentId, setTournamentId] = useState<string>('');
+  const [success, setSuccess] = useState('');
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+
+  const [registrationForm, setRegistrationForm] = useState({
+    category: '',
+    ageGroup: '',
+    partnerName: '',
+    partnerPhone: '',
+    partnerAge: '',
+    partnerGender: '',
+    paymentMethod: 'cash',
+    transactionId: '',
+  });
 
   useEffect(() => {
-    params.then(p => {
-      setTournamentId(p.id);
-    });
-  }, [params]);
+    fetchTournament();
+  }, [id]);
 
-  useEffect(() => {
-    if (tournamentId) {
-      fetchTournamentDetails();
-    }
-  }, [tournamentId]);
-
-  const fetchTournamentDetails = async () => {
+  const fetchTournament = async () => {
     try {
       setIsLoading(true);
-      
-      // Fetch tournament details
-      const tournamentResponse = await fetch(`/api/tournaments/${tournamentId}`);
-      if (!tournamentResponse.ok) {
-        throw new Error('Tournament not found');
-      }
-      const tournamentData = await tournamentResponse.json();
-      setTournament(tournamentData);
+      const response = await fetch(`/api/tournaments/${id}`);
+      const result = await response.json();
 
-      // Fetch participants
-      const participantsResponse = await fetch(`/api/tournaments/${tournamentId}/participants`);
-      if (participantsResponse.ok) {
-        const participantsData = await participantsResponse.json();
-        setParticipants(participantsData);
+      if (result.success) {
+        setTournament(result.data);
+        
+        // Check if user is already registered
+        if (user) {
+          const participantsResponse = await fetch(`/api/tournaments/${id}/participants`);
+          const participantsResult = await participantsResponse.json();
+          
+          if (participantsResult.success && participantsResult.data) {
+            const isRegistered = participantsResult.data.some(
+              (p: any) => p.userId === user._id
+            );
+            setAlreadyRegistered(isRegistered);
+          }
+        }
+      } else {
+        setError('Tournament not found');
       }
     } catch (error) {
-      console.error('Error fetching tournament details:', error);
-      setError('Failed to load tournament details');
+      console.error('Error fetching tournament:', error);
+      setError('Failed to load tournament');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      router.push(`/login?redirect=/tournaments/${id}`);
+      return;
+    }
+
+    setIsRegistering(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch(`/api/tournaments/${id}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registrationForm),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSuccess(result.message || 'Registration successful! Waiting for admin approval.');
+        setShowRegistrationForm(false);
+        setAlreadyRegistered(true);
+        
+        // Refresh tournament data
+        setTimeout(() => {
+          fetchTournament();
+        }, 2000);
+      } else {
+        setError(result.error || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Error registering:', error);
+      setError('Failed to register. Please try again.');
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'published':
       case 'registration_open':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-500 text-white';
       case 'ongoing':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-500 text-white';
       case 'completed':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-500 text-white';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-500 text-white';
     }
   };
 
@@ -121,25 +172,12 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ id:
     switch (status) {
       case 'registration_open':
         return 'Registration Open';
-      case 'published':
-        return 'Published';
       case 'ongoing':
         return 'Ongoing';
       case 'completed':
         return 'Completed';
       default:
         return status.replace('_', ' ');
-    }
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -153,287 +191,594 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ id:
   };
 
   const canRegister = () => {
-    if (!tournament) return false;
-    return tournament.status === 'registration_open' && 
-           tournament.participantCount < tournament.maxParticipants &&
-           isEligibleForTournament();
+    if (!tournament || !user) return false;
+    return (
+      tournament.status === 'registration_open' &&
+      tournament.participantCount < tournament.maxParticipants &&
+      isEligibleForTournament() &&
+      !alreadyRegistered
+    );
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (error || !tournament) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
-          <Trophy className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Tournament Not Found</h2>
-          <p className="text-gray-600 mb-6">{error || 'The tournament you\'re looking for doesn\'t exist.'}</p>
-          <Button asChild>
-            <Link href="/tournaments">Back to Tournaments</Link>
-          </Button>
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading tournament details...</p>
         </div>
       </div>
     );
   }
 
+  if (error && !tournament) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Tournament Not Found</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <Button asChild>
+              <Link href="/tournaments">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Tournaments
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!tournament) return null;
+
+  const isDoubles = tournament.categories.some(cat => 
+    cat.toLowerCase().includes('doubles') || cat.toLowerCase().includes('mixed')
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}
         <div className="mb-6">
-          <Button variant="ghost" asChild>
-            <Link href="/tournaments" className="flex items-center">
+          <Button variant="outline" asChild size="sm">
+            <Link href="/tournaments">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Tournaments
             </Link>
           </Button>
         </div>
 
-        {/* Tournament Header */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
-              <div className="flex-1 mb-4 lg:mb-0">
-                <div className="flex items-center space-x-2 mb-2">
-                  <CardTitle className="text-2xl lg:text-3xl">{tournament.name}</CardTitle>
-                  <Badge className={getStatusColor(tournament.status)}>
-                    {getStatusText(tournament.status)}
-                  </Badge>
-                  {tournament.tournamentType === 'society_only' && (
-                    <Badge variant="outline">
-                      Society Only
-                    </Badge>
-                  )}
-                </div>
-                <CardDescription className="text-lg">
+        {/* Hero Section */}
+        <Card className="mb-8 overflow-hidden border-0 shadow-2xl bg-white/80 backdrop-blur-sm">
+          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <Badge className={`${getStatusColor(tournament.status)} mb-4`}>
+                  {getStatusText(tournament.status)}
+                </Badge>
+                <h1 className="text-3xl lg:text-4xl font-bold mb-2">
+                  {tournament.name}
+                </h1>
+                <p className="text-blue-100 text-lg flex items-center">
+                  <Trophy className="h-5 w-5 mr-2" />
                   {tournament.sport.charAt(0).toUpperCase() + tournament.sport.slice(1)} Tournament
-                </CardDescription>
+                </p>
               </div>
-              
-              {canRegister() && (
-                <Button size="lg" asChild>
-                  <Link href={`/tournaments/${tournament._id}/register`}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Register Now
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-        </Card>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Tournament Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Basic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Tournament Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Start Date</p>
-                      <p className="text-sm text-gray-600">{new Date(tournament.startDate).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">End Date</p>
-                      <p className="text-sm text-gray-600">{new Date(tournament.endDate).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <MapPin className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Venue</p>
-                      <p className="text-sm text-gray-600">{tournament.venue}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <DollarSign className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Entry Fee</p>
-                      <p className="text-sm text-gray-600">₹{tournament.entryFee}</p>
-                    </div>
-                  </div>
+              <div className="hidden md:block">
+                <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
+                  <div className="text-3xl font-bold">{tournament.participantCount}</div>
+                  <div className="text-sm text-blue-100">Participants</div>
                 </div>
-
-                {/* Categories */}
-                {tournament.categories && tournament.categories.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-2">Categories</p>
-                    <div className="flex flex-wrap gap-2">
-                      {tournament.categories.map((category) => (
-                        <Badge key={category} variant="secondary">
-                          {category}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Age Groups */}
-                {tournament.ageGroups && tournament.ageGroups.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-2">Age Groups</p>
-                    <div className="flex flex-wrap gap-2">
-                      {tournament.ageGroups.map((ageGroup) => (
-                        <Badge key={ageGroup} variant="outline">
-                          {ageGroup}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Rules */}
-                {tournament.rules && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-2">Rules</p>
-                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{tournament.rules}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Participants */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Participants ({participants.length}/{tournament.maxParticipants})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {participants.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No participants yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {participants.map((participant) => (
-                      <div key={participant._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h4 className="font-medium text-gray-900">{participant.name}</h4>
-                            <Badge className={getPaymentStatusColor(participant.paymentStatus)}>
-                              {participant.paymentStatus}
-                            </Badge>
-                            {participant.isApproved ? (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <Clock className="h-4 w-4 text-yellow-600" />
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <span className="flex items-center">
-                              <Phone className="h-3 w-3 mr-1" />
-                              {participant.phone}
-                            </span>
-                            <span>{participant.category}</span>
-                            <span>{new Date(participant.registeredAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Registration Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Registration</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-900">Participants</span>
-                  <span className="text-sm text-gray-600">{tournament.participantCount}/{tournament.maxParticipants}</span>
+          <CardContent className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {/* Key Info Cards */}
+              <div className="flex items-start space-x-3">
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <Calendar className="h-6 w-6 text-blue-600" />
                 </div>
-                
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(tournament.participantCount / tournament.maxParticipants) * 100}%` }}
-                  ></div>
-                </div>
-
-                {tournament.tournamentType === 'society_only' && tournament.allowedSociety && (
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <div className="flex items-center text-sm text-blue-800">
-                      <Home className="h-4 w-4 mr-2" />
-                      <span>Only for {tournament.allowedSociety} residents</span>
-                    </div>
-                    {isEligibleForTournament() ? (
-                      <div className="flex items-center text-sm text-green-600 mt-2">
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        You are eligible
-                      </div>
-                    ) : (
-                      <div className="flex items-center text-sm text-red-600 mt-2">
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Not eligible
-                      </div>
+                <div>
+                  <div className="text-sm text-gray-600">Tournament Dates</div>
+                  <div className="font-semibold text-gray-900">
+                    {new Date(tournament.startDate).toLocaleDateString('en-IN', { 
+                      day: 'numeric', 
+                      month: 'short' 
+                    })}
+                    {tournament.startDate !== tournament.endDate && (
+                      <> - {new Date(tournament.endDate).toLocaleDateString('en-IN', { 
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric' 
+                      })}</>
                     )}
                   </div>
-                )}
+                </div>
+              </div>
 
-                {canRegister() && (
-                  <Button asChild className="w-full">
-                    <Link href={`/tournaments/${tournament._id}/register`}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Register Now
+              <div className="flex items-start space-x-3">
+                <div className="p-3 bg-green-100 rounded-xl">
+                  <MapPin className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">Venue</div>
+                  <div className="font-semibold text-gray-900">{tournament.venue}</div>
+                  <div className="text-sm text-gray-500">{tournament.location}</div>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <div className="p-3 bg-purple-100 rounded-xl">
+                  <DollarSign className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">Entry Fee</div>
+                  <div className="font-semibold text-gray-900">₹{tournament.entryFee}</div>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <div className="p-3 bg-orange-100 rounded-xl">
+                  <Users className="h-6 w-6 text-orange-600" />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">Capacity</div>
+                  <div className="font-semibold text-gray-900">
+                    {tournament.participantCount} / {tournament.maxParticipants}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Categories */}
+            {tournament.categories && tournament.categories.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <Target className="h-4 w-4 mr-2" />
+                  Categories Available
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {tournament.categories.map((category) => (
+                    <Badge key={category} variant="secondary" className="text-sm px-4 py-2">
+                      {category}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Age Groups */}
+            {tournament.ageGroups && tournament.ageGroups.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Age Groups</h3>
+                <div className="flex flex-wrap gap-2">
+                  {tournament.ageGroups.map((ageGroup) => (
+                    <Badge key={ageGroup} variant="outline" className="text-sm px-4 py-2">
+                      {ageGroup}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Registration Deadline */}
+            {tournament.registrationDeadline && (
+              <Alert className="mb-6 border-orange-200 bg-orange-50">
+                <Clock className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-orange-800">
+                  Registration closes on{' '}
+                  <strong>
+                    {new Date(tournament.registrationDeadline).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </strong>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Success/Error Messages */}
+            {success && (
+              <Alert className="mb-6 border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">{success}</AlertDescription>
+              </Alert>
+            )}
+
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <XCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Eligibility Check */}
+            {tournament.tournamentType === 'society_only' && tournament.allowedSociety && (
+              <Alert className={`mb-6 ${isEligibleForTournament() ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                <Info className={`h-4 w-4 ${isEligibleForTournament() ? 'text-green-600' : 'text-red-600'}`} />
+                <AlertDescription className={isEligibleForTournament() ? 'text-green-800' : 'text-red-800'}>
+                  {isEligibleForTournament() 
+                    ? `✓ You are eligible for this tournament (${tournament.allowedSociety} resident)`
+                    : `This tournament is only for residents of ${tournament.allowedSociety}`
+                  }
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Already Registered */}
+            {alreadyRegistered && (
+              <Alert className="mb-6 border-blue-200 bg-blue-50">
+                <CheckCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  ✓ You are already registered for this tournament. Check your dashboard for updates.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Registration Button */}
+            {!showRegistrationForm && (
+              <div className="flex flex-col sm:flex-row gap-4">
+                {canRegister() ? (
+                  <Button 
+                    size="lg" 
+                    className="flex-1 text-lg h-14"
+                    onClick={() => setShowRegistrationForm(true)}
+                  >
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    Register for Tournament
+                  </Button>
+                ) : alreadyRegistered ? (
+                  <Button size="lg" className="flex-1 text-lg h-14" disabled>
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    Already Registered
+                  </Button>
+                ) : tournament.status !== 'registration_open' ? (
+                  <Button size="lg" className="flex-1 text-lg h-14" disabled>
+                    <Clock className="h-5 w-5 mr-2" />
+                    Registration Closed
+                  </Button>
+                ) : tournament.participantCount >= tournament.maxParticipants ? (
+                  <Button size="lg" className="flex-1 text-lg h-14" disabled>
+                    <XCircle className="h-5 w-5 mr-2" />
+                    Tournament Full
+                  </Button>
+                ) : !user ? (
+                  <Button 
+                    size="lg" 
+                    className="flex-1 text-lg h-14"
+                    onClick={() => router.push(`/login?redirect=/tournaments/${id}`)}
+                  >
+                    Sign In to Register
+                  </Button>
+                ) : (
+                  <Button size="lg" className="flex-1 text-lg h-14" disabled>
+                    <XCircle className="h-5 w-5 mr-2" />
+                    Not Eligible
+                  </Button>
+                )}
+                
+                {user && (
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    className="sm:w-auto text-lg h-14"
+                    asChild
+                  >
+                    <Link href="/player/dashboard">
+                      Go to Dashboard
                     </Link>
                   </Button>
                 )}
+              </div>
+            )}
 
-                {tournament.status === 'registration_open' && tournament.participantCount >= tournament.maxParticipants && (
-                  <div className="flex items-center text-sm text-red-600">
-                    <XCircle className="h-4 w-4 mr-1" />
-                    Registration Full
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Prizes */}
-            {tournament.prizes && (
-              <Card>
+            {/* Registration Form */}
+            {showRegistrationForm && canRegister() && (
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
                 <CardHeader>
-                  <CardTitle>Prizes</CardTitle>
+                  <CardTitle className="flex items-center">
+                    <Sparkles className="h-5 w-5 mr-2 text-blue-600" />
+                    Complete Your Registration
+                  </CardTitle>
+                  <CardDescription>
+                    Fill in the required details to register for this tournament
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-900">Winner</span>
-                    <span className="text-sm font-semibold text-green-600">₹{tournament.prizes.winner}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-900">Runner-up</span>
-                    <span className="text-sm font-semibold text-blue-600">₹{tournament.prizes.runnerUp}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-900">Semi-finalist</span>
-                    <span className="text-sm font-semibold text-orange-600">₹{tournament.prizes.semiFinalist}</span>
-                  </div>
+                <CardContent>
+                  <form onSubmit={handleRegister} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Category Selection */}
+                      <div className="space-y-2">
+                        <Label htmlFor="category">Category *</Label>
+                        <Select 
+                          value={registrationForm.category}
+                          onValueChange={(value) => setRegistrationForm({ ...registrationForm, category: value })}
+                          required
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tournament.categories.map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {category}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Age Group Selection */}
+                      {tournament.ageGroups && tournament.ageGroups.length > 0 && (
+                        <div className="space-y-2">
+                          <Label htmlFor="ageGroup">Age Group *</Label>
+                          <Select 
+                            value={registrationForm.ageGroup}
+                            onValueChange={(value) => setRegistrationForm({ ...registrationForm, ageGroup: value })}
+                            required
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select age group" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {tournament.ageGroups.map((ageGroup) => (
+                                <SelectItem key={ageGroup} value={ageGroup}>
+                                  {ageGroup}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Partner Details for Doubles */}
+                    {isDoubles && (
+                      <div className="space-y-4 p-4 bg-white/50 rounded-lg border border-blue-200">
+                        <h4 className="font-semibold text-gray-900 flex items-center">
+                          <Users className="h-4 w-4 mr-2" />
+                          Partner Details (For Doubles)
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="partnerName">Partner Name</Label>
+                            <Input
+                              id="partnerName"
+                              type="text"
+                              placeholder="Partner's full name"
+                              value={registrationForm.partnerName}
+                              onChange={(e) => setRegistrationForm({ ...registrationForm, partnerName: e.target.value })}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="partnerPhone">Partner Phone</Label>
+                            <Input
+                              id="partnerPhone"
+                              type="tel"
+                              placeholder="+91 9876543210"
+                              value={registrationForm.partnerPhone}
+                              onChange={(e) => setRegistrationForm({ ...registrationForm, partnerPhone: e.target.value })}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="partnerAge">Partner Age</Label>
+                            <Input
+                              id="partnerAge"
+                              type="number"
+                              placeholder="Age"
+                              value={registrationForm.partnerAge}
+                              onChange={(e) => setRegistrationForm({ ...registrationForm, partnerAge: e.target.value })}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="partnerGender">Partner Gender</Label>
+                            <Select 
+                              value={registrationForm.partnerGender}
+                              onValueChange={(value) => setRegistrationForm({ ...registrationForm, partnerGender: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select gender" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="male">Male</SelectItem>
+                                <SelectItem value="female">Female</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Payment Details */}
+                    <div className="space-y-4 p-4 bg-white/50 rounded-lg border border-blue-200">
+                      <h4 className="font-semibold text-gray-900 flex items-center">
+                        <DollarSign className="h-4 w-4 mr-2" />
+                        Payment Details
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="paymentMethod">Payment Method *</Label>
+                          <Select 
+                            value={registrationForm.paymentMethod}
+                            onValueChange={(value) => setRegistrationForm({ ...registrationForm, paymentMethod: value })}
+                            required
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select payment method" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cash">Cash</SelectItem>
+                              <SelectItem value="upi">UPI</SelectItem>
+                              <SelectItem value="card">Card</SelectItem>
+                              <SelectItem value="netbanking">Net Banking</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {registrationForm.paymentMethod !== 'cash' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="transactionId">Transaction ID</Label>
+                            <Input
+                              id="transactionId"
+                              type="text"
+                              placeholder="Enter transaction ID"
+                              value={registrationForm.transactionId}
+                              onChange={(e) => setRegistrationForm({ ...registrationForm, transactionId: e.target.value })}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Entry fee: <strong>₹{tournament.entryFee}</strong>
+                      </p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                      <Button 
+                        type="submit" 
+                        size="lg" 
+                        className="flex-1"
+                        disabled={isRegistering}
+                      >
+                        {isRegistering ? (
+                          <>
+                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                            Registering...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-5 w-5 mr-2" />
+                            Complete Registration
+                          </>
+                        )}
+                      </Button>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="lg"
+                        onClick={() => setShowRegistrationForm(false)}
+                        disabled={isRegistering}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
                 </CardContent>
               </Card>
             )}
-          </div>
+          </CardContent>
+        </Card>
+
+        {/* Additional Information */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Description */}
+          {tournament.description && (
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Info className="h-5 w-5 mr-2 text-blue-600" />
+                  About Tournament
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 whitespace-pre-wrap">{tournament.description}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tournament Format */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Trophy className="h-5 w-5 mr-2 text-purple-600" />
+                Format
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div>
+                  <div className="text-sm text-gray-600">Tournament Format</div>
+                  <div className="font-semibold text-gray-900 capitalize">{tournament.format}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">Tournament Type</div>
+                  <div className="font-semibold text-gray-900 capitalize">
+                    {tournament.tournamentType.replace('_', ' ')}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Rules */}
+          {tournament.rules && (
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Award className="h-5 w-5 mr-2 text-green-600" />
+                  Rules & Regulations
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 whitespace-pre-wrap">{tournament.rules}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Prizes */}
+          {tournament.prizes && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Award className="h-5 w-5 mr-2 text-yellow-600" />
+                  Prizes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 whitespace-pre-wrap">{tournament.prizes}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Contact Information */}
+          {(tournament.contactPerson || tournament.contactPhone) && (
+            <Card className="lg:col-span-3">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="h-5 w-5 mr-2 text-indigo-600" />
+                  Contact Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {tournament.contactPerson && (
+                    <div>
+                      <div className="text-sm text-gray-600">Contact Person</div>
+                      <div className="font-semibold text-gray-900">{tournament.contactPerson}</div>
+                    </div>
+                  )}
+                  {tournament.contactPhone && (
+                    <div>
+                      <div className="text-sm text-gray-600">Contact Phone</div>
+                      <div className="font-semibold text-gray-900">{tournament.contactPhone}</div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

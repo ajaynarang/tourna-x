@@ -16,16 +16,18 @@ import {
 
 interface Participant {
   _id: string;
-  userId: string;
+  userId: {
+    _id: string;
+    name: string;
+    phone: string;
+    email?: string;
+  };
   tournamentId: string;
   tournamentName: string;
-  name: string;
-  phone: string;
-  email?: string;
   category: string;
   gender: string;
   isApproved: boolean;
-  paymentStatus: 'pending' | 'paid';
+  paymentStatus: 'pending' | 'paid' | 'na';
   registeredAt: string;
 }
 
@@ -66,9 +68,9 @@ export default function AdminParticipantsPage() {
 
     if (searchTerm) {
       filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.phone.includes(searchTerm) ||
-        p.tournamentName.toLowerCase().includes(searchTerm.toLowerCase())
+        p.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.userId?.phone?.includes(searchTerm) ||
+        p.tournamentName?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -287,21 +289,21 @@ function ParticipantCard({
         {/* Avatar */}
         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-blue-500">
           <span className="text-lg font-bold text-white">
-            {participant.name.charAt(0).toUpperCase()}
+            {participant.userId?.name?.charAt(0).toUpperCase() || 'P'}
           </span>
         </div>
 
         {/* Info */}
         <div className="min-w-0 flex-1">
-          <h3 className="text-primary truncate font-semibold">{participant.name}</h3>
+          <h3 className="text-primary truncate font-semibold">{participant.userId?.name || 'Unknown'}</h3>
           <div className="text-tertiary mt-1 flex flex-wrap items-center gap-3 text-sm">
             <span className="flex items-center gap-1">
               <Phone className="h-3 w-3" />
-              {participant.phone}
+              {participant.userId?.phone || 'N/A'}
             </span>
             <span className="flex items-center gap-1">
               <Trophy className="h-3 w-3" />
-              {participant.tournamentName}
+              {participant.tournamentName || 'Unknown Tournament'}
             </span>
           </div>
           <div className="text-tertiary mt-1 flex flex-wrap items-center gap-3 text-xs">

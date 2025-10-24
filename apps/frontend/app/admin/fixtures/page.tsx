@@ -1,446 +1,324 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
-import { Button } from '@repo/ui';
-import { Badge } from '@repo/ui';
-import { 
-  Calendar, 
-  Clock,
-  MapPin,
-  Users,
+import { useRouter } from 'next/navigation';
+import { AuthGuard } from '@/components/auth-guard';
+import { motion } from 'framer-motion';
+import {
   Trophy,
-  ArrowLeft,
-  RefreshCw,
-  Filter,
-  Search,
-  Plus,
-  Edit,
-  Eye,
+  Calendar,
+  Users,
+  Zap,
   CheckCircle,
-  XCircle,
-  AlertCircle
+  Clock,
+  AlertCircle,
+  Loader2,
+  RefreshCw,
+  Eye,
+  Edit,
 } from 'lucide-react';
 import Link from 'next/link';
 
-interface Fixture {
+interface Tournament {
   _id: string;
-  tournamentId: string;
-  tournamentName: string;
-  round: string;
-  matchNumber: number;
-  player1Name: string;
-  player2Name: string;
-  scheduledTime: string;
-  court: string;
+  name: string;
+  sport: string;
+  format: string;
   status: string;
-  player1Score: number[];
-  player2Score: number[];
-  winner?: string;
+  participantCount: number;
+  maxParticipants: number;
+  startDate: string;
+  hasFixtures: boolean;
 }
 
-export default function AdminFixtures() {
-  const { user } = useAuth();
-  const [fixtures, setFixtures] = useState<Fixture[]>([]);
+export default function AdminFixturesPage() {
+  return (
+    <AuthGuard requiredRoles={['admin']}>
+      <AdminFixturesContent />
+    </AuthGuard>
+  );
+}
+
+function AdminFixturesContent() {
+  const router = useRouter();
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
-  const [selectedTournament, setSelectedTournament] = useState<string>('all');
+  const [generatingFor, setGeneratingFor] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchFixtures();
+    fetchTournaments();
   }, []);
 
-  const fetchFixtures = async () => {
+  const fetchTournaments = async () => {
     try {
       setIsLoading(true);
+      const response = await fetch('/api/tournaments');
+      const data = await response.json();
       
-      // Mock data for now - replace with actual API call
-      const mockFixtures: Fixture[] = [
-        {
-          _id: '1',
-          tournamentId: 'tournament-1',
-          tournamentName: 'Summer Badminton Championship',
-          round: 'Quarter Final',
-          matchNumber: 1,
-          player1Name: 'John Smith',
-          player2Name: 'Sarah Johnson',
-          scheduledTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-          court: 'Court 1',
-          status: 'scheduled',
-          player1Score: [],
-          player2Score: []
-        },
-        {
-          _id: '2',
-          tournamentId: 'tournament-1',
-          tournamentName: 'Summer Badminton Championship',
-          round: 'Quarter Final',
-          matchNumber: 2,
-          player1Name: 'Mike Wilson',
-          player2Name: 'Emma Davis',
-          scheduledTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-          court: 'Court 2',
-          status: 'in_progress',
-          player1Score: [21, 15],
-          player2Score: [18, 12]
-        },
-        {
-          _id: '3',
-          tournamentId: 'tournament-1',
-          tournamentName: 'Summer Badminton Championship',
-          round: 'Semi Final',
-          matchNumber: 1,
-          player1Name: 'Alex Brown',
-          player2Name: 'Lisa Garcia',
-          scheduledTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          court: 'Court 1',
-          status: 'completed',
-          player1Score: [21, 19],
-          player2Score: [18, 21],
-          winner: 'Lisa Garcia'
-        },
-        {
-          _id: '4',
-          tournamentId: 'tournament-2',
-          tournamentName: 'Spring Tennis Open',
-          round: 'First Round',
-          matchNumber: 1,
-          player1Name: 'David Lee',
-          player2Name: 'Maria Rodriguez',
-          scheduledTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          court: 'Court 3',
-          status: 'scheduled',
-          player1Score: [],
-          player2Score: []
-        }
-      ];
+      if (data.success && Array.isArray(data.data)) {
+        // Fetch participant counts and fixture status for each tournament
+        const tournamentsWithCounts = await Promise.all(
+          data.data.map(async (tournament: any) => {
+            try {
+              // Get participant count
+              const participantsRes = await fetch(`/api/tournaments/${tournament._id}/participants`);
+              const participantsData = await participantsRes.json();
+              const participantCount = participantsData.success && Array.isArray(participantsData.data) 
+                ? participantsData.data.length 
+                : 0;
 
-      setFixtures(mockFixtures);
+              // Check if fixtures exist
+              const matchesRes = await fetch(`/api/matches?tournamentId=${tournament._id}`);
+              const matchesData = await matchesRes.json();
+              const hasFixtures = matchesData.success && Array.isArray(matchesData.data) && matchesData.data.length > 0;
+
+              return {
+                ...tournament,
+                participantCount,
+                hasFixtures,
+              };
+            } catch (error) {
+              console.error(`Error fetching data for tournament ${tournament._id}:`, error);
+              return {
+                ...tournament,
+                participantCount: 0,
+                hasFixtures: false,
+              };
+            }
+          })
+        );
+
+        setTournaments(tournamentsWithCounts);
+      }
     } catch (error) {
-      console.error('Error fetching fixtures:', error);
+      console.error('Error fetching tournaments:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'scheduled':
-        return 'bg-blue-100 text-blue-800';
-      case 'in_progress':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const handleGenerateFixtures = async (tournamentId: string) => {
+    if (!confirm('Generate fixtures for this tournament? This will create all matches based on registered participants.')) {
+      return;
     }
-  };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'scheduled':
-        return Clock;
-      case 'in_progress':
-        return AlertCircle;
-      case 'completed':
-        return CheckCircle;
-      case 'cancelled':
-        return XCircle;
-      default:
-        return Clock;
+    setGeneratingFor(tournamentId);
+    try {
+      const response = await fetch(`/api/tournaments/${tournamentId}/fixtures/generate`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Fixtures generated successfully! ${data.matchesCreated} matches created.`);
+        fetchTournaments();
+        router.push(`/admin/tournaments/${tournamentId}/fixtures`);
+      } else {
+        alert(data.error || 'Failed to generate fixtures');
+      }
+    } catch (error) {
+      console.error('Error generating fixtures:', error);
+      alert('Failed to generate fixtures');
+    } finally {
+      setGeneratingFor(null);
     }
-  };
-
-  const tournaments = Array.from(new Set(fixtures.map(f => f.tournamentName)));
-
-  const filteredFixtures = fixtures.filter(fixture => {
-    const matchesFilter = filter === 'all' || fixture.status === filter;
-    const matchesTournament = selectedTournament === 'all' || fixture.tournamentName === selectedTournament;
-    return matchesFilter && matchesTournament;
-  });
-
-  const formatScore = (player1Score: number[], player2Score: number[]) => {
-    if (player1Score.length === 0 || player2Score.length === 0) {
-      return 'TBD';
-    }
-    return `${player1Score.join('-')} vs ${player2Score.join('-')}`;
-  };
-
-  const handleUpdateScore = async (fixtureId: string) => {
-    // This would open a score update modal or navigate to scoring page
-    console.log('Update score for fixture:', fixtureId);
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-green-500" />
       </div>
     );
   }
 
+  // Show tournaments that don't have fixtures yet (including draft/published/registration_open)
+  const readyForFixtures = tournaments.filter(t => !t.hasFixtures);
+
+  // Show tournaments that already have fixtures
+  const hasFixtures = tournaments.filter(t => t.hasFixtures);
+
   return (
-    <div className="relative z-10 min-h-screen p-8">
-      <div className="w-full">
+    <div className="min-h-screen py-8">
+      <div className="mx-auto max-w-7xl px-4">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/admin/dashboard">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Dashboard
-                </Link>
-              </Button>
-              <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                  Tournament Fixtures
-                </h1>
-                <p className="text-gray-600">
-                  Manage match schedules and track tournament progress
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                onClick={() => fetchFixtures()} 
-                variant="outline" 
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </Button>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Generate Fixtures
-              </Button>
-            </div>
-          </div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <h1 className="text-primary mb-2 text-3xl font-bold">Fixture Management</h1>
+          <p className="text-secondary">Generate and manage tournament fixtures</p>
+        </motion.div>
 
-        {/* Filters */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <select
-              value={selectedTournament}
-              onChange={(e) => setSelectedTournament(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Tournaments</option>
-              {tournaments.map(tournament => (
-                <option key={tournament} value={tournament}>{tournament}</option>
+        {/* Ready for Fixtures */}
+        {readyForFixtures.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <h2 className="text-primary mb-4 flex items-center gap-2 text-xl font-semibold">
+              <Zap className="h-6 w-6 text-green-500" />
+              Ready to Generate Fixtures
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {readyForFixtures.map((tournament) => (
+                <motion.div
+                  key={tournament._id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="glass-card-intense rounded-xl p-6"
+                >
+                  <div className="mb-4 flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-primary mb-1 font-semibold">{tournament.name}</h3>
+                      <p className="text-tertiary text-sm">{tournament.sport}</p>
+                    </div>
+                    <Trophy className="h-6 w-6 text-green-400" />
+                  </div>
+
+                  <div className="mb-4 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-secondary">Format:</span>
+                      <span className="text-primary font-medium capitalize">{tournament.format}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-secondary">Participants:</span>
+                      <span className={`font-medium ${tournament.participantCount < 2 ? 'text-red-500' : 'text-primary'}`}>
+                        {tournament.participantCount}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-secondary">Status:</span>
+                      <span className="text-primary font-medium capitalize">{tournament.status}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-secondary">Start Date:</span>
+                      <span className="text-primary font-medium">
+                        {new Date(tournament.startDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {tournament.participantCount < 2 && (
+                    <div className="mb-3 flex items-start gap-2 rounded-lg bg-yellow-500/10 p-3 text-xs text-yellow-500">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <span>At least 2 participants required to generate fixtures</span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => handleGenerateFixtures(tournament._id)}
+                    disabled={generatingFor === tournament._id || tournament.participantCount < 2}
+                    className="bg-primary w-full rounded-lg px-4 py-2 font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {generatingFor === tournament._id ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        Generate Fixtures
+                      </span>
+                    )}
+                  </button>
+                </motion.div>
               ))}
-            </select>
-          </div>
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                filter === 'all'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              All ({fixtures.length})
-            </button>
-            <button
-              onClick={() => setFilter('scheduled')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                filter === 'scheduled'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Scheduled ({fixtures.filter(f => f.status === 'scheduled').length})
-            </button>
-            <button
-              onClick={() => setFilter('in_progress')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                filter === 'in_progress'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              In Progress ({fixtures.filter(f => f.status === 'in_progress').length})
-            </button>
-            <button
-              onClick={() => setFilter('completed')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                filter === 'completed'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Completed ({fixtures.filter(f => f.status === 'completed').length})
-            </button>
-          </div>
-        </div>
+            </div>
+          </motion.div>
+        )}
 
-        {/* Fixtures List */}
-        <div className="space-y-4">
-          {filteredFixtures.length === 0 ? (
-            <Card className="bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200">
-              <CardContent className="p-8 text-center">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Fixtures Found</h3>
-                <p className="text-gray-600 mb-4">
-                  {selectedTournament !== 'all' 
-                    ? 'No fixtures found for the selected tournament.' 
-                    : 'No fixtures have been generated yet.'
-                  }
-                </p>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Generate Fixtures
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredFixtures.map((fixture) => {
-              const StatusIcon = getStatusIcon(fixture.status);
-              const isUpcoming = fixture.status === 'scheduled';
-              const isInProgress = fixture.status === 'in_progress';
-              const isCompleted = fixture.status === 'completed';
-              
-              return (
-                <Card key={fixture._id} className={`${
-                  isUpcoming ? 'bg-gradient-to-br from-white to-blue-50 border-blue-200' :
-                  isInProgress ? 'bg-gradient-to-br from-white to-yellow-50 border-yellow-200' :
-                  isCompleted ? 'bg-gradient-to-br from-white to-green-50 border-green-200' :
-                  'bg-gradient-to-br from-white to-gray-50 border-gray-200'
-                }`}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {fixture.tournamentName}
-                          </h3>
-                          <Badge className={getStatusColor(fixture.status)}>
-                            <StatusIcon className="h-3 w-3 mr-1" />
-                            {fixture.status.replace('_', ' ').toUpperCase()}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">
-                          <strong>Round:</strong> {fixture.round} • <strong>Match #{fixture.matchNumber}</strong>
-                        </p>
-                      </div>
+        {/* Tournaments with Fixtures */}
+        {hasFixtures.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <h2 className="text-primary mb-4 flex items-center gap-2 text-xl font-semibold">
+              <CheckCircle className="h-6 w-6 text-green-500" />
+              Tournaments with Fixtures
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {hasFixtures.map((tournament) => (
+                <motion.div
+                  key={tournament._id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="glass-card-intense rounded-xl p-6"
+                >
+                  <div className="mb-4 flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-primary mb-1 font-semibold">{tournament.name}</h3>
+                      <p className="text-tertiary text-sm">{tournament.sport}</p>
                     </div>
+                    <CheckCircle className="h-6 w-6 text-green-500" />
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                      {/* Match Details */}
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Users className="h-4 w-4" />
-                          <span><strong>Players:</strong> {fixture.player1Name} vs {fixture.player2Name}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Calendar className="h-4 w-4" />
-                          <span><strong>Date:</strong> {new Date(fixture.scheduledTime).toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Clock className="h-4 w-4" />
-                          <span><strong>Time:</strong> {new Date(fixture.scheduledTime).toLocaleTimeString()}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin className="h-4 w-4" />
-                          <span><strong>Court:</strong> {fixture.court}</span>
-                        </div>
-                      </div>
-
-                      {/* Score Section */}
-                      <div className="space-y-3">
-                        {isCompleted ? (
-                          <div className="bg-white rounded-lg p-4 border border-gray-200">
-                            <h4 className="font-semibold text-gray-900 mb-2">Final Result</h4>
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-gray-900 mb-1">
-                                {formatScore(fixture.player1Score, fixture.player2Score)}
-                              </div>
-                              <div className="text-sm text-green-600 font-semibold">
-                                🏆 Winner: {fixture.winner}
-                              </div>
-                            </div>
-                          </div>
-                        ) : isInProgress ? (
-                          <div className="bg-white rounded-lg p-4 border border-gray-200">
-                            <h4 className="font-semibold text-gray-900 mb-2">Live Score</h4>
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-gray-900 mb-1">
-                                {formatScore(fixture.player1Score, fixture.player2Score)}
-                              </div>
-                              <div className="text-sm text-yellow-600 font-semibold">
-                                Match in Progress
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="bg-white rounded-lg p-4 border border-gray-200">
-                            <h4 className="font-semibold text-gray-900 mb-2">Match Status</h4>
-                            <div className="text-center">
-                              <div className="text-lg font-semibold text-gray-700 mb-1">
-                                Scheduled
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                Match will start soon
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                  <div className="mb-4 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-secondary">Format:</span>
+                      <span className="text-primary font-medium capitalize">{tournament.format}</span>
                     </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/tournaments/${fixture.tournamentId}`}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Tournament
-                        </Link>
-                      </Button>
-                      <div className="flex items-center space-x-2">
-                        {isInProgress && (
-                          <Button 
-                            onClick={() => handleUpdateScore(fixture._id)}
-                            size="sm"
-                            className="bg-yellow-600 hover:bg-yellow-700"
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Update Score
-                          </Button>
-                        )}
-                        {isUpcoming && (
-                          <Button 
-                            onClick={() => handleUpdateScore(fixture._id)}
-                            variant="outline" 
-                            size="sm"
-                          >
-                            <Clock className="h-4 w-4 mr-2" />
-                            Start Match
-                          </Button>
-                        )}
-                        {isCompleted && (
-                          <Button 
-                            onClick={() => handleUpdateScore(fixture._id)}
-                            variant="outline" 
-                            size="sm"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            View Details
-                          </Button>
-                        )}
-                      </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-secondary">Status:</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-500">
+                        <CheckCircle className="h-3 w-3" />
+                        Fixtures Ready
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-        </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Link
+                      href={`/admin/tournaments/${tournament._id}/fixtures`}
+                      className="glass-card flex-1 rounded-lg px-4 py-2 text-center text-sm font-medium text-secondary transition-all hover:bg-white/10"
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        <Eye className="h-4 w-4" />
+                        View
+                      </span>
+                    </Link>
+                    <Link
+                      href={`/admin/scoring/${tournament._id}`}
+                      className="bg-primary flex-1 rounded-lg px-4 py-2 text-center text-sm font-medium text-white transition-all hover:opacity-90"
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        <Edit className="h-4 w-4" />
+                        Score
+                      </span>
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* No Tournaments */}
+        {tournaments.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="py-12 text-center"
+          >
+            <Trophy className="text-secondary mx-auto h-16 w-16" />
+            <h3 className="text-primary mt-4 text-lg font-semibold">No Tournaments Found</h3>
+            <p className="text-secondary mt-2">
+              Create a tournament and register participants to generate fixtures
+            </p>
+            <Link
+              href="/admin/tournaments/create"
+              className="bg-primary mt-6 inline-block rounded-lg px-6 py-2 font-medium text-white transition-all hover:opacity-90"
+            >
+              Create Tournament
+            </Link>
+          </motion.div>
+        )}
       </div>
     </div>
   );

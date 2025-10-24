@@ -76,13 +76,66 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // Get participants with pagination
+    // Get participants with pagination and user details
     const skip = (page - 1) * limit;
     const participants = await db.collection(COLLECTIONS.PARTICIPANTS)
-      .find(query)
-      .sort({ registeredAt: -1 })
-      .skip(skip)
-      .limit(limit)
+      .aggregate([
+        { $match: query },
+        {
+          $lookup: {
+            from: COLLECTIONS.USERS,
+            localField: 'userId',
+            foreignField: '_id',
+            as: 'userDetails'
+          }
+        },
+        {
+          $lookup: {
+            from: COLLECTIONS.TOURNAMENTS,
+            localField: 'tournamentId',
+            foreignField: '_id',
+            as: 'tournamentDetails'
+          }
+        },
+        {
+          $unwind: {
+            path: '$userDetails',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $unwind: {
+            path: '$tournamentDetails',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            userId: {
+              _id: '$userDetails._id',
+              name: '$userDetails.name',
+              phone: '$userDetails.phone',
+              email: '$userDetails.email'
+            },
+            tournamentId: '$tournamentDetails._id',
+            tournamentName: '$tournamentDetails.name',
+            category: 1,
+            gender: 1,
+            isApproved: 1,
+            paymentStatus: 1,
+            registeredAt: 1,
+            partnerName: 1,
+            partnerPhone: 1,
+            emergencyContact: 1,
+            emergencyContactName: 1,
+            medicalInfo: 1
+          }
+        },
+        { $sort: { registeredAt: -1 } },
+        { $skip: skip },
+        { $limit: limit }
+      ])
       .toArray();
 
     const total = await db.collection(COLLECTIONS.PARTICIPANTS).countDocuments(query);
