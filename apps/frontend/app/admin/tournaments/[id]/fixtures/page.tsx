@@ -124,6 +124,36 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
     );
   };
 
+  const handleLiveScoreUpdate = (playerA: any, playerB: any, history: any[]) => {
+    if (!selectedMatch) return;
+    
+    // Convert LiveScoring format to Match format
+    const updatedMatch: Match = {
+      ...selectedMatch,
+      player1Score: [playerA.score],
+      player2Score: [playerB.score],
+      status: 'in_progress'
+    };
+    
+    handleScoreUpdate(updatedMatch);
+  };
+
+  const handleMatchComplete = (winner: any, finalScore: { playerA: number; playerB: number }) => {
+    if (!selectedMatch) return;
+    
+    const updatedMatch: Match = {
+      ...selectedMatch,
+      player1Score: [finalScore.playerA],
+      player2Score: [finalScore.playerB],
+      status: 'completed',
+      winnerId: winner.id === selectedMatch.player1Id ? selectedMatch.player1Id : selectedMatch.player2Id
+    };
+    
+    handleScoreUpdate(updatedMatch);
+    setShowScoringModal(false);
+    setSelectedMatch(null);
+  };
+
   const handleSaveSchedule = async () => {
     if (!selectedMatch) return;
 
@@ -479,8 +509,19 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
             </div>
             
             <LiveScoring 
-              matchId={selectedMatch._id} 
-              onScoreUpdate={handleScoreUpdate}
+              matchId={selectedMatch._id || ''} 
+              playerA={{
+                name: selectedMatch.player1Name || 'Player 1',
+                score: selectedMatch.player1Score?.[0] || 0,
+                id: selectedMatch.player1Id || ''
+              }}
+              playerB={{
+                name: selectedMatch.player2Name || 'Player 2',
+                score: selectedMatch.player2Score?.[0] || 0,
+                id: selectedMatch.player2Id || ''
+              }}
+              onScoreUpdate={handleLiveScoreUpdate}
+              onMatchComplete={handleMatchComplete}
             />
           </motion.div>
         </div>

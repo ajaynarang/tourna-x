@@ -1,32 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS, insertTournamentSchema, tournamentSchema } from '@repo/schemas';
+import { getAuthUser } from '@/lib/auth-utils';
 import { ObjectId } from 'mongodb';
-
-// Helper function to get authenticated user
-async function getAuthenticatedUser(request: NextRequest) {
-  const db = await connectToDatabase();
-  const sessionToken = request.cookies.get('session')?.value;
-
-  if (!sessionToken) {
-    return null;
-  }
-
-  const session = await db.collection(COLLECTIONS.SESSIONS).findOne({
-    sessionToken,
-    expiresAt: { $gt: new Date() }
-  });
-
-  if (!session) {
-    return null;
-  }
-
-  const user = await db.collection(COLLECTIONS.USERS).findOne({
-    _id: new ObjectId(session.userId)
-  });
-
-  return user;
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -92,11 +68,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const db = await connectToDatabase();
-    const user = await getAuthenticatedUser(request);
+    const authUser = await getAuthUser(request);
 
-    console.log('User:', user);
+    console.log('Auth user:', authUser);
 
-    if (!user || !user.roles?.includes('admin')) {
+    if (!authUser || !authUser.roles?.includes('admin')) {
       return NextResponse.json(
         { success: false, error: 'Admin access required' },
         { status: 403 }
@@ -111,7 +87,7 @@ export async function POST(request: NextRequest) {
       startDate: tournamentData.startDate ? new Date(tournamentData.startDate) : undefined,
       endDate: tournamentData.endDate ? new Date(tournamentData.endDate) : undefined,
       registrationDeadline: tournamentData.registrationDeadline ? new Date(tournamentData.registrationDeadline) : undefined,
-      createdBy: user._id.toString(),
+      createdBy: authUser.userId,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

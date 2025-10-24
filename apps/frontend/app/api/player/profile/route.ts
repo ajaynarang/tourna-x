@@ -1,47 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
+import { getAuthUser } from '@/lib/auth-utils';
 import { ObjectId } from 'mongodb';
-
-// Helper function to get authenticated user
-async function getAuthenticatedUser(request: NextRequest) {
-  const db = await connectToDatabase();
-  const sessionToken = request.cookies.get('session')?.value;
-
-  if (!sessionToken) {
-    return null;
-  }
-
-  const session = await db.collection(COLLECTIONS.SESSIONS).findOne({
-    sessionToken,
-    expiresAt: { $gt: new Date() }
-  });
-
-  if (!session) {
-    return null;
-  }
-
-  const user = await db.collection(COLLECTIONS.USERS).findOne({
-    _id: new ObjectId(session.userId)
-  });
-
-  return user;
-}
 
 // GET - Get player profile
 export async function GET(request: NextRequest) {
   try {
-    const user = await getAuthenticatedUser(request);
+    const authUser = await getAuthUser(request);
 
-    if (!user) {
+    if (!authUser) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
         { status: 401 }
       );
     }
 
+    // Get full user data from database
+    const db = await connectToDatabase();
+    const user = await db.collection(COLLECTIONS.USERS).findOne({
+      _id: new ObjectId(authUser.userId)
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
     // Remove sensitive data
-    const { ...profileData } = user;
+    const { password, ...profileData } = user;
 
     return NextResponse.json({
       success: true,
@@ -61,12 +50,24 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const db = await connectToDatabase();
-    const user = await getAuthenticatedUser(request);
+    const authUser = await getAuthUser(request);
 
-    if (!user) {
+    if (!authUser) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
         { status: 401 }
+      );
+    }
+
+    // Get full user data from database
+    const user = await db.collection(COLLECTIONS.USERS).findOne({
+      _id: new ObjectId(authUser.userId)
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
       );
     }
 

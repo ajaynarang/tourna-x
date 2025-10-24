@@ -13,6 +13,7 @@ import {
   Trophy,
   User,
   Users,
+  Target,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -85,6 +86,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       icon: Settings,
       action: () => router.push('/admin/scoring'),
       keywords: ['scoring', 'results', 'points'],
+      category: 'Navigate',
+    },
+    {
+      id: 'admin-practice-matches',
+      title: 'Practice Matches',
+      subtitle: 'Record daily practice',
+      icon: Target,
+      action: () => router.push('/admin/practice-matches'),
+      keywords: ['practice', 'matches', 'daily', 'training', 'practice sessions'],
       category: 'Navigate',
     },
     {

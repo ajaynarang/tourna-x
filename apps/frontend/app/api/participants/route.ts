@@ -1,37 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS, insertParticipantSchema, participantSchema } from '@repo/schemas';
+import { getAuthUser } from '@/lib/auth-utils';
 import { ObjectId } from 'mongodb';
 
 // Helper function to get authenticated user
-async function getAuthenticatedUser(request: NextRequest) {
-  const db = await connectToDatabase();
-  const sessionToken = request.cookies.get('session')?.value;
-
-  if (!sessionToken) {
-    return null;
-  }
-
-  const session = await db.collection(COLLECTIONS.SESSIONS).findOne({
-    sessionToken,
-    expiresAt: { $gt: new Date() }
-  });
-
-  if (!session) {
-    return null;
-  }
-
-  const user = await db.collection(COLLECTIONS.USERS).findOne({
-    _id: new ObjectId(session.userId)
-  });
-
-  return user;
-}
 
 export async function GET(request: NextRequest) {
   try {
     const db = await connectToDatabase();
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthUser(request);
     const { searchParams } = new URL(request.url);
     
     const tournamentId = searchParams.get('tournamentId');

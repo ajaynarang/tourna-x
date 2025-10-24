@@ -1,33 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
+import { getAuthUser } from '@/lib/auth-utils';
 import { ObjectId } from 'mongodb';
 import { ObjectId } from 'mongodb';
 
 // Helper function to get authenticated user
-async function getAuthenticatedUser(request: NextRequest) {
-  const db = await connectToDatabase();
-  const sessionToken = request.cookies.get('session')?.value;
-
-  if (!sessionToken) {
-    return null;
-  }
-
-  const session = await db.collection(COLLECTIONS.SESSIONS).findOne({
-    sessionToken,
-    expiresAt: { $gt: new Date() }
-  });
-
-  if (!session) {
-    return null;
-  }
-
-  const user = await db.collection(COLLECTIONS.USERS).findOne({
-    _id: new ObjectId(session.userId)
-  });
-
-  return user;
-}
 
 export async function POST(
   request: NextRequest,
@@ -35,7 +13,7 @@ export async function POST(
 ) {
   try {
     const db = await connectToDatabase();
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthUser(request);
     const { id } = await params;
 
     if (!user || !user.roles?.includes('admin')) {

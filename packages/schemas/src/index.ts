@@ -104,16 +104,21 @@ export const participantSchema = z.object({
 
 export const matchSchema = z.object({
   _id: objectIdSchema.optional(),
-  tournamentId: objectIdSchema,
+  matchType: z.enum(["tournament", "practice"]).default("tournament"),
+  tournamentId: objectIdSchema.optional(), // Required only for tournament matches
   category: z.enum(["singles", "doubles", "mixed"]),
   ageGroup: z.string().optional(),
-  round: z.string().min(1), // "Quarter Final", "Semi Final", "Final"
-  roundNumber: z.number().min(1),
-  matchNumber: z.number().min(1),
+  round: z.string().optional(), // "Quarter Final", "Semi Final", "Final" - optional for practice matches
+  roundNumber: z.number().optional(), // Optional for practice matches
+  matchNumber: z.number().optional(), // Optional for practice matches
   player1Id: objectIdSchema.optional(),
   player2Id: objectIdSchema.optional(),
   player1Name: z.string().optional(),
   player2Name: z.string().optional(),
+  player1Phone: z.string().min(10).max(15).optional(), // For guest players
+  player2Phone: z.string().min(10).max(15).optional(), // For guest players
+  player1IsGuest: z.boolean().default(false),
+  player2IsGuest: z.boolean().default(false),
   
   // Flexible scoring system
   scoringFormat: z.object({
@@ -252,6 +257,40 @@ export const playerStatsSchema = z.object({
   updatedAt: z.date().default(() => new Date()),
 });
 
+// Practice statistics schema - separate from tournament stats
+export const practiceStatsSchema = z.object({
+  _id: objectIdSchema.optional(),
+  playerId: objectIdSchema,
+  totalMatches: z.number().default(0),
+  wins: z.number().default(0),
+  losses: z.number().default(0),
+  winRate: z.number().default(0), // Percentage
+  totalGamesWon: z.number().default(0),
+  totalGamesLost: z.number().default(0),
+  currentStreak: z.number().default(0), // Current win streak
+  longestStreak: z.number().default(0),
+  favoriteCategory: z.string().optional(),
+  totalPoints: z.number().default(0), // Cumulative points scored
+  averageMatchDuration: z.number().default(0),
+  recentForm: z.array(z.string()).default([]), // ["W", "W", "L", "W", "W"]
+  singlesRecord: z.object({
+    played: z.number().default(0),
+    won: z.number().default(0),
+    lost: z.number().default(0),
+  }).default({ played: 0, won: 0, lost: 0 }),
+  doublesRecord: z.object({
+    played: z.number().default(0),
+    won: z.number().default(0),
+    lost: z.number().default(0),
+  }).default({ played: 0, won: 0, lost: 0 }),
+  mixedRecord: z.object({
+    played: z.number().default(0),
+    won: z.number().default(0),
+    lost: z.number().default(0),
+  }).default({ played: 0, won: 0, lost: 0 }),
+  updatedAt: z.date().default(() => new Date()),
+});
+
 export const whatsappGroupSchema = z.object({
   _id: objectIdSchema.optional(),
   name: z.string().min(1).max(100),
@@ -312,6 +351,11 @@ export const insertPlayerStatsSchema = playerStatsSchema.omit({
   updatedAt: true,
 });
 
+export const insertPracticeStatsSchema = practiceStatsSchema.omit({
+  _id: true,
+  updatedAt: true,
+});
+
 export const insertOtpSchema = otpSchema.omit({
   _id: true,
   createdAt: true,
@@ -350,6 +394,9 @@ export type InsertReferee = z.infer<typeof insertRefereeSchema>;
 export type PlayerStats = z.infer<typeof playerStatsSchema>;
 export type InsertPlayerStats = z.infer<typeof insertPlayerStatsSchema>;
 
+export type PracticeStats = z.infer<typeof practiceStatsSchema>;
+export type InsertPracticeStats = z.infer<typeof insertPracticeStatsSchema>;
+
 export type WhatsappGroup = z.infer<typeof whatsappGroupSchema>;
 export type InsertWhatsappGroup = z.infer<typeof insertWhatsappGroupSchema>;
 
@@ -367,6 +414,7 @@ export const COLLECTIONS = {
   SESSIONS: "sessions",
   REFEREES: "referees",
   PLAYER_STATS: "player_stats",
+  PRACTICE_STATS: "practice_stats",
   WHATSAPP_GROUPS: "whatsapp_groups",
   OTPS: "otps",
 } as const;
@@ -394,11 +442,16 @@ export const INDEXES = {
   ],
   MATCHES: [
     { tournamentId: 1 },
+    { matchType: 1 },
     { category: 1 },
     { roundNumber: 1 },
     { status: 1 },
     { createdAt: -1 },
     { scheduledDate: 1 },
+    { matchType: 1, status: 1 },
+    { matchType: 1, createdAt: -1 },
+    { matchType: 1, player1Id: 1 },
+    { matchType: 1, player2Id: 1 },
   ],
   PAIRINGS: [
     { tournamentId: 1 },
@@ -424,6 +477,10 @@ export const INDEXES = {
     { playerId: 1 }, // unique index
     { overallRanking: 1 },
     { societyRanking: 1 },
+  ],
+  PRACTICE_STATS: [
+    { playerId: 1 }, // unique index
+    { updatedAt: -1 },
   ],
   WHATSAPP_GROUPS: [
     { sport: 1 },

@@ -9,7 +9,8 @@ import {
   User, 
   BarChart3,
   Users,
-  Settings
+  Settings,
+  Target
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -23,7 +24,7 @@ export default function MobileBottomNavigation() {
   const adminNavItems = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: BarChart3 },
     { name: 'Tournaments', href: '/admin/tournaments', icon: Trophy },
-    { name: 'Participants', href: '/admin/participants', icon: Users },
+    { name: 'Practice', href: '/admin/practice-matches', icon: Target },
     { name: 'Fixtures', href: '/admin/fixtures', icon: Calendar },
     { name: 'Scoring', href: '/admin/scoring', icon: Settings },
   ];

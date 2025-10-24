@@ -37,6 +37,12 @@ export function usePageTitle(): { title: string; subtitle?: string } {
   if (pathname?.startsWith('/admin/scoring/')) {
     return { title: 'Match Scoring', subtitle: 'Update match scores' };
   }
+  if (pathname === '/admin/practice-matches') {
+    return { title: 'Practice Matches', subtitle: 'Record daily practice sessions' };
+  }
+  if (pathname?.startsWith('/admin/practice-matches/')) {
+    return { title: 'Score Practice Match', subtitle: 'Live practice match scoring' };
+  }
   if (pathname === '/admin/analytics') {
     return { title: 'Analytics', subtitle: 'Tournament insights and reports' };
   }

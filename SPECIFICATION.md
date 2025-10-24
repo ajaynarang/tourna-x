@@ -38,6 +38,13 @@
   - Player statistics
   - Performance trends
 
+- **Practice Match Recording**
+  - Create standalone practice matches (independent of tournaments)
+  - Support for registered players and guest players (phone + name only)
+  - Full badminton scoring with game tracking
+  - Separate practice statistics tracking
+  - Practice match history and analytics
+
 ### Player Features
 - **Registration System**
   - Phone-based OTP authentication
@@ -54,7 +61,8 @@
 - **Statistics**
   - Personal performance metrics
   - Win/loss records
-  - Tournament history
+  - Tournament history (separate from practice)
+  - Practice match statistics (tracked separately)
   - Achievement tracking
 
 ## 🏗️ Technical Architecture
@@ -79,11 +87,12 @@
 - **Users**: Admin and player accounts
 - **Tournaments**: Tournament information and settings
 - **Participants**: Player registrations and approvals
-- **Matches**: Fixtures, scores, and results
+- **Matches**: Tournament fixtures and practice matches (distinguished by matchType field)
+- **Practice Stats**: Separate statistics for practice matches
 - **Sessions**: Authentication sessions
 - **OTPs**: Phone verification codes
 - **Notifications**: System notifications
-- **Player Stats**: Performance tracking
+- **Player Stats**: Tournament performance tracking
 
 ## 🔐 Authentication System
 
@@ -170,6 +179,15 @@
 - `POST /api/matches` - Create match
 - `POST /api/matches/[id]/score` - Update match score
 
+### Practice Matches
+- `GET /api/practice-matches` - List practice matches
+- `POST /api/practice-matches` - Create practice match
+- `GET /api/practice-matches/[id]` - Get practice match details
+- `PUT /api/practice-matches/[id]` - Update practice match
+- `DELETE /api/practice-matches/[id]` - Delete practice match
+- `POST /api/practice-matches/[id]/score` - Update practice match score
+- `GET /api/practice-matches/stats` - Get practice statistics
+
 ### Fixtures
 - `POST /api/tournaments/[id]/fixtures/generate` - Generate fixtures
 
@@ -189,10 +207,12 @@ apps/frontend/
 │   │   ├── tournaments/       # Tournament management
 │   │   ├── participants/      # Participant management
 │   │   ├── matches/           # Match management
+│   │   ├── practice-matches/  # Practice match management
 │   │   └── admin/             # Admin-specific APIs
 │   ├── admin/                 # Admin pages
 │   │   ├── dashboard/         # Admin dashboard
 │   │   ├── tournaments/       # Tournament management
+│   │   ├── practice-matches/  # Practice match recording
 │   │   └── analytics/         # Analytics dashboard
 │   ├── player/                # Player pages
 │   │   ├── dashboard/         # Player dashboard

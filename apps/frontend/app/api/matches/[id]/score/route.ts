@@ -1,28 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
+import { getAuthUser } from '@/lib/auth-utils';
 import { ObjectId } from 'mongodb';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 
 // Helper function to get authenticated user
-async function getAuthenticatedUser() {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) {
-    throw new Error('Unauthorized');
-  }
-
-  const db = await getDatabase();
-  const user = await db.collection(COLLECTIONS.USERS).findOne({
-    _id: new ObjectId(session.userId)
-  });
-
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  return user;
-}
 
 // Helper function to determine game winner
 function determineGameWinner(player1Score: number, player2Score: number, scoringFormat: any): 'player1' | 'player2' | null {
@@ -68,7 +52,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getAuthenticatedUser();
+    const user = await getAuthUser();
     const { id } = params;
     
     const body = await request.json();

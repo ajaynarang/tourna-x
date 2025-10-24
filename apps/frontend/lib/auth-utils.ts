@@ -12,6 +12,8 @@ export async function getAuthUser(request: NextRequest) {
     return null;
   }
 
+  console.log('Session token:', sessionToken);
+
   const session = await db.collection(COLLECTIONS.SESSIONS).findOne({
     sessionToken,
     expiresAt: { $gt: new Date() }
@@ -22,7 +24,7 @@ export async function getAuthUser(request: NextRequest) {
   }
 
   const user = await db.collection(COLLECTIONS.USERS).findOne({
-    _id: session.userId
+    _id: new ObjectId(session.userId)
   });
 
   if (!user) {
