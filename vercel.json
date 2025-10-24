@@ -11,14 +11,14 @@
   },
   "env": {
     "NODE_ENV": "production",
-    "MONGODB_URI": "@mongodb_uri",
-    "MONGODB_DATABASE": "@mongodb_database"
+      "MONGODB_URI": "mongodb-uri",
+      "MONGODB_DATABASE": "tourna-x"
   },
   "build": {
     "env": {
       "NODE_ENV": "production",
-      "MONGODB_URI": "@mongodb_uri",
-      "MONGODB_DATABASE": "@mongodb_database"
+      "MONGODB_URI": "mongodb-uri",
+      "MONGODB_DATABASE": "tourna-x"
     }
   },
   "rewrites": [
