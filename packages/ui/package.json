@@ -23,8 +23,7 @@
     }
   },
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.1",
@@ -58,11 +57,16 @@
     "@types/react-dom": "^18.2.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "cmdk": "^1.0.0",
     "embla-carousel-react": "^8.6.0",
+    "input-otp": "^1.2.4",
     "lucide-react": "^0.344.0",
     "react": "^18.2.0",
+    "react-day-picker": "^8.10.1",
     "react-dom": "^18.2.0",
     "react-hook-form": "7.62.0",
+    "react-resizable-panels": "^2.0.18",
+    "recharts": "^2.12.7",
     "tailwind-merge": "^2.2.1",
     "vaul": "^1.0.0"
   },

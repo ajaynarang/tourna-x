@@ -82,8 +82,11 @@ export default function PracticeMatchesPage() {
       const response = await fetch(`/api/practice-matches?${params.toString()}`);
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         setMatches(data.data);
+      } else {
+        console.error('Failed to fetch matches:', data.error);
+        // Don't show alert for fetch errors as it might be annoying
       }
     } catch (error) {
       console.error('Error fetching practice matches:', error);
@@ -101,10 +104,14 @@ export default function PracticeMatchesPage() {
         method: 'DELETE',
       });
 
-      if (response.ok) {
-        fetchMatches();
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Successfully deleted, refresh the matches list
+        await fetchMatches();
       } else {
-        alert('Failed to delete match');
+        // Show specific error message from API
+        alert(data.error || 'Failed to delete match');
       }
     } catch (error) {
       console.error('Error deleting match:', error);
