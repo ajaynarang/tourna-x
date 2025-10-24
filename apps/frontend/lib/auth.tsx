@@ -25,7 +25,7 @@ interface AuthContextType {
   currentRole: UserRole | null;
   login: (username: string, password: string) => Promise<void>;
   loginWithPhone: (phone: string, otp: string) => Promise<void>;
-  sendOtp: (phone: string) => Promise<void>;
+  sendOtp: (phone: string, purpose?: 'login' | 'register') => Promise<void>;
   logout: () => void;
   switchRole: (role: UserRole) => void;
   isAdmin: boolean;
@@ -155,14 +155,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const sendOtp = async (phone: string) => {
+  const sendOtp = async (phone: string, purpose: 'login' | 'register' = 'login') => {
     try {
       const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, purpose }),
       });
 
       if (response.ok) {

@@ -8,6 +8,7 @@ import { Button } from '@repo/ui';
 import { Input } from '@repo/ui';
 import { Label } from '@repo/ui';
 import { Alert, AlertDescription } from '@repo/ui';
+import { CountryCodeSelector } from '@repo/ui';
 import { Trophy, X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -32,7 +33,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      await sendOtp(loginForm.phone);
+      await sendOtp(loginForm.phone, 'login');
       setOtpSent(true);
       setOtpTimer(60);
       
@@ -46,8 +47,12 @@ export default function LoginPage() {
           return prev - 1;
         });
       }, 1000);
-    } catch (err) {
-      setError('Failed to send OTP. Please try again.');
+    } catch (err: any) {
+      if (err.message?.includes('No account found')) {
+        setError('No account found with this phone number. Please register first.');
+      } else {
+        setError(err.message || 'Failed to send OTP. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +79,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      await sendOtp(loginForm.phone);
+      await sendOtp(loginForm.phone, 'login');
       setOtpTimer(60);
       
       const interval = setInterval(() => {
@@ -86,8 +91,12 @@ export default function LoginPage() {
           return prev - 1;
         });
       }, 1000);
-    } catch (err) {
-      setError('Failed to resend OTP. Please try again.');
+    } catch (err: any) {
+      if (err.message?.includes('No account found')) {
+        setError('No account found with this phone number. Please register first.');
+      } else {
+        setError(err.message || 'Failed to resend OTP. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -138,14 +147,12 @@ export default function LoginPage() {
                     <Label htmlFor="phone" className="text-primary text-sm font-semibold">
                       Phone Number
                     </Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+91 9876543210"
+                    <CountryCodeSelector
                       value={loginForm.phone}
-                      onChange={(e) => setLoginForm({ ...loginForm, phone: e.target.value })}
-                      className="h-12 text-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                      required
+                      onChange={(value) => setLoginForm({ ...loginForm, phone: value })}
+                      placeholder="9876543210"
+                      className="h-12 text-lg border-slate-200 focus-within:border-blue-500 focus-within:ring-blue-500"
+                      disabled={false}
                     />
                     <p className="text-tertiary text-sm leading-relaxed">
                       We'll send you a verification code. Works for both admins and players.

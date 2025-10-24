@@ -20,6 +20,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate phone number format (should include country code)
+    if (!phone.startsWith('+91') || phone.length !== 13) {
+      return NextResponse.json(
+        { success: false, error: 'Please enter a valid Indian phone number with country code (+91)' },
+        { status: 400 }
+      );
+    }
+
+    // Extract phone number without country code for database storage
+    const phoneNumber = phone.replace('+91', '');
+
     // Verify OTP
     // Allow test OTP 123456 for development/testing
     const isTestOtp = otp === '123456';
@@ -27,7 +38,7 @@ export async function POST(request: NextRequest) {
     if (!isTestOtp) {
       console.log('Looking for OTP record...');
       const otpRecord = await db.collection(COLLECTIONS.OTPS).findOne({
-        phone,
+        phone: phoneNumber,
         otp,
         isUsed: false
       });
@@ -53,16 +64,16 @@ export async function POST(request: NextRequest) {
 
     // Find or create user
     console.log('Looking for user...');
-    let user = await db.collection(COLLECTIONS.USERS).findOne({ phone });
+    let user = await db.collection(COLLECTIONS.USERS).findOne({ phone: phoneNumber });
 
     if (!user) {
       console.log('Creating new user...');
       // Create new user - admin for specific test numbers, player otherwise
-      const isAdminPhone = phone === '9999999999' || phone === '8888888888'; // Test admin numbers
+      const isAdminPhone = phoneNumber === '9999999999' || phoneNumber === '8888888888'; // Test admin numbers
       const newUser = insertUserSchema.parse({
-        phone,
+        phone: phoneNumber,
         roles: isAdminPhone ? ['admin'] : ['player'],
-        name: isAdminPhone ? `Admin ${phone.slice(-4)}` : `Player ${phone.slice(-4)}`, // Temporary name
+        name: isAdminPhone ? `Admin ${phoneNumber.slice(-4)}` : `Player ${phoneNumber.slice(-4)}`, // Temporary name
       });
 
       const result = await db.collection(COLLECTIONS.USERS).insertOne(newUser);

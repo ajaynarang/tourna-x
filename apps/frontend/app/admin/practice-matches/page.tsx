@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
 import { Button } from '@repo/ui';
@@ -22,7 +22,10 @@ import {
   UserCheck,
   UserX,
   Trophy,
-  Target
+  Target,
+  ChevronRight,
+  Settings,
+  BarChart3
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -54,6 +57,8 @@ export default function PracticeMatchesPage() {
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'singles' | 'doubles' | 'mixed'>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<PracticeMatch | null>(null);
+  const [showMatchDetails, setShowMatchDetails] = useState(false);
 
   useEffect(() => {
     fetchMatches();
@@ -141,61 +146,31 @@ export default function PracticeMatchesPage() {
     <div className="min-h-screen">
       {/* Header */}
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-primary">Practice Matches</h1>
+            <p className="text-sm text-tertiary mt-1">Track and score your practice sessions</p>
+          </div>
           <Button
             onClick={() => setIsCreateDialogOpen(true)}
             className="bg-primary hover:bg-primary/90 text-white"
           >
             <Plus className="mr-2 h-4 w-4" />
-            New Practice Match
+            New Match
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="glass-card rounded-xl p-6 mb-6">
-          <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-tertiary" />
-              <span className="text-sm text-tertiary">Filters:</span>
-            </div>
-            
-            <div className="flex flex-wrap gap-3">
-              {/* Status Filter */}
-              <div className="flex gap-2">
-                {['all', 'scheduled', 'in_progress', 'completed'].map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => setFilter(status as any)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      filter === status
-                        ? 'bg-primary text-white'
-                        : 'glass-card text-tertiary hover:bg-white/5'
-                    }`}
-                  >
-                    {status.replace('_', ' ').charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
-                  </button>
-                ))}
+      {/* Mobile-Optimized Filters */}
+      <div className="mx-auto max-w-7xl px-4 pb-4 sm:px-6 lg:px-8">
+        <div className="glass-card rounded-xl p-4 mb-6">
+          <div className="space-y-4">
+            {/* Filter Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-tertiary" />
+                <span className="text-sm font-medium text-primary">Filters</span>
               </div>
-
-              {/* Category Filter */}
-              <div className="flex gap-2">
-                {['all', 'singles', 'doubles', 'mixed'].map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setCategoryFilter(category as any)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      categoryFilter === category
-                        ? 'bg-primary text-white'
-                        : 'glass-card text-tertiary hover:bg-white/5'
-                    }`}
-                  >
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                  </button>
-                ))}
-              </div>
-
               <Button
                 variant="outline"
                 size="sm"
@@ -205,10 +180,50 @@ export default function PracticeMatchesPage() {
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
+            
+            {/* Status Filter - Mobile Optimized */}
+            <div className="space-y-2">
+              <span className="text-xs font-medium text-tertiary uppercase tracking-wide">Status</span>
+              <div className="grid grid-cols-2 gap-2">
+                {['all', 'scheduled', 'in_progress', 'completed'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setFilter(status as any)}
+                    className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      filter === status
+                        ? 'bg-primary text-white shadow-lg'
+                        : 'glass-card text-tertiary hover:bg-white/5 border border-white/10'
+                    }`}
+                  >
+                    {status.replace('_', ' ').charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Category Filter - Mobile Optimized */}
+            <div className="space-y-2">
+              <span className="text-xs font-medium text-tertiary uppercase tracking-wide">Type</span>
+              <div className="grid grid-cols-2 gap-2">
+                {['all', 'singles', 'doubles', 'mixed'].map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setCategoryFilter(category as any)}
+                    className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      categoryFilter === category
+                        ? 'bg-primary text-white shadow-lg'
+                        : 'glass-card text-tertiary hover:bg-white/5 border border-white/10'
+                    }`}
+                  >
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Matches Grid */}
+        {/* Streamlined Matches List */}
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -229,143 +244,57 @@ export default function PracticeMatchesPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-3">
             {matches.map((match) => {
               const StatusIcon = getStatusIcon(match.status);
               
               return (
-                <Card key={match._id} className="glass-card border-white/10 overflow-hidden hover:border-primary/30 transition-all">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <Badge className={getCategoryBadge(match.category)}>
-                        {match.category}
-                      </Badge>
-                      <Badge className={getStatusColor(match.status)}>
-                        <StatusIcon className="mr-1 h-3 w-3" />
-                        {match.status.replace('_', ' ')}
-                      </Badge>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {/* Player 1 */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                          {match.player1IsGuest ? (
-                            <UserX className="h-5 w-5 text-blue-400" />
-                          ) : (
-                            <UserCheck className="h-5 w-5 text-blue-400" />
-                          )}
+                <Card 
+                  key={match._id} 
+                  className="glass-card border-white/10 overflow-hidden hover:border-primary/30 transition-all cursor-pointer active:scale-[0.98]"
+                  onClick={() => {
+                    setSelectedMatch(match);
+                    setShowMatchDetails(true);
+                  }}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="flex-shrink-0">
+                          <Badge className={getCategoryBadge(match.category)}>
+                            {match.category}
+                          </Badge>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-primary truncate">
-                            {match.player1Name}
-                          </p>
-                          {match.player1IsGuest && match.player1Phone && (
-                            <p className="text-xs text-tertiary">Guest • {match.player1Phone}</p>
-                          )}
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-primary truncate">
+                              {match.player1Name}
+                            </span>
+                            <span className="text-xs text-tertiary">vs</span>
+                            <span className="text-sm font-medium text-primary truncate">
+                              {match.player2Name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-tertiary">
+                            <Calendar className="h-3 w-3" />
+                            <span>{new Date(match.createdAt).toLocaleDateString()}</span>
+                            {match.court && (
+                              <>
+                                <span>•</span>
+                                <Target className="h-3 w-3" />
+                                <span>{match.court}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-center">
-                        <div className="text-xs text-tertiary">vs</div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Badge className={getStatusColor(match.status)}>
+                          <StatusIcon className="mr-1 h-3 w-3" />
+                          {match.status.replace('_', ' ')}
+                        </Badge>
+                        <ChevronRight className="h-4 w-4 text-tertiary" />
                       </div>
-
-                      {/* Player 2 */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-pink-500/10">
-                          {match.player2IsGuest ? (
-                            <UserX className="h-5 w-5 text-pink-400" />
-                          ) : (
-                            <UserCheck className="h-5 w-5 text-pink-400" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-primary truncate">
-                            {match.player2Name}
-                          </p>
-                          {match.player2IsGuest && match.player2Phone && (
-                            <p className="text-xs text-tertiary">Guest • {match.player2Phone}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-3">
-                    {/* Match Details */}
-                    {match.court && (
-                      <div className="flex items-center gap-2 text-sm text-tertiary">
-                        <Target className="h-4 w-4" />
-                        <span>{match.court}</span>
-                      </div>
-                    )}
-
-                    {match.venue && (
-                      <div className="flex items-center gap-2 text-sm text-tertiary">
-                        <MapPin className="h-4 w-4" />
-                        <span className="truncate">{match.venue}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 text-sm text-tertiary">
-                      <Calendar className="h-4 w-4" />
-                      <span>{new Date(match.createdAt).toLocaleDateString()}</span>
-                    </div>
-
-                    {/* Winner Info */}
-                    {match.status === 'completed' && match.winnerName && (
-                      <div className="mt-3 pt-3 border-t border-white/10">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Trophy className="h-4 w-4 text-yellow-400" />
-                          <span className="text-tertiary">Winner:</span>
-                          <span className="text-primary font-medium">{match.winnerName}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex gap-2 pt-3">
-                      {match.status !== 'completed' && match.status !== 'cancelled' && (
-                        <Link
-                          href={`/admin/practice-matches/${match._id}`}
-                          className="flex-1"
-                        >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full border-primary/20 hover:bg-primary/10 hover:border-primary/30"
-                          >
-                            <Play className="mr-2 h-4 w-4" />
-                            {match.status === 'in_progress' ? 'Continue' : 'Start'}
-                          </Button>
-                        </Link>
-                      )}
-
-                      {match.status === 'completed' && (
-                        <Link
-                          href={`/admin/practice-matches/${match._id}`}
-                          className="flex-1"
-                        >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full border-white/10 hover:bg-white/5"
-                          >
-                            View Details
-                          </Button>
-                        </Link>
-                      )}
-
-                      {match.status !== 'completed' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteMatch(match._id)}
-                          className="border-red-500/20 hover:bg-red-500/10 hover:border-red-500/30"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -374,6 +303,138 @@ export default function PracticeMatchesPage() {
           </div>
         )}
       </div>
+
+      {/* Match Details Modal */}
+      {showMatchDetails && selectedMatch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="glass-card-intense border border-white/10 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-primary">Match Details</h2>
+                <button
+                  onClick={() => setShowMatchDetails(false)}
+                  className="text-tertiary hover:text-primary transition-colors"
+                >
+                  <XCircle className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Badge className={getCategoryBadge(selectedMatch.category)}>
+                    {selectedMatch.category}
+                  </Badge>
+                  <Badge className={getStatusColor(selectedMatch.status)}>
+                    {React.createElement(getStatusIcon(selectedMatch.status), { className: "mr-1 h-3 w-3" })}
+                    {selectedMatch.status.replace('_', ' ')}
+                  </Badge>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                      {selectedMatch.player1IsGuest ? (
+                        <UserX className="h-5 w-5 text-blue-400" />
+                      ) : (
+                        <UserCheck className="h-5 w-5 text-blue-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-primary truncate">
+                        {selectedMatch.player1Name}
+                      </p>
+                      {selectedMatch.player1IsGuest && selectedMatch.player1Phone && (
+                        <p className="text-xs text-tertiary">Guest • {selectedMatch.player1Phone}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center">
+                    <div className="text-xs text-tertiary">vs</div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-pink-500/10">
+                      {selectedMatch.player2IsGuest ? (
+                        <UserX className="h-5 w-5 text-pink-400" />
+                      ) : (
+                        <UserCheck className="h-5 w-5 text-pink-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-primary truncate">
+                        {selectedMatch.player2Name}
+                      </p>
+                      {selectedMatch.player2IsGuest && selectedMatch.player2Phone && (
+                        <p className="text-xs text-tertiary">Guest • {selectedMatch.player2Phone}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {selectedMatch.court && (
+                  <div className="flex items-center gap-2 text-sm text-tertiary">
+                    <Target className="h-4 w-4" />
+                    <span>{selectedMatch.court}</span>
+                  </div>
+                )}
+
+                {selectedMatch.venue && (
+                  <div className="flex items-center gap-2 text-sm text-tertiary">
+                    <MapPin className="h-4 w-4" />
+                    <span className="truncate">{selectedMatch.venue}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 text-sm text-tertiary">
+                  <Calendar className="h-4 w-4" />
+                  <span>{new Date(selectedMatch.createdAt).toLocaleDateString()}</span>
+                </div>
+
+                {selectedMatch.notes && (
+                  <div className="pt-3 border-t border-white/10">
+                    <p className="text-sm text-tertiary mb-1">Notes</p>
+                    <p className="text-sm text-primary">{selectedMatch.notes}</p>
+                  </div>
+                )}
+
+                {selectedMatch.status === 'completed' && selectedMatch.winnerName && (
+                  <div className="pt-3 border-t border-white/10">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Trophy className="h-4 w-4 text-yellow-400" />
+                      <span className="text-tertiary">Winner:</span>
+                      <span className="text-primary font-medium">{selectedMatch.winnerName}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                {selectedMatch.status !== 'completed' && selectedMatch.status !== 'cancelled' && (
+                  <Link
+                    href={`/admin/practice-matches/${selectedMatch._id}`}
+                    className="flex-1"
+                  >
+                    <Button
+                      className="w-full bg-primary hover:bg-primary/90 text-white"
+                    >
+                      <Play className="mr-2 h-4 w-4" />
+                      {selectedMatch.status === 'in_progress' ? 'Continue Scoring' : 'Start Scoring'}
+                    </Button>
+                  </Link>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => setShowMatchDetails(false)}
+                  className="flex-1 border-white/10 hover:bg-white/5"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Match Dialog */}
       {isCreateDialogOpen && (

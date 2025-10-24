@@ -15,20 +15,50 @@ const sendSMS = async (phone: string, otp: string) => {
 export async function POST(request: NextRequest) {
   try {
     const db = await connectToDatabase();
-    const { phone } = await request.json();
+    const { phone, purpose = 'login' } = await request.json();
 
-    // Validate phone number
-    if (!phone || phone.length < 10) {
+    // Validate phone number format (should include country code)
+    if (!phone || !phone.startsWith('+91') || phone.length !== 13) {
       return NextResponse.json(
-        { success: false, error: 'Valid phone number is required' },
+        { success: false, error: 'Please enter a valid Indian phone number with country code (+91)' },
         { status: 400 }
+      );
+    }
+
+    // Extract phone number without country code for database storage
+    const phoneNumber = phone.replace('+91', '');
+
+    // Check if user exists
+    const existingUser = await db.collection(COLLECTIONS.USERS).findOne({ phone: phoneNumber });
+
+    // For login purpose: user must exist
+    if (purpose === 'login' && !existingUser) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'No account found with this phone number. Please register first.',
+          userExists: false
+        },
+        { status: 404 }
+      );
+    }
+
+    // For registration purpose: user must not exist
+    if (purpose === 'register' && existingUser) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'An account with this phone number already exists. Please sign in instead.',
+          userExists: true
+        },
+        { status: 409 }
       );
     }
 
     // Check rate limiting (max 3 OTPs per hour per phone)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const recentOtps = await db.collection(COLLECTIONS.OTPS).countDocuments({
-      phone,
+      phone: phoneNumber,
       createdAt: { $gte: oneHourAgo }
     });
 
@@ -45,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     // Store OTP
     const otpData = insertOtpSchema.parse({
-      phone,
+      phone: phoneNumber,
       otp,
       expiresAt,
     });
@@ -53,7 +83,7 @@ export async function POST(request: NextRequest) {
     await db.collection(COLLECTIONS.OTPS).insertOne(otpData);
 
     // Send SMS
-    await sendSMS(phone, otp);
+    await sendSMS(phoneNumber, otp);
 
     return NextResponse.json({
       success: true,

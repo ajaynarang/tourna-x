@@ -10,5 +10,6 @@ export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 export { Skeleton } from './skeleton'
 // export { Form, FormItem, FormLabel, FormControl, FormDescription, FormMessage, FormField } from './form'
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select'
+export { CountryCodeSelector } from './country-code-selector'
 export { Toast, ToastAction, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport, type ToastProps, type ToastActionElement } from './toast'
 export { cn } from './lib/utils'

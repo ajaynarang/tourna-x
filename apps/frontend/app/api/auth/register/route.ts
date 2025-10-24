@@ -13,13 +13,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate phone number format (should include country code)
+    if (!phone.startsWith('+91') || phone.length !== 13) {
+      return NextResponse.json(
+        { error: 'Please enter a valid Indian phone number with country code (+91)' },
+        { status: 400 }
+      );
+    }
+
+    // Extract phone number without country code for database storage
+    const phoneNumber = phone.replace('+91', '');
+
     const db = await connectToDatabase();
     const otpsCollection = db.collection(COLLECTIONS.OTPS);
     const usersCollection = db.collection(COLLECTIONS.USERS);
 
     // Verify OTP
     const otpRecord = await otpsCollection.findOne({
-      phone,
+      phone: phoneNumber,
       otp,
       isUsed: false,
       expiresAt: { $gt: new Date() },
@@ -33,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await usersCollection.findOne({ phone });
+    const existingUser = await usersCollection.findOne({ phone: phoneNumber });
     if (existingUser) {
       return NextResponse.json(
         { error: 'User with this phone number already exists' },
@@ -44,7 +55,7 @@ export async function POST(request: NextRequest) {
     // Create new user
     const userData = insertUserSchema.parse({
       name,
-      phone,
+      phone: phoneNumber,
       email: email || undefined,
       age: age || undefined,
       gender: gender || undefined,

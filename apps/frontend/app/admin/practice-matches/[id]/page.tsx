@@ -20,7 +20,11 @@ import {
   UserX,
   CheckCircle,
   AlertCircle,
-  Plus
+  Plus,
+  Settings,
+  BarChart3,
+  Minimize2,
+  Maximize2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -65,6 +69,8 @@ export default function PracticeMatchScoringPage({
   const [match, setMatch] = useState<PracticeMatch | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentGame, setCurrentGame] = useState(1);
+  const [showMatchDetails, setShowMatchDetails] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     fetchMatch();
@@ -230,29 +236,29 @@ export default function PracticeMatchScoringPage({
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
+    <div className={`min-h-screen ${isFullscreen ? 'fixed inset-0 z-50 bg-black' : ''}`}>
+      {/* Distraction-Free Header */}
       <div className="glass-card-intense border-b">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Link href="/admin/practice-matches">
-                <Button variant="outline" size="sm" className="border-white/10">
+                <Button variant="outline" size="sm" className="border-white/10 hover:bg-white/5">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-                  <Dumbbell className="h-6 w-6 text-white" />
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                  <Dumbbell className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-primary">Practice Match</h1>
-                  <div className="flex items-center gap-2 mt-1">
+                  <h1 className="text-lg font-bold text-primary">Practice Match</h1>
+                  <div className="flex items-center gap-2">
                     <Badge className={getCategoryBadge(match.category)}>
                       {match.category}
                     </Badge>
-                    <span className="text-sm text-tertiary">•</span>
-                    <span className="text-sm text-tertiary">
+                    <span className="text-xs text-tertiary">•</span>
+                    <span className="text-xs text-tertiary">
                       {new Date(match.createdAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -260,126 +266,163 @@ export default function PracticeMatchScoringPage({
               </div>
             </div>
 
-            {match.status === 'completed' && (
-              <Badge className="bg-green-500/10 text-green-400 border-green-500/20">
-                <CheckCircle className="mr-1 h-3 w-3" />
-                Completed
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {match.status === 'completed' && (
+                <Badge className="bg-green-500/10 text-green-400 border-green-500/20">
+                  <CheckCircle className="mr-1 h-3 w-3" />
+                  Completed
+                </Badge>
+              )}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowMatchDetails(!showMatchDetails)}
+                className="border-white/10 hover:bg-white/5"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="border-white/10 hover:bg-white/5"
+              >
+                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {/* Match Info Cards */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
-          {/* Player Info */}
-          <Card className="glass-card border-white/10">
-            <CardHeader>
-              <CardTitle className="text-sm text-gray-400">Players</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                  {match.player1IsGuest ? (
-                    <UserX className="h-5 w-5 text-blue-400" />
-                  ) : (
-                    <UserCheck className="h-5 w-5 text-blue-400" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {match.player1Name}
-                  </p>
-                  {match.player1IsGuest && match.player1Phone && (
-                    <p className="text-xs text-gray-500">Guest • {match.player1Phone}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-center text-xs text-gray-500">vs</div>
-
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-pink-500/10">
-                  {match.player2IsGuest ? (
-                    <UserX className="h-5 w-5 text-pink-400" />
-                  ) : (
-                    <UserCheck className="h-5 w-5 text-pink-400" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {match.player2Name}
-                  </p>
-                  {match.player2IsGuest && match.player2Phone && (
-                    <p className="text-xs text-gray-500">Guest • {match.player2Phone}</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Match Details */}
-          <Card className="glass-card border-white/10">
-            <CardHeader>
-              <CardTitle className="text-sm text-gray-400">Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {match.court && (
-                <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <Target className="h-4 w-4 text-gray-400" />
-                  <span>{match.court}</span>
-                </div>
-              )}
-              {match.venue && (
-                <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  <span className="truncate">{match.venue}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <Calendar className="h-4 w-4 text-gray-400" />
-                <span>{new Date(match.createdAt).toLocaleDateString()}</span>
-              </div>
-              {match.startTime && (
-                <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <Clock className="h-4 w-4 text-gray-400" />
-                  <span>Started: {new Date(match.startTime).toLocaleTimeString()}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Current Score */}
-          {match.games && match.games.length > 0 && (
-            <Card className="glass-card border-white/10">
-              <CardHeader>
-                <CardTitle className="text-sm text-gray-400">Games Won</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-around">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-400">
-                      {match.matchResult?.player1GamesWon || match.games.filter((g: any) => g.winner === 'player1').length}
+        {/* Collapsible Match Details */}
+        {showMatchDetails && (
+          <div className="mb-6 space-y-4">
+            {/* Match Info Cards - Mobile Optimized */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Player Info */}
+              <Card className="glass-card border-white/10">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs text-tertiary uppercase tracking-wide">Players</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
+                      {match.player1IsGuest ? (
+                        <UserX className="h-4 w-4 text-blue-400" />
+                      ) : (
+                        <UserCheck className="h-4 w-4 text-blue-400" />
+                      )}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {match.player1Name.split(' ')[0]}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-primary truncate">
+                        {match.player1Name}
+                      </p>
+                      {match.player1IsGuest && match.player1Phone && (
+                        <p className="text-xs text-tertiary">Guest • {match.player1Phone}</p>
+                      )}
                     </div>
                   </div>
-                  <div className="text-gray-600">-</div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-pink-400">
-                      {match.matchResult?.player2GamesWon || match.games.filter((g: any) => g.winner === 'player2').length}
+
+                  <div className="flex items-center justify-center text-xs text-tertiary">vs</div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-500/10">
+                      {match.player2IsGuest ? (
+                        <UserX className="h-4 w-4 text-pink-400" />
+                      ) : (
+                        <UserCheck className="h-4 w-4 text-pink-400" />
+                      )}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {match.player2Name.split(' ')[0]}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-primary truncate">
+                        {match.player2Name}
+                      </p>
+                      {match.player2IsGuest && match.player2Phone && (
+                        <p className="text-xs text-tertiary">Guest • {match.player2Phone}</p>
+                      )}
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                </CardContent>
+              </Card>
+
+              {/* Match Details */}
+              <Card className="glass-card border-white/10">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs text-tertiary uppercase tracking-wide">Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  {match.court && (
+                    <div className="flex items-center gap-2 text-sm text-tertiary">
+                      <Target className="h-3 w-3" />
+                      <span>{match.court}</span>
+                    </div>
+                  )}
+                  {match.venue && (
+                    <div className="flex items-center gap-2 text-sm text-tertiary">
+                      <MapPin className="h-3 w-3" />
+                      <span className="truncate">{match.venue}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-sm text-tertiary">
+                    <Calendar className="h-3 w-3" />
+                    <span>{new Date(match.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  {match.startTime && (
+                    <div className="flex items-center gap-2 text-sm text-tertiary">
+                      <Clock className="h-3 w-3" />
+                      <span>Started: {new Date(match.startTime).toLocaleTimeString()}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Current Score */}
+              {match.games && match.games.length > 0 && (
+                <Card className="glass-card border-white/10 sm:col-span-2 lg:col-span-1">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xs text-tertiary uppercase tracking-wide">Games Won</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-around">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-400">
+                          {match.matchResult?.player1GamesWon || match.games.filter((g: any) => g.winner === 'player1').length}
+                        </div>
+                        <div className="text-xs text-tertiary mt-1">
+                          {match.player1Name.split(' ')[0]}
+                        </div>
+                      </div>
+                      <div className="text-tertiary">-</div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-pink-400">
+                          {match.matchResult?.player2GamesWon || match.games.filter((g: any) => g.winner === 'player2').length}
+                        </div>
+                        <div className="text-xs text-tertiary mt-1">
+                          {match.player2Name.split(' ')[0]}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Match Notes */}
+            {match.notes && (
+              <Card className="glass-card border-white/10">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs text-tertiary uppercase tracking-wide">Notes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-primary">{match.notes}</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
 
         {/* Match Completed View */}
         {match.status === 'completed' && (
@@ -388,22 +431,22 @@ export default function PracticeMatchScoringPage({
               <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10 mb-4">
                 <Trophy className="h-8 w-8 text-green-400" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Match Completed!</h2>
-              <p className="text-gray-400 mb-4">
-                Winner: <span className="text-white font-semibold">{match.winnerName}</span>
+              <h2 className="text-2xl font-bold text-primary mb-2">Match Completed!</h2>
+              <p className="text-tertiary mb-4">
+                Winner: <span className="text-primary font-semibold">{match.winnerName}</span>
               </p>
               
               {/* Games Summary */}
               <div className="max-w-md mx-auto mt-6 space-y-2">
                 {match.games?.map((game: any, index: number) => (
                   <div key={index} className="flex items-center justify-between glass-card p-3 rounded-lg">
-                    <span className="text-sm text-gray-400">Game {game.gameNumber}</span>
+                    <span className="text-sm text-tertiary">Game {game.gameNumber}</span>
                     <div className="flex items-center gap-4">
-                      <span className={`text-sm font-medium ${game.winner === 'player1' ? 'text-blue-400' : 'text-gray-500'}`}>
+                      <span className={`text-sm font-medium ${game.winner === 'player1' ? 'text-blue-400' : 'text-tertiary'}`}>
                         {game.player1Score}
                       </span>
-                      <span className="text-gray-600">-</span>
-                      <span className={`text-sm font-medium ${game.winner === 'player2' ? 'text-pink-400' : 'text-gray-500'}`}>
+                      <span className="text-tertiary">-</span>
+                      <span className={`text-sm font-medium ${game.winner === 'player2' ? 'text-pink-400' : 'text-tertiary'}`}>
                         {game.player2Score}
                       </span>
                     </div>
@@ -413,13 +456,13 @@ export default function PracticeMatchScoringPage({
 
               <div className="mt-8 flex gap-3 justify-center">
                 <Link href="/admin/practice-matches">
-                  <Button variant="outline" className="border-white/10">
+                  <Button variant="outline" className="border-white/10 hover:bg-white/5">
                     View All Matches
                   </Button>
                 </Link>
                 <Button
                   onClick={() => router.push('/admin/practice-matches')}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className="bg-primary hover:bg-primary/90"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   New Practice Match
@@ -429,57 +472,61 @@ export default function PracticeMatchScoringPage({
           </Card>
         )}
 
-        {/* Scoring Interface */}
+        {/* Distraction-Free Scoring Interface */}
         {match.status !== 'completed' && match.status !== 'cancelled' && (
           <>
             {match.status === 'scheduled' ? (
               <Card className="glass-card border-white/10">
                 <CardContent className="p-12 text-center">
-                  <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-purple-500/10 mb-4">
-                    <Clock className="h-8 w-8 text-purple-400" />
+                  <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+                    <Clock className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-2">Ready to Start?</h3>
-                  <p className="text-gray-400 mb-6">Begin scoring this practice match</p>
+                  <h3 className="text-xl font-semibold text-primary mb-2">Ready to Start?</h3>
+                  <p className="text-tertiary mb-6">Begin scoring this practice match</p>
                   <Button
                     onClick={handleStartMatch}
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    className="bg-primary hover:bg-primary/90"
                   >
                     Start Match
                   </Button>
                 </CardContent>
               </Card>
             ) : (
-              <LiveScoring
-                matchId={match._id}
-                playerA={{ 
-                  name: match.player1Name, 
-                  score: match.games && match.games.length > 0 
-                    ? match.games[match.games.length - 1].player1Score || 0 
-                    : 0, 
-                  id: match.player1Id || 'guest1' 
-                }}
-                playerB={{ 
-                  name: match.player2Name, 
-                  score: match.games && match.games.length > 0 
-                    ? match.games[match.games.length - 1].player2Score || 0 
-                    : 0, 
-                  id: match.player2Id || 'guest2' 
-                }}
-                onScoreUpdate={handleScoreUpdate}
-                onMatchComplete={handleMatchComplete}
-              />
+              <div className={`${isFullscreen ? 'fixed inset-0 z-40 bg-black flex items-center justify-center p-4' : ''}`}>
+                <div className={`${isFullscreen ? 'w-full max-w-4xl' : ''}`}>
+                  <LiveScoring
+                    matchId={match._id}
+                    playerA={{ 
+                      name: match.player1Name, 
+                      score: match.games && match.games.length > 0 
+                        ? match.games[match.games.length - 1].player1Score || 0 
+                        : 0, 
+                      id: match.player1Id || 'guest1' 
+                    }}
+                    playerB={{ 
+                      name: match.player2Name, 
+                      score: match.games && match.games.length > 0 
+                        ? match.games[match.games.length - 1].player2Score || 0 
+                        : 0, 
+                      id: match.player2Id || 'guest2' 
+                    }}
+                    onScoreUpdate={handleScoreUpdate}
+                    onMatchComplete={handleMatchComplete}
+                  />
+                </div>
+              </div>
             )}
           </>
         )}
 
-        {/* Match Notes */}
-        {match.notes && (
+        {/* Match Notes - Only show when details are expanded */}
+        {match.notes && showMatchDetails && (
           <Card className="glass-card border-white/10 mt-6">
-            <CardHeader>
-              <CardTitle className="text-sm text-gray-400">Notes</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs text-tertiary uppercase tracking-wide">Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-300">{match.notes}</p>
+              <p className="text-sm text-primary">{match.notes}</p>
             </CardContent>
           </Card>
         )}

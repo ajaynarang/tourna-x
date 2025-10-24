@@ -8,6 +8,7 @@ import { Input } from '@repo/ui';
 import { Label } from '@repo/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@repo/ui';
 import { Alert, AlertDescription } from '@repo/ui';
+import { CountryCodeSelector } from '@repo/ui';
 import { Trophy, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -43,7 +44,7 @@ export default function RegisterPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phone: form.phone }),
+        body: JSON.stringify({ phone: form.phone, purpose: 'register' }),
       });
 
       if (response.ok) {
@@ -61,10 +62,15 @@ export default function RegisterPage() {
           });
         }, 1000);
       } else {
-        throw new Error('Failed to send OTP');
+        const errorData = await response.json();
+        if (errorData.userExists) {
+          setError('An account with this phone number already exists. Please sign in instead.');
+        } else {
+          throw new Error(errorData.error || 'Failed to send OTP');
+        }
       }
-    } catch (err) {
-      setError('Failed to send OTP. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +121,7 @@ export default function RegisterPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phone: form.phone }),
+        body: JSON.stringify({ phone: form.phone, purpose: 'register' }),
       });
 
       if (response.ok) {
@@ -131,10 +137,15 @@ export default function RegisterPage() {
           });
         }, 1000);
       } else {
-        throw new Error('Failed to resend OTP');
+        const errorData = await response.json();
+        if (errorData.userExists) {
+          setError('An account with this phone number already exists. Please sign in instead.');
+        } else {
+          throw new Error(errorData.error || 'Failed to resend OTP');
+        }
       }
-    } catch (err) {
-      setError('Failed to resend OTP. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -202,13 +213,11 @@ export default function RegisterPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+91 9876543210"
+                  <CountryCodeSelector
                     value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    required
+                    onChange={(value) => setForm({ ...form, phone: value })}
+                    placeholder="9876543210"
+                    disabled={false}
                   />
                 </div>
 
