@@ -3,18 +3,6 @@
   "buildCommand": "cd ../.. && pnpm install && pnpm run build:frontend",
   "installCommand": "cd ../.. && pnpm install",
   "framework": "nextjs",
-  "env": {
-    "NODE_ENV": "production",
-    "MONGODB_URI": "mongodb-uri",
-    "MONGODB_DATABASE": "tourna-x"
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production",
-      "MONGODB_URI": "mongodb-uri",
-      "MONGODB_DATABASE": "tourna-x"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
