@@ -1,13 +1,9 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import MobileNavigation from '@/components/layout/mobile-navigation'
-import DesktopNavigation from '@/components/layout/desktop-navigation'
-import MobileBottomNavigation from '@/components/layout/mobile-bottom-navigation'
-import Providers from '@/components/providers'
-// import ServiceWorkerRegistration from '@/components/service-worker-registration'
+import { RootLayoutClient } from './layout-client'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
   title: 'Tourna-X - Tournament Management System',
@@ -20,16 +16,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <Providers>
-          <div className="min-h-screen bg-gray-50">
-            <MobileNavigation />
-            <DesktopNavigation />
-            <main className="pb-20 lg:pb-0">{children}</main>
-            <MobileBottomNavigation />
-          </div>
-        </Providers>
+    <html lang="en" className="dark">
+      <body className={inter.variable}>
+        <RootLayoutClient>{children}</RootLayoutClient>
       </body>
     </html>
   )

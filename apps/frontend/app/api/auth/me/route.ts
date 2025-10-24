@@ -1,48 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
-import { ObjectId } from 'mongodb';
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionId = request.cookies.get('session')?.value;
+    const db = await connectToDatabase();
+    const sessionToken = request.cookies.get('session')?.value;
 
-    if (!sessionId) {
+    if (!sessionToken) {
       return NextResponse.json(
-        { error: 'Not authenticated' },
+        { success: false, error: 'No session found' },
         { status: 401 }
       );
     }
 
-    const db = await connectToDatabase();
+    // Find session
+    const session = await db.collection(COLLECTIONS.SESSIONS).findOne({
+      sessionToken,
+      expiresAt: { $gt: new Date() }
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or expired session' },
+        { status: 401 }
+      );
+    }
+
+    // Find user
     const user = await db.collection(COLLECTIONS.USERS).findOne({
-      _id: new ObjectId(sessionId),
+      _id: session.userId
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Invalid session' },
+        { success: false, error: 'User not found' },
         { status: 401 }
       );
     }
 
     return NextResponse.json({
-      _id: user._id.toString(),
-      username: user.username,
-      roles: user.roles || [user.role] || ['player'], // Handle both old and new schema
-      phone: user.phone,
-      email: user.email,
-      name: user.name,
-      society: user.society,
-      block: user.block,
-      flatNumber: user.flatNumber,
-      age: user.age,
-      gender: user.gender,
+      success: true,
+      user: {
+        _id: user._id,
+        username: user.username,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        roles: user.roles,
+        society: user.society,
+        block: user.block,
+        flatNumber: user.flatNumber,
+        age: user.age,
+        gender: user.gender,
+      }
     });
+
   } catch (error) {
-    console.error('Auth check error:', error);
+    console.error('Get user error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

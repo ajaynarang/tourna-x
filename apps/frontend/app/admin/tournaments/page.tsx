@@ -1,28 +1,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
 import { Button } from '@repo/ui';
 import { Badge } from '@repo/ui';
 import { 
-  Trophy, 
   Plus,
-  Eye,
-  Edit,
-  MoreHorizontal,
-  Calendar,
-  Users,
-  DollarSign,
-  MapPin,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  ArrowLeft,
-  RefreshCw,
+  Search,
   Filter,
-  Search
+  MoreVertical,
+  Edit,
+  Trash2,
+  Eye,
+  Users,
+  Calendar,
+  MapPin,
+  DollarSign,
+  Trophy,
+  Play,
+  Pause,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Settings,
+  BarChart3
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -30,83 +33,49 @@ interface Tournament {
   _id: string;
   name: string;
   sport: string;
-  status: string;
+  venue: string;
+  location: string;
   startDate: string;
   endDate: string;
-  venue: string;
+  categories: string[];
+  format: string;
   entryFee: number;
-  tournamentType: string;
-  participantCount: number;
   maxParticipants: number;
+  participantCount: number;
+  status: string;
   isPublished: boolean;
-  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export default function AdminTournaments() {
+export default function AdminTournamentsPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [filteredTournaments, setFilteredTournaments] = useState<Tournament[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'draft' | 'published' | 'ongoing' | 'completed'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sportFilter, setSportFilter] = useState('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     fetchTournaments();
   }, []);
 
+  useEffect(() => {
+    filterTournaments();
+  }, [tournaments, searchTerm, statusFilter, sportFilter]);
+
   const fetchTournaments = async () => {
     try {
       setIsLoading(true);
+      const response = await fetch('/api/tournaments');
+      const result = await response.json();
       
-      // Mock data for now - replace with actual API call
-      const mockTournaments: Tournament[] = [
-        {
-          _id: '1',
-          name: 'Summer Badminton Championship',
-          sport: 'badminton',
-          status: 'published',
-          startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-          venue: 'Sports Complex',
-          entryFee: 500,
-          tournamentType: 'open',
-          participantCount: 24,
-          maxParticipants: 32,
-          isPublished: true,
-          createdBy: 'admin'
-        },
-        {
-          _id: '2',
-          name: 'Spring Tennis Open',
-          sport: 'tennis',
-          status: 'draft',
-          startDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-          venue: 'Tennis Club',
-          entryFee: 750,
-          tournamentType: 'society_only',
-          participantCount: 0,
-          maxParticipants: 16,
-          isPublished: false,
-          createdBy: 'admin'
-        },
-        {
-          _id: '3',
-          name: 'Winter Championship',
-          sport: 'badminton',
-          status: 'ongoing',
-          startDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          venue: 'Community Center',
-          entryFee: 300,
-          tournamentType: 'open',
-          participantCount: 16,
-          maxParticipants: 16,
-          isPublished: true,
-          createdBy: 'admin'
-        }
-      ];
-
-      setTournaments(mockTournaments);
+      if (result.success) {
+        setTournaments(result.data);
+      }
     } catch (error) {
       console.error('Error fetching tournaments:', error);
     } finally {
@@ -114,311 +83,423 @@ export default function AdminTournaments() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-800';
-      case 'published':
-        return 'bg-green-100 text-green-800';
-      case 'ongoing':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-purple-100 text-purple-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const filterTournaments = () => {
+    let filtered = tournaments;
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return Edit;
-      case 'published':
-        return CheckCircle;
-      case 'ongoing':
-        return Clock;
-      case 'completed':
-        return Trophy;
-      case 'cancelled':
-        return XCircle;
-      default:
-        return AlertCircle;
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(tournament =>
+        tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tournament.venue.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tournament.location.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-  };
 
-  const filteredTournaments = tournaments.filter(tournament => {
-    const matchesFilter = filter === 'all' || tournament.status === filter;
-    const matchesSearch = tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tournament.sport.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(tournament => tournament.status === statusFilter);
+    }
+
+    // Sport filter
+    if (sportFilter !== 'all') {
+      filtered = filtered.filter(tournament => tournament.sport === sportFilter);
+    }
+
+    setFilteredTournaments(filtered);
+  };
 
   const handlePublish = async (tournamentId: string) => {
     try {
-      // API call to publish tournament
-      console.log('Publishing tournament:', tournamentId);
-      // Update local state
-      setTournaments(prev => prev.map(t => 
-        t._id === tournamentId ? { ...t, status: 'published', isPublished: true } : t
-      ));
+      const response = await fetch(`/api/tournaments/${tournamentId}/publish`, {
+        method: 'POST',
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchTournaments(); // Refresh the list
+      }
     } catch (error) {
       console.error('Error publishing tournament:', error);
     }
   };
 
-  const handleDelete = async (tournamentId: string) => {
-    if (confirm('Are you sure you want to delete this tournament?')) {
-      try {
-        // API call to delete tournament
-        console.log('Deleting tournament:', tournamentId);
-        setTournaments(prev => prev.filter(t => t._id !== tournamentId));
-      } catch (error) {
-        console.error('Error deleting tournament:', error);
+  const handleOpenRegistration = async (tournamentId: string) => {
+    try {
+      const response = await fetch(`/api/tournaments/${tournamentId}/open-registration`, {
+        method: 'POST',
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchTournaments(); // Refresh the list
       }
+    } catch (error) {
+      console.error('Error opening registration:', error);
     }
   };
 
+  const handleDelete = async (tournamentId: string) => {
+    if (!confirm('Are you sure you want to delete this tournament?')) return;
+    
+    try {
+      const response = await fetch(`/api/tournaments/${tournamentId}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchTournaments(); // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error deleting tournament:', error);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      draft: { color: 'bg-gray-500/10 border-gray-500/30 text-gray-400', icon: Edit },
+      published: { color: 'bg-blue-500/10 border-blue-500/30 text-blue-400', icon: Eye },
+      registration_open: { color: 'bg-green-500/10 border-green-500/30 text-green-400', icon: Users },
+      ongoing: { color: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400', icon: Play },
+      completed: { color: 'bg-purple-500/10 border-purple-500/30 text-purple-400', icon: CheckCircle },
+      cancelled: { color: 'bg-red-500/10 border-red-500/30 text-red-400', icon: AlertCircle },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
+    const Icon = config.icon;
+
+    return (
+      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium ${config.color}`}>
+        <Icon className="h-3 w-3" />
+        {status.replace('_', ' ')}
+      </span>
+    );
+  };
+
+  const getStatusActions = (tournament: Tournament) => {
+    const actions = [];
+
+    switch (tournament.status) {
+      case 'draft':
+        actions.push(
+          <Button
+            key="publish"
+            onClick={() => handlePublish(tournament._id)}
+            size="sm"
+            variant="outline"
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            Publish
+          </Button>
+        );
+        break;
+      
+      case 'published':
+        actions.push(
+          <Button
+            key="open-registration"
+            onClick={() => handleOpenRegistration(tournament._id)}
+            size="sm"
+            variant="outline"
+          >
+            <Users className="h-4 w-4 mr-1" />
+            Open Registration
+          </Button>
+        );
+        break;
+      
+      case 'registration_open':
+        actions.push(
+          <Button
+            key="manage-participants"
+            asChild
+            size="sm"
+            variant="outline"
+          >
+            <Link href={`/admin/tournaments/${tournament._id}/participants`}>
+              <Users className="h-4 w-4 mr-1" />
+              Manage Participants
+            </Link>
+          </Button>
+        );
+        break;
+      
+      case 'ongoing':
+        actions.push(
+          <Button
+            key="live-scoring"
+            asChild
+            size="sm"
+            variant="outline"
+          >
+            <Link href={`/admin/scoring?tournament=${tournament._id}`}>
+              <Play className="h-4 w-4 mr-1" />
+              Live Scoring
+            </Link>
+          </Button>
+        );
+        break;
+    }
+
+    actions.push(
+      <Button
+        key="edit"
+        asChild
+        size="sm"
+        variant="outline"
+      >
+        <Link href={`/admin/tournaments/${tournament._id}/edit`}>
+          <Edit className="h-4 w-4 mr-1" />
+          Edit
+        </Link>
+      </Button>
+    );
+
+    actions.push(
+      <Button
+        key="delete"
+        onClick={() => handleDelete(tournament._id)}
+        size="sm"
+        variant="outline"
+        className="text-red-600 hover:text-red-700"
+      >
+        <Trash2 className="h-4 w-4 mr-1" />
+        Delete
+      </Button>
+    );
+
+    return actions;
+  };
+
+  const renderGridView = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {filteredTournaments.map((tournament) => (
+        <div key={tournament._id} className="glass-card-intense hover:shadow-lg transition-all duration-300 hover:scale-105 group">
+          <div className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-primary line-clamp-2 group-hover:text-primary/80 transition-colors">{tournament.name}</h3>
+                <p className="text-tertiary text-sm mt-1">
+                  {tournament.sport.charAt(0).toUpperCase() + tournament.sport.slice(1)} Tournament
+                </p>
+              </div>
+              {getStatusBadge(tournament.status)}
+            </div>
+            
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center text-sm text-tertiary">
+                <MapPin className="h-4 w-4 mr-2" />
+                {tournament.venue}, {tournament.location}
+              </div>
+              
+              <div className="flex items-center text-sm text-tertiary">
+                <Calendar className="h-4 w-4 mr-2" />
+                {new Date(tournament.startDate).toLocaleDateString()} - {new Date(tournament.endDate).toLocaleDateString()}
+              </div>
+              
+              <div className="flex items-center text-sm text-tertiary">
+                <Users className="h-4 w-4 mr-2" />
+                {tournament.participantCount} / {tournament.maxParticipants} participants
+              </div>
+              
+              <div className="flex items-center text-sm text-tertiary">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Entry Fee: ₹{tournament.entryFee}
+              </div>
+              
+              <div className="flex items-center text-sm text-tertiary">
+                <Trophy className="h-4 w-4 mr-2" />
+                {tournament.categories.join(', ')} • {tournament.format}
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              {getStatusActions(tournament).slice(0, 2)}
+              {getStatusActions(tournament).length > 2 && (
+                <Button size="sm" variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderListView = () => (
+    <div className="space-y-4">
+      {filteredTournaments.map((tournament) => (
+        <div key={tournament._id} className="glass-card-intense hover:shadow-md transition-all duration-300 group">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-4 mb-2">
+                  <h3 className="text-lg font-semibold text-primary group-hover:text-primary/80 transition-colors">{tournament.name}</h3>
+                  {getStatusBadge(tournament.status)}
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-tertiary">
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    {tournament.venue}
+                  </div>
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {new Date(tournament.startDate).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center">
+                    <Users className="h-4 w-4 mr-2" />
+                    {tournament.participantCount}/{tournament.maxParticipants}
+                  </div>
+                  <div className="flex items-center">
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    ₹{tournament.entryFee}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {getStatusActions(tournament)}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="relative z-10 min-h-screen p-8 flex items-center justify-center">
+        <div className="glass-card-intense p-8 text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-tertiary">Loading tournaments...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-blue-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="relative z-10 min-h-screen p-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/admin/dashboard">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Dashboard
-                </Link>
-              </Button>
-              <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                  Tournament Management
-                </h1>
-                <p className="text-gray-600">
-                  Create, manage, and monitor all tournaments
-                </p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold gradient-title">
+                Tournament Management
+              </h1>
+              <p className="text-tertiary">
+                Manage all your tournaments and track their progress
+              </p>
+            </div>
+            <Button asChild>
+              <Link href="/admin/tournaments/create">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Tournament
+              </Link>
+            </Button>
+          </div>
+
+          {/* Filters and Search */}
+          <div className="glass-card-intense p-6 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-tertiary" />
+                  <input
+                    type="text"
+                    placeholder="Search tournaments..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-primary placeholder:text-tertiary"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-primary"
+                >
+                  <option value="all">All Status</option>
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="registration_open">Registration Open</option>
+                  <option value="ongoing">Ongoing</option>
+                  <option value="completed">Completed</option>
+                </select>
+                
+                <select
+                  value={sportFilter}
+                  onChange={(e) => setSportFilter(e.target.value)}
+                  className="px-3 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-primary"
+                >
+                  <option value="all">All Sports</option>
+                  <option value="badminton">Badminton</option>
+                  <option value="tennis">Tennis</option>
+                </select>
+                
+                <div className="flex bg-white/5 border border-white/10 rounded-lg overflow-hidden">
+                  <Button
+                    onClick={() => setViewMode('grid')}
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="rounded-r-none bg-transparent hover:bg-white/10"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => setViewMode('list')}
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="rounded-l-none bg-transparent hover:bg-white/10"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                onClick={() => fetchTournaments()} 
-                variant="outline" 
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </Button>
-              <Button asChild size="sm">
+          </div>
+        </div>
+
+        {/* Tournaments List */}
+        {filteredTournaments.length === 0 ? (
+          <div className="glass-card-intense p-12 text-center">
+            <Trophy className="h-16 w-16 text-tertiary mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-primary mb-2">
+              {searchTerm || statusFilter !== 'all' || sportFilter !== 'all' 
+                ? 'No tournaments found' 
+                : 'No tournaments yet'
+              }
+            </h3>
+            <p className="text-tertiary mb-6">
+              {searchTerm || statusFilter !== 'all' || sportFilter !== 'all'
+                ? 'Try adjusting your search or filters'
+                : 'Create your first tournament to get started'
+              }
+            </p>
+            {(!searchTerm && statusFilter === 'all' && sportFilter === 'all') && (
+              <Button asChild>
                 <Link href="/admin/tournaments/create">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Tournament
                 </Link>
               </Button>
-            </div>
+            )}
           </div>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search tournaments..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-tertiary">
+                Showing {filteredTournaments.length} of {tournaments.length} tournaments
+              </p>
             </div>
-          </div>
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                filter === 'all'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              All ({tournaments.length})
-            </button>
-            <button
-              onClick={() => setFilter('draft')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                filter === 'draft'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Draft ({tournaments.filter(t => t.status === 'draft').length})
-            </button>
-            <button
-              onClick={() => setFilter('published')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                filter === 'published'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Published ({tournaments.filter(t => t.status === 'published').length})
-            </button>
-            <button
-              onClick={() => setFilter('ongoing')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                filter === 'ongoing'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Ongoing ({tournaments.filter(t => t.status === 'ongoing').length})
-            </button>
-          </div>
-        </div>
-
-        {/* Tournaments Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTournaments.length === 0 ? (
-            <div className="col-span-full">
-              <Card className="bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200">
-                <CardContent className="p-8 text-center">
-                  <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Tournaments Found</h3>
-                  <p className="text-gray-600 mb-4">
-                    {searchTerm ? 'No tournaments match your search criteria.' : 'Create your first tournament to get started.'}
-                  </p>
-                  <Button asChild>
-                    <Link href="/admin/tournaments/create">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Tournament
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            filteredTournaments.map((tournament) => {
-              const StatusIcon = getStatusIcon(tournament.status);
-              const participationRate = (tournament.participantCount / tournament.maxParticipants) * 100;
-              
-              return (
-                <Card key={tournament._id} className={`${
-                  tournament.status === 'ongoing' ? 'bg-gradient-to-br from-white to-blue-50 border-blue-200' :
-                  tournament.status === 'published' ? 'bg-gradient-to-br from-white to-green-50 border-green-200' :
-                  tournament.status === 'draft' ? 'bg-gradient-to-br from-white to-yellow-50 border-yellow-200' :
-                  'bg-gradient-to-br from-white to-gray-50 border-gray-200'
-                }`}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <CardTitle className="text-lg">{tournament.name}</CardTitle>
-                          <Badge className={getStatusColor(tournament.status)}>
-                            <StatusIcon className="h-3 w-3 mr-1" />
-                            {tournament.status.toUpperCase()}
-                          </Badge>
-                        </div>
-                        <CardDescription className="text-sm">
-                          {tournament.sport.charAt(0).toUpperCase() + tournament.sport.slice(1)} • {tournament.tournamentType.replace('_', ' ')}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="pt-0">
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Calendar className="h-4 w-4" />
-                        <span>{new Date(tournament.startDate).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <MapPin className="h-4 w-4" />
-                        <span>{tournament.venue}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <DollarSign className="h-4 w-4" />
-                        <span>₹{tournament.entryFee}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Users className="h-4 w-4" />
-                        <span>{tournament.participantCount}/{tournament.maxParticipants} participants</span>
-                      </div>
-                    </div>
-
-                    {/* Participation Progress */}
-                    <div className="mb-4">
-                      <div className="flex justify-between text-sm text-gray-600 mb-1">
-                        <span>Participation</span>
-                        <span>{participationRate.toFixed(0)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full ${
-                            participationRate >= 80 ? 'bg-green-500' :
-                            participationRate >= 50 ? 'bg-yellow-500' :
-                            'bg-red-500'
-                          }`}
-                          style={{ width: `${participationRate}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/tournaments/${tournament._id}`}>
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Link>
-                        </Button>
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/admin/tournaments/${tournament._id}/edit`}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Link>
-                        </Button>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        {tournament.status === 'draft' && (
-                          <Button 
-                            onClick={() => handlePublish(tournament._id)}
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Publish
-                          </Button>
-                        )}
-                        <Button 
-                          onClick={() => handleDelete(tournament._id)}
-                          variant="outline" 
-                          size="sm"
-                          className="text-red-600 border-red-300 hover:bg-red-50"
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-        </div>
-      </div>
+            
+            {viewMode === 'grid' ? renderGridView() : renderListView()}
+          </>
+        )}
     </div>
   );
 }

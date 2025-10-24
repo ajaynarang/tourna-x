@@ -1,74 +1,103 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { COLLECTIONS } from '@repo/schemas';
-import bcrypt from 'bcrypt';
+import { COLLECTIONS, userSchema, sessionSchema, insertSessionSchema } from '@repo/schemas';
+import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const db = await connectToDatabase();
+    const { username, password } = await request.json();
 
-    if (!email || !password) {
+    // Validate input
+    if (!username || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { success: false, error: 'Username and password are required' },
         { status: 400 }
       );
     }
 
-    const db = await connectToDatabase();
-
-    // Find admin user by email
+    // Find user by username or email
     const user = await db.collection(COLLECTIONS.USERS).findOne({
-      email,
-      role: 'admin',
+      $or: [
+        { username: username },
+        { email: username }
+      ]
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { success: false, error: 'Invalid credentials' },
         { status: 401 }
       );
     }
 
-    // Compare hashed password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    // Check if user has admin role
+    if (!user.roles?.includes('admin')) {
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Verify password
+    if (!user.password) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid credentials' },
         { status: 401 }
       );
     }
 
-    // Create session (in production, use proper session management)
-    const response = NextResponse.json({
-      message: 'Login successful',
-      user: {
-        _id: user._id.toString(),
-        username: user.username,
-        role: user.role,
-        phone: user.phone,
-        email: user.email,
-        name: user.name,
-        society: user.society,
-        block: user.block,
-        flatNumber: user.flatNumber,
-        age: user.age,
-        gender: user.gender,
-      },
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    // Create session
+    const sessionToken = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    const sessionData = insertSessionSchema.parse({
+      userId: user._id,
+      sessionToken,
+      expiresAt,
     });
 
-    // Set session cookie (in production, use secure session tokens)
-    response.cookies.set('session', user._id.toString(), {
+    await db.collection(COLLECTIONS.SESSIONS).insertOne(sessionData);
+
+    // Create response with session cookie
+    const response = NextResponse.json({
+      success: true,
+      message: 'Login successful',
+      user: {
+        _id: user._id,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        roles: user.roles,
+        phone: user.phone,
+        society: user.society,
+      }
+    });
+
+    // Set session cookie
+    response.cookies.set('session', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
     });
 
     return response;
+
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

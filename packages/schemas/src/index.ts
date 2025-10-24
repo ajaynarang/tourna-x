@@ -27,13 +27,17 @@ export const tournamentSchema = z.object({
   sport: z.enum(["badminton", "tennis"]),
   categories: z.array(z.enum(["singles", "doubles", "mixed"])), // Multiple categories allowed
   ageGroups: z.array(z.string()).optional(), // e.g., ["U-18", "U-25", "Open"]
+  gender: z.array(z.enum(["men", "women", "mixed"])).optional(), // Per category
   format: z.enum(["knockout", "round_robin"]),
   startDate: z.date(),
   endDate: z.date(),
+  registrationDeadline: z.date().optional(),
   venue: z.string().min(1).max(200),
   location: z.string().min(1).max(200),
+  courts: z.number().min(1).max(20).default(1), // Number of courts available
   entryFee: z.number().min(0).default(0),
   maxParticipants: z.number().min(2).max(1000).default(64),
+  participantCount: z.number().min(0).default(0), // Current participant count
   rules: z.string().optional(),
   prizes: z.object({
     winner: z.number().min(0).default(0),
@@ -46,6 +50,7 @@ export const tournamentSchema = z.object({
   isPublished: z.boolean().default(false),
   createdBy: objectIdSchema,
   createdAt: z.date().default(() => new Date()),
+  updatedAt: z.date().default(() => new Date()),
 });
 
 export const participantSchema = z.object({
@@ -61,11 +66,19 @@ export const participantSchema = z.object({
   block: z.string().max(50).optional(),
   flatNumber: z.string().max(20).optional(),
   category: z.enum(["singles", "doubles", "mixed"]),
+  ageGroup: z.string().optional(), // "Open", "U-18", etc.
   partnerId: objectIdSchema.optional(), // For doubles/mixed
   partnerName: z.string().max(100).optional(),
   partnerPhone: z.string().max(15).optional(),
+  partnerAge: z.number().min(1).max(100).optional(),
+  partnerGender: z.enum(["male", "female", "other"]).optional(),
   paymentStatus: z.enum(["pending", "paid"]).default("pending"),
+  paymentMethod: z.string().optional(),
+  transactionId: z.string().optional(),
   isApproved: z.boolean().default(false), // Admin approval
+  approvedAt: z.date().optional(),
+  approvedBy: objectIdSchema.optional(),
+  rejectionReason: z.string().optional(),
   isEligible: z.boolean().default(true), // Society eligibility check
   registeredAt: z.date().default(() => new Date()),
 });
@@ -73,7 +86,9 @@ export const participantSchema = z.object({
 export const matchSchema = z.object({
   _id: objectIdSchema.optional(),
   tournamentId: objectIdSchema,
-  round: z.string().min(1),
+  category: z.enum(["singles", "doubles", "mixed"]),
+  ageGroup: z.string().optional(),
+  round: z.string().min(1), // "Quarter Final", "Semi Final", "Final"
   roundNumber: z.number().min(1),
   matchNumber: z.number().min(1),
   player1Id: objectIdSchema.optional(),
@@ -83,13 +98,17 @@ export const matchSchema = z.object({
   player1Score: z.array(z.number()).default([]), // Game scores [21, 19, 21]
   player2Score: z.array(z.number()).default([]), // Game scores [19, 21, 19]
   winnerId: objectIdSchema.optional(),
-  status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).default("scheduled"),
+  winnerName: z.string().optional(),
+  status: z.enum(["scheduled", "in_progress", "completed", "walkover", "cancelled"]).default("scheduled"),
   court: z.string().optional(),
-  scheduledTime: z.date().optional(),
+  scheduledDate: z.date().optional(),
+  scheduledTime: z.string().optional(), // "10:00 AM"
   startTime: z.date().optional(),
   endTime: z.date().optional(),
+  duration: z.number().optional(), // Minutes
   notes: z.string().optional(),
   createdAt: z.date().default(() => new Date()),
+  updatedAt: z.date().default(() => new Date()),
 });
 
 // New schema for OTP verification
@@ -100,6 +119,73 @@ export const otpSchema = z.object({
   expiresAt: z.date(),
   isUsed: z.boolean().default(false),
   createdAt: z.date().default(() => new Date()),
+});
+
+// Additional schemas for tournament management
+export const pairingSchema = z.object({
+  _id: objectIdSchema.optional(),
+  tournamentId: objectIdSchema,
+  player1Id: objectIdSchema,
+  player2Id: objectIdSchema.optional(),
+  player1Name: z.string(),
+  player2Name: z.string(),
+  player2Phone: z.string().optional(),
+  player2Email: z.string().optional(),
+  category: z.enum(["doubles", "mixed"]),
+  invitationStatus: z.enum(["pending", "accepted", "rejected"]).default("pending"),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export const notificationSchema = z.object({
+  _id: objectIdSchema.optional(),
+  userId: objectIdSchema,
+  type: z.enum(["registration_approved", "registration_rejected", "match_scheduled", "match_starting", "match_result", "tournament_update"]),
+  title: z.string(),
+  message: z.string(),
+  isRead: z.boolean().default(false),
+  tournamentId: objectIdSchema.optional(),
+  matchId: objectIdSchema.optional(),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export const sessionSchema = z.object({
+  _id: objectIdSchema.optional(),
+  userId: objectIdSchema,
+  sessionToken: z.string(),
+  expiresAt: z.date(),
+  createdAt: z.date().default(() => new Date()),
+});
+
+// Referee role schema
+export const refereeSchema = z.object({
+  _id: objectIdSchema.optional(),
+  userId: objectIdSchema,
+  tournamentId: objectIdSchema,
+  court: z.string(),
+  isActive: z.boolean().default(true),
+  assignedAt: z.date().default(() => new Date()),
+});
+
+// Player statistics schema
+export const playerStatsSchema = z.object({
+  _id: objectIdSchema.optional(),
+  playerId: objectIdSchema,
+  totalTournaments: z.number().default(0),
+  totalMatches: z.number().default(0),
+  wins: z.number().default(0),
+  losses: z.number().default(0),
+  winRate: z.number().default(0), // Percentage
+  titles: z.number().default(0), // 1st place finishes
+  runnerUps: z.number().default(0), // 2nd place finishes
+  currentStreak: z.number().default(0), // Current win streak
+  longestStreak: z.number().default(0),
+  favoriteCategory: z.string().optional(),
+  totalPoints: z.number().default(0), // Cumulative points scored
+  averageMatchDuration: z.number().default(0),
+  societyRanking: z.number().optional(),
+  overallRanking: z.number().optional(),
+  recentForm: z.array(z.string()).default([]), // ["W", "W", "L", "W", "W"]
+  updatedAt: z.date().default(() => new Date()),
 });
 
 export const whatsappGroupSchema = z.object({
@@ -137,12 +223,37 @@ export const insertMatchSchema = matchSchema.omit({
   createdAt: true,
 });
 
-export const insertWhatsappGroupSchema = whatsappGroupSchema.omit({
+export const insertPairingSchema = pairingSchema.omit({
   _id: true,
   createdAt: true,
 });
 
+export const insertNotificationSchema = notificationSchema.omit({
+  _id: true,
+  createdAt: true,
+});
+
+export const insertSessionSchema = sessionSchema.omit({
+  _id: true,
+  createdAt: true,
+});
+
+export const insertRefereeSchema = refereeSchema.omit({
+  _id: true,
+  assignedAt: true,
+});
+
+export const insertPlayerStatsSchema = playerStatsSchema.omit({
+  _id: true,
+  updatedAt: true,
+});
+
 export const insertOtpSchema = otpSchema.omit({
+  _id: true,
+  createdAt: true,
+});
+
+export const insertWhatsappGroupSchema = whatsappGroupSchema.omit({
   _id: true,
   createdAt: true,
 });
@@ -160,6 +271,21 @@ export type InsertParticipant = z.infer<typeof insertParticipantSchema>;
 export type Match = z.infer<typeof matchSchema>;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
 
+export type Pairing = z.infer<typeof pairingSchema>;
+export type InsertPairing = z.infer<typeof insertPairingSchema>;
+
+export type Notification = z.infer<typeof notificationSchema>;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type Session = z.infer<typeof sessionSchema>;
+export type InsertSession = z.infer<typeof insertSessionSchema>;
+
+export type Referee = z.infer<typeof refereeSchema>;
+export type InsertReferee = z.infer<typeof insertRefereeSchema>;
+
+export type PlayerStats = z.infer<typeof playerStatsSchema>;
+export type InsertPlayerStats = z.infer<typeof insertPlayerStatsSchema>;
+
 export type WhatsappGroup = z.infer<typeof whatsappGroupSchema>;
 export type InsertWhatsappGroup = z.infer<typeof insertWhatsappGroupSchema>;
 
@@ -172,6 +298,11 @@ export const COLLECTIONS = {
   TOURNAMENTS: "tournaments", 
   PARTICIPANTS: "participants",
   MATCHES: "matches",
+  PAIRINGS: "pairings",
+  NOTIFICATIONS: "notifications",
+  SESSIONS: "sessions",
+  REFEREES: "referees",
+  PLAYER_STATS: "player_stats",
   WHATSAPP_GROUPS: "whatsapp_groups",
   OTPS: "otps",
 } as const;
@@ -180,22 +311,55 @@ export const COLLECTIONS = {
 export const INDEXES = {
   USERS: [
     { username: 1 }, // unique index
+    { phone: 1 }, // unique index
+    { email: 1 }, // unique index
   ],
   TOURNAMENTS: [
     { createdBy: 1 },
     { status: 1 },
     { sport: 1 },
     { createdAt: -1 },
+    { startDate: 1 },
   ],
   PARTICIPANTS: [
     { tournamentId: 1 },
+    { userId: 1 },
     { registeredAt: -1 },
+    { isApproved: 1 },
+    { paymentStatus: 1 },
   ],
   MATCHES: [
     { tournamentId: 1 },
+    { category: 1 },
     { roundNumber: 1 },
     { status: 1 },
     { createdAt: -1 },
+    { scheduledDate: 1 },
+  ],
+  PAIRINGS: [
+    { tournamentId: 1 },
+    { player1Id: 1 },
+    { invitationStatus: 1 },
+  ],
+  NOTIFICATIONS: [
+    { userId: 1 },
+    { isRead: 1 },
+    { createdAt: -1 },
+  ],
+  SESSIONS: [
+    { userId: 1 },
+    { sessionToken: 1 }, // unique index
+    { expiresAt: 1 },
+  ],
+  REFEREES: [
+    { tournamentId: 1 },
+    { court: 1 },
+    { isActive: 1 },
+  ],
+  PLAYER_STATS: [
+    { playerId: 1 }, // unique index
+    { overallRanking: 1 },
+    { societyRanking: 1 },
   ],
   WHATSAPP_GROUPS: [
     { sport: 1 },
@@ -209,3 +373,6 @@ export const INDEXES = {
     { createdAt: -1 },
   ],
 } as const;
+
+// Export UI types
+export * from './ui';

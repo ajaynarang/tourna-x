@@ -57,23 +57,32 @@ interface Participant {
   registeredAt: string;
 }
 
-export default function TournamentDetailPage({ params }: { params: { id: string } }) {
+export default function TournamentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAuth();
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [tournamentId, setTournamentId] = useState<string>('');
 
   useEffect(() => {
-    fetchTournamentDetails();
-  }, [params.id]);
+    params.then(p => {
+      setTournamentId(p.id);
+    });
+  }, [params]);
+
+  useEffect(() => {
+    if (tournamentId) {
+      fetchTournamentDetails();
+    }
+  }, [tournamentId]);
 
   const fetchTournamentDetails = async () => {
     try {
       setIsLoading(true);
       
       // Fetch tournament details
-      const tournamentResponse = await fetch(`/api/tournaments/${params.id}`);
+      const tournamentResponse = await fetch(`/api/tournaments/${tournamentId}`);
       if (!tournamentResponse.ok) {
         throw new Error('Tournament not found');
       }
@@ -81,7 +90,7 @@ export default function TournamentDetailPage({ params }: { params: { id: string 
       setTournament(tournamentData);
 
       // Fetch participants
-      const participantsResponse = await fetch(`/api/tournaments/${params.id}/participants`);
+      const participantsResponse = await fetch(`/api/tournaments/${tournamentId}/participants`);
       if (participantsResponse.ok) {
         const participantsData = await participantsResponse.json();
         setParticipants(participantsData);

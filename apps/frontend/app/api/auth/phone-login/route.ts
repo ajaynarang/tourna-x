@@ -1,94 +1,102 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { COLLECTIONS } from '@repo/schemas';
+import { COLLECTIONS, otpSchema, userSchema, insertUserSchema, sessionSchema, insertSessionSchema } from '@repo/schemas';
+import { randomBytes } from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
+    const db = await connectToDatabase();
     const { phone, otp } = await request.json();
 
+    // Validate input
     if (!phone || !otp) {
       return NextResponse.json(
-        { error: 'Phone number and OTP are required' },
+        { success: false, error: 'Phone number and OTP are required' },
         { status: 400 }
       );
     }
 
-    const db = await connectToDatabase();
-    const usersCollection = db.collection(COLLECTIONS.USERS);
+    // Verify OTP
+    const otpRecord = await db.collection(COLLECTIONS.OTPS).findOne({
+      phone,
+      otp,
+      expiresAt: { $gt: new Date() },
+      isUsed: false
+    });
 
-    // Hardcoded verification code for testing
-    const HARDCODED_OTP = '123456';
-    
-    if (otp !== HARDCODED_OTP) {
+    if (!otpRecord) {
       return NextResponse.json(
-        { error: 'Invalid verification code. Use 123456 for testing.' },
-        { status: 400 }
+        { success: false, error: 'Invalid or expired OTP' },
+        { status: 401 }
       );
     }
 
-    // Normalize phone number - ensure it starts with +91
-    let normalizedPhone = phone.trim();
-    if (!normalizedPhone.startsWith('+')) {
-      if (normalizedPhone.startsWith('91')) {
-        normalizedPhone = '+' + normalizedPhone;
-      } else {
-        normalizedPhone = '+91' + normalizedPhone;
-      }
-    }
+    // Mark OTP as used
+    await db.collection(COLLECTIONS.OTPS).updateOne(
+      { _id: otpRecord._id },
+      { $set: { isUsed: true } }
+    );
 
-    console.log(`Login attempt: original phone=${phone}, normalized phone=${normalizedPhone}`);
+    // Find or create user
+    let user = await db.collection(COLLECTIONS.USERS).findOne({ phone });
 
-    // Find user by phone (could be admin or player) - try both formats
-    let user = await usersCollection.findOne({ phone: normalizedPhone });
-    
-    // If not found with normalized format, try the original format
     if (!user) {
-      user = await usersCollection.findOne({ phone });
-    }
-    
-    if (!user) {
-      // Create new user as player by default
-      const newUser = {
-        phone: normalizedPhone, // Use normalized phone number
-        name: 'Player', // Default name, can be updated later
+      // Create new player user
+      const newUser = insertUserSchema.parse({
+        phone,
         roles: ['player'],
-        createdAt: new Date(),
-      };
-      
-      const result = await usersCollection.insertOne(newUser);
-      user = { _id: result.insertedId, ...newUser };
+        name: `Player ${phone.slice(-4)}`, // Temporary name
+      });
+
+      const result = await db.collection(COLLECTIONS.USERS).insertOne(newUser);
+      user = { ...newUser, _id: result.insertedId };
     }
 
-    // Create session (simplified - in production use proper session management)
+    // Create session
+    const sessionToken = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    const sessionData = insertSessionSchema.parse({
+      userId: user._id,
+      sessionToken,
+      expiresAt,
+    });
+
+    await db.collection(COLLECTIONS.SESSIONS).insertOne(sessionData);
+
+    // Create response with session cookie
     const response = NextResponse.json({
+      success: true,
       message: 'Login successful',
       user: {
-        _id: user._id.toString(),
+        _id: user._id,
         name: user.name,
         phone: user.phone,
-        roles: user.roles || [user.role] || ['player'], // Handle both old and new schema
         email: user.email,
+        roles: user.roles,
         society: user.society,
         block: user.block,
         flatNumber: user.flatNumber,
         age: user.age,
         gender: user.gender,
-      },
+      }
     });
 
-    // Set session cookie (simplified)
-    response.cookies.set('session', user._id.toString(), {
+    // Set session cookie
+    response.cookies.set('session', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
     });
 
     return response;
+
   } catch (error) {
     console.error('Phone login error:', error);
     return NextResponse.json(
-      { error: 'Login failed' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

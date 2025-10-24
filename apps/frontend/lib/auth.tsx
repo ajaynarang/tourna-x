@@ -129,18 +129,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
-        
-        // Set initial role and redirect
-        if (data.user.roles?.includes('admin')) {
-          setCurrentRole('admin');
-          router.push('/admin/dashboard');
-        } else if (data.user.roles?.includes('player')) {
-          setCurrentRole('player');
-          router.push('/player/dashboard');
+        if (data.success && data.user) {
+          setUser(data.user);
+          
+          // Set initial role and redirect
+          if (data.user.roles?.includes('admin')) {
+            setCurrentRole('admin');
+            router.push('/admin/dashboard');
+          } else if (data.user.roles?.includes('player')) {
+            setCurrentRole('player');
+            router.push('/player/dashboard');
+          }
+        } else {
+          throw new Error(data.error || 'Phone login failed');
         }
       } else {
-        throw new Error('Phone login failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Phone login failed');
       }
     } catch (error) {
       console.error('Phone login error:', error);
