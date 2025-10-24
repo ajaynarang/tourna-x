@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
+import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
@@ -11,35 +12,71 @@ export async function GET(
 
     if (!tournamentId) {
       return NextResponse.json(
-        { error: 'Tournament ID is required' },
+        { success: false, error: 'Tournament ID is required' },
         { status: 400 }
       );
     }
 
     const db = await connectToDatabase();
 
-    // Fetch participants for this tournament
+    // Fetch participants for this tournament with user details populated
     const participants = await db.collection(COLLECTIONS.PARTICIPANTS)
-      .find({ tournamentId })
-      .sort({ registeredAt: -1 })
+      .aggregate([
+        {
+          $match: { 
+            tournamentId: new ObjectId(tournamentId)
+          }
+        },
+        {
+          $lookup: {
+            from: COLLECTIONS.USERS,
+            localField: 'userId',
+            foreignField: '_id',
+            as: 'userDetails'
+          }
+        },
+        {
+          $unwind: {
+            path: '$userDetails',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $sort: { registeredAt: -1 }
+        },
+        {
+          $project: {
+            _id: 1,
+            userId: {
+              _id: '$userDetails._id',
+              name: '$userDetails.name',
+              phone: '$userDetails.phone',
+              email: '$userDetails.email'
+            },
+            category: 1,
+            gender: 1,
+            isApproved: 1,
+            paymentStatus: 1,
+            registeredAt: 1,
+            partnerName: 1,
+            partnerPhone: 1,
+            emergencyContact: 1,
+            emergencyContactName: 1,
+            medicalInfo: 1,
+            addedBy: 1
+          }
+        }
+      ])
       .toArray();
 
-    // Transform participants data for frontend
-    const participantsData = participants.map(participant => ({
-      _id: participant._id.toString(),
-      name: participant.name,
-      phone: participant.phone,
-      category: participant.category,
-      paymentStatus: participant.paymentStatus,
-      isApproved: participant.isApproved,
-      registeredAt: participant.registeredAt,
-    }));
-
-    return NextResponse.json(participantsData);
+    return NextResponse.json({
+      success: true,
+      data: participants
+    });
   } catch (error) {
     console.error('Error fetching tournament participants:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch participants' },
+      { success: false, error: 'Failed to fetch participants' },
       { status: 500 }
     );
   }

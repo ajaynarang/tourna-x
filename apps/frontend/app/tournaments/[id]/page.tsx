@@ -218,7 +218,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ id:
               
               {canRegister() && (
                 <Button size="lg" asChild>
-                  <Link href={`/register?tournament=${tournament._id}`}>
+                  <Link href={`/tournaments/${tournament._id}/register`}>
                     <Plus className="h-4 w-4 mr-2" />
                     Register Now
                   </Link>
@@ -395,7 +395,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ id:
 
                 {canRegister() && (
                   <Button asChild className="w-full">
-                    <Link href={`/register?tournament=${tournament._id}`}>
+                    <Link href={`/tournaments/${tournament._id}/register`}>
                       <Plus className="h-4 w-4 mr-2" />
                       Register Now
                     </Link>
