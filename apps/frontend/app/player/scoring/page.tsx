@@ -6,11 +6,20 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/auth-guard';
 import LiveScoring from '@/components/live-scoring';
+import { MatchScore } from '@/lib/scoring-utils';
 import { ArrowLeft, Trophy, Users, Calendar, Clock, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@repo/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/card';
-import { Badge } from '@repo/ui/badge';
+import { Badge } from '@repo/ui';
+
+interface PointHistory {
+  player: string;
+  reason: string | null;
+  scoreA: number;
+  scoreB: number;
+  timestamp: Date;
+}
 
 interface Match {
   _id: string;
@@ -84,15 +93,15 @@ function MatchScoringContent() {
     }
   };
 
-  const handleScoreUpdate = (playerA: Player, playerB: Player, history: any[]) => {
+  const handleScoreUpdate = (matchScore: MatchScore, history: PointHistory[]) => {
     // Update match scores in real-time
-    console.log('Score updated:', { playerA, playerB, history });
+    console.log('Score updated:', { matchScore, history });
     
     // Here you would typically send the score update to your API
     // For now, we'll just log it
   };
 
-  const handleMatchComplete = (winner: Player, finalScore: { playerA: number; playerB: number }) => {
+  const handleMatchComplete = (winner: Player, finalScore: MatchScore) => {
     // Handle match completion
     console.log('Match completed:', { winner, finalScore });
     
@@ -102,7 +111,7 @@ function MatchScoringContent() {
     // 3. Redirect to match results or tournament page
     
     // For demo purposes, show an alert
-    alert(`Match completed! ${winner.name} won ${finalScore.playerA}-${finalScore.playerB}`);
+    alert(`Match completed! ${winner.name} won ${finalScore.player1GamesWon}-${finalScore.player2GamesWon}`);
     
     // Redirect back to matches page
     router.push('/player/matches');
@@ -116,7 +125,7 @@ function MatchScoringContent() {
     // 2. User is one of the players in the match, OR
     // 3. Match status is 'in_progress'
     return (
-      user.role === 'admin' ||
+      user.roles?.includes('admin') ||
       match.player1Id === user._id ||
       match.player2Id === user._id ||
       match.status === 'in_progress'
@@ -187,6 +196,7 @@ function MatchScoringContent() {
         matchId={match._id}
         playerA={playerA}
         playerB={playerB}
+        scoringFormat={{ pointsPerGame: 21, gamesPerMatch: 3, winBy: 2, maxPoints: 30 }}
         onScoreUpdate={handleScoreUpdate}
         onMatchComplete={handleMatchComplete}
       />

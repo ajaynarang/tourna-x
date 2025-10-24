@@ -4,6 +4,21 @@ import { useState } from 'react';
 import LiveScoring from '@/components/live-scoring';
 import { Button } from '@repo/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/card';
+import { MatchScore } from '@/lib/scoring-utils';
+
+interface PointHistory {
+  player: string;
+  reason: string | null;
+  scoreA: number;
+  scoreB: number;
+  timestamp: Date;
+}
+
+interface Player {
+  name: string;
+  score: number;
+  id: string;
+}
 
 export default function ScoringDemo() {
   const [showDemo, setShowDemo] = useState(false);
@@ -20,12 +35,12 @@ export default function ScoringDemo() {
     id: 'player-b'
   };
 
-  const handleScoreUpdate = (playerA: any, playerB: any, history: any[]) => {
-    console.log('Score updated:', { playerA, playerB, history });
+  const handleScoreUpdate = (matchScore: MatchScore, history: PointHistory[]) => {
+    console.log('Score updated:', { matchScore, history });
   };
 
-  const handleMatchComplete = (winner: any, finalScore: { playerA: number; playerB: number }) => {
-    alert(`Match completed! ${winner.name} won ${finalScore.playerA}-${finalScore.playerB}`);
+  const handleMatchComplete = (winner: Player, finalScore: MatchScore) => {
+    alert(`Match completed! ${winner.name} won!`);
     setShowDemo(false);
   };
 
@@ -35,6 +50,7 @@ export default function ScoringDemo() {
         matchId="demo-match"
         playerA={demoPlayerA}
         playerB={demoPlayerB}
+        scoringFormat={{ pointsPerGame: 21, gamesPerMatch: 3, winBy: 2, maxPoints: 30 }}
         onScoreUpdate={handleScoreUpdate}
         onMatchComplete={handleMatchComplete}
       />

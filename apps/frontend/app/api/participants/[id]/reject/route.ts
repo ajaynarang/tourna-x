@@ -3,7 +3,6 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
 import { getAuthUser } from '@/lib/auth-utils';
 import { ObjectId } from 'mongodb';
-import { ObjectId } from 'mongodb';
 
 // Helper function to get authenticated user
 

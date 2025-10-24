@@ -15,6 +15,8 @@ import {
   ArrowRight,
   CheckCircle2
 } from 'lucide-react';
+import { Card, CardContent } from '@repo/ui';
+import { Button } from '@repo/ui';
 
 const ONBOARDING_STEPS = [
   {
@@ -139,20 +141,24 @@ function PlayerWelcomeContent() {
 
             {/* Current Step Content */}
             <div className="text-center py-8">
-              <div className={`inline-flex p-6 bg-gradient-to-br ${ONBOARDING_STEPS[currentStep].color} rounded-2xl shadow-xl mb-6`}>
-                {(() => {
-                  const Icon = ONBOARDING_STEPS[currentStep].icon;
-                  return <Icon className="h-16 w-16 text-white" />;
-                })()}
-              </div>
-              
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                {ONBOARDING_STEPS[currentStep].title}
-              </h2>
-              
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                {ONBOARDING_STEPS[currentStep].description}
-              </p>
+              {ONBOARDING_STEPS[currentStep] && (
+                <>
+                  <div className={`inline-flex p-6 bg-gradient-to-br ${ONBOARDING_STEPS[currentStep].color} rounded-2xl shadow-xl mb-6`}>
+                    {(() => {
+                      const Icon = ONBOARDING_STEPS[currentStep].icon;
+                      return <Icon className="h-16 w-16 text-white" />;
+                    })()}
+                  </div>
+                  
+                  <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                    {ONBOARDING_STEPS[currentStep].title}
+                  </h2>
+                  
+                  <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                    {ONBOARDING_STEPS[currentStep].description}
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Navigation Buttons */}
@@ -234,7 +240,7 @@ function PlayerWelcomeContent() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

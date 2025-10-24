@@ -77,10 +77,14 @@ export default function BadmintonScorer({
     history.forEach(point => {
       if (point.reason && point.reason !== 'skipped') {
         const player = point.player === 'A' ? 'A' : 'B';
-        if (!stats[player][point.reason]) {
-          stats[player][point.reason] = 0;
+        if (stats[player] && point.reason) {
+          if (!stats[player][point.reason]) {
+            stats[player][point.reason] = 0;
+          }
+          if (stats[player][point.reason] !== undefined) {
+            stats[player][point.reason]++;
+          }
         }
-        stats[player][point.reason]++;
       }
     });
     

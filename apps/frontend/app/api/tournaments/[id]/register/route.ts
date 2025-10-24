@@ -62,7 +62,7 @@ export async function POST(
     // Check if user already registered for this tournament
     const existingRegistration = await db.collection(COLLECTIONS.PARTICIPANTS).findOne({
       tournamentId: new ObjectId(id),
-      userId: user._id
+      userId: user.userId
     });
 
     if (existingRegistration) {
@@ -88,21 +88,21 @@ export async function POST(
     // Check society eligibility for society-only tournaments
     let isEligible = true;
     if (tournament.tournamentType === 'society_only' && tournament.allowedSociety) {
-      isEligible = user.society === tournament.allowedSociety;
+      isEligible = (user as any).society === tournament.allowedSociety;
     }
 
     // Validate registration data
     const validatedData = insertParticipantSchema.parse({
       tournamentId: new ObjectId(id),
-      userId: user._id,
+      userId: user.userId,
       name: registrationData.name || user.name,
       phone: registrationData.phone || user.phone,
       email: registrationData.email || user.email,
-      age: registrationData.age || user.age,
-      gender: registrationData.gender || user.gender,
-      society: registrationData.society || user.society,
-      block: registrationData.block || user.block,
-      flatNumber: registrationData.flatNumber || user.flatNumber,
+      age: registrationData.age || (user as any).age,
+      gender: registrationData.gender || (user as any).gender,
+      society: registrationData.society || (user as any).society,
+      block: registrationData.block || (user as any).block,
+      flatNumber: registrationData.flatNumber || (user as any).flatNumber,
       category: registrationData.category,
       ageGroup: registrationData.ageGroup,
       partnerName: registrationData.partnerName,

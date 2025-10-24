@@ -118,7 +118,7 @@ export async function POST(
           createdAt: new Date(),
           updatedAt: new Date(),
         };
-        delete duplicateData._id;
+        delete (duplicateData as any)._id;
 
         const duplicateResult = await db.collection(COLLECTIONS.TOURNAMENTS).insertOne(duplicateData);
         

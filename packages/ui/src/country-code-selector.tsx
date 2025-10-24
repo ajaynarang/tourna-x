@@ -34,8 +34,8 @@ export const CountryCodeSelector: React.FC<CountryCodeSelectorProps> = ({
     if (value) {
       const match = value.match(/^(\+\d{1,3})(.*)$/);
       if (match) {
-        setCountryCode(match[1]);
-        setPhoneNumber(match[2]);
+        setCountryCode(match[1] || '+91');
+        setPhoneNumber(match[2] || '');
       } else {
         setPhoneNumber(value);
       }

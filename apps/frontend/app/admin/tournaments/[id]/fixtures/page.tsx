@@ -8,20 +8,25 @@ import { Match as BaseMatch } from '@repo/schemas';
 import { motion } from 'framer-motion';
 
 // Extended Match interface with new scoring fields
-interface Match extends BaseMatch {
-  games?: Array<{
+interface Match extends Omit<BaseMatch, 'games'> {
+  games: Array<{
     gameNumber: number;
     player1Score: number;
     player2Score: number;
     winner?: 'player1' | 'player2';
     duration?: number;
-    completedAt?: string;
+    completedAt?: Date;
+    pointHistory?: Array<{
+      player: 'player1' | 'player2';
+      reason: string;
+      scoreAfter: { player1: number; player2: number; };
+    }>;
   }>;
   matchResult?: {
     player1GamesWon: number;
     player2GamesWon: number;
     totalDuration?: number;
-    completedAt?: string;
+    completedAt?: Date;
   };
 }
 import {
@@ -102,10 +107,17 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
     }
   };
 
+  const formatDate = (date: string | Date | undefined): string => {
+    if (!date) return '';
+    if (typeof date === 'string') return date;
+    if (date instanceof Date) return date.toISOString().split('T')[0] || '';
+    return '';
+  };
+
   const handleScheduleMatch = (match: Match) => {
     setSelectedMatch(match);
     setScheduleData({
-      date: match.scheduledDate || '',
+      date: formatDate(match.scheduledDate),
       time: match.scheduledTime || '',
       venue: match.venue || tournament?.venue || '',
     });
@@ -188,7 +200,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
 
   // Group matches by round
   const matchesByRound = matches.reduce((acc, match) => {
-    const key = match.round;
+    const key = match.round || 'Unknown';
     if (!acc[key]) {
       acc[key] = [];
     }

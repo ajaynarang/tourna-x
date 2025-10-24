@@ -93,7 +93,7 @@ export async function POST(
       paymentStatus: paymentStatus || 'na',
       registeredAt: new Date(),
       addedBy: 'admin',
-      addedByUserId: user._id,
+      addedByUserId: user.userId,
     };
 
     const result = await db.collection(COLLECTIONS.PARTICIPANTS).insertOne(participant);

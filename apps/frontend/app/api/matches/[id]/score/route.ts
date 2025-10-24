@@ -3,8 +3,6 @@ import { getDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
 import { getAuthUser } from '@/lib/auth-utils';
 import { ObjectId } from 'mongodb';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 
 // Helper function to get authenticated user
 
@@ -49,11 +47,11 @@ function determineMatchWinner(games: any[], scoringFormat: any): 'player1' | 'pl
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getAuthUser();
-    const { id } = params;
+    const { id } = await params;
+    const user = await getAuthUser(request);
     
     const body = await request.json();
     const { action, gameNumber, player1Score, player2Score, scoringFormat } = body;
@@ -72,9 +70,9 @@ export async function POST(
 
     // Check if user has permission to score this match
     // Admin can score any match, players can only score their own matches
-    const isAdmin = user.roles?.includes('admin');
-    const isPlayerInMatch = match.player1Id?.toString() === user._id?.toString() || 
-                           match.player2Id?.toString() === user._id?.toString();
+    const isAdmin = user?.roles?.includes('admin');
+    const isPlayerInMatch = match.player1Id?.toString() === user?.userId?.toString() ||
+                           match.player2Id?.toString() === user?.userId?.toString();
     
     if (!isAdmin && !isPlayerInMatch) {
       return NextResponse.json(
@@ -239,10 +237,10 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const db = await getDatabase();
     
     const match = await db.collection(COLLECTIONS.MATCHES).findOne({

@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     // Get player's participations
     const participations = await db.collection(COLLECTIONS.PARTICIPANTS)
-      .find({ userId: user._id })
+      .find({ userId: user.userId })
       .sort({ registeredAt: -1 })
       .toArray();
 
@@ -28,8 +28,8 @@ export async function GET(request: NextRequest) {
     const playerMatches = await db.collection(COLLECTIONS.MATCHES)
       .find({
         $or: [
-          { player1Id: user._id },
-          { player2Id: user._id }
+          { player1Id: user.userId },
+          { player2Id: user.userId }
         ]
       })
       .sort({ createdAt: -1 })
@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
     const upcomingMatches = await db.collection(COLLECTIONS.MATCHES)
       .find({
         $or: [
-          { player1Id: user._id },
-          { player2Id: user._id }
+          { player1Id: user.userId },
+          { player2Id: user.userId }
         ],
         status: 'scheduled',
         scheduledDate: { $gte: new Date() }
@@ -62,25 +62,25 @@ export async function GET(request: NextRequest) {
     // Calculate player stats
     const totalMatches = playerMatches.length;
     const wins = playerMatches.filter(match => 
-      match.status === 'completed' && match.winnerId === user._id
+      match.status === 'completed' && match.winnerId === user.userId
     ).length;
     const losses = totalMatches - wins;
     const winRate = totalMatches > 0 ? (wins / totalMatches) * 100 : 0;
 
     // Get player's notifications
     const notifications = await db.collection(COLLECTIONS.NOTIFICATIONS)
-      .find({ userId: user._id })
+      .find({ userId: user.userId })
       .sort({ createdAt: -1 })
       .limit(10)
       .toArray();
 
     const dashboardData = {
       player: {
-        _id: user._id,
+        _id: user.userId,
         name: user.name,
         phone: user.phone,
         email: user.email,
-        society: user.society,
+        society: (user as any).society || '',
         stats: {
           totalMatches,
           wins,

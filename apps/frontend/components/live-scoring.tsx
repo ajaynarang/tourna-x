@@ -116,7 +116,7 @@ export default function LiveScoring({
     const currentGameIndex = matchScore.currentGame - 1;
     const currentGame = matchScore.games[currentGameIndex];
     
-    if (currentGame) {
+    if (currentGame && lastPoint) {
       const newGame = {
         ...currentGame,
         player1Score: lastPoint.player === 'A' ? Math.max(0, currentGame.player1Score - 1) : currentGame.player1Score,
@@ -157,10 +157,14 @@ export default function LiveScoring({
     history.forEach(point => {
       if (point.reason && point.reason !== 'skipped') {
         const player = point.player === 'A' ? 'A' : 'B';
-        if (!stats[player][point.reason]) {
-          stats[player][point.reason] = 0;
+        if (stats[player] && point.reason) {
+          if (!stats[player][point.reason]) {
+            stats[player][point.reason] = 0;
+          }
+          if (stats[player][point.reason] !== undefined) {
+            stats[player][point.reason]++;
+          }
         }
-        stats[player][point.reason]++;
       }
     });
     
