@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/auth-guard';
-import { LiveScoring } from '@/components/live-scoring';
+import LiveScoring from '@/components/live-scoring';
 import { Match as BaseMatch } from '@repo/schemas';
 import { motion } from 'framer-motion';
 

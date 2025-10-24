@@ -419,10 +419,19 @@ function PlayerMatchesContent() {
                         View Tournament
                       </button>
                       {match.status === 'in_progress' && (
-                        <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400">
-                          <AlertCircle className="h-3 w-3 mr-1" />
-                          Live Match
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Live Match
+                          </span>
+                          <button
+                            onClick={() => router.push(`/player/scoring?matchId=${match._id}`)}
+                            className="glass-card flex items-center gap-2 rounded-lg px-3 py-1 font-medium text-primary transition-all hover:bg-white/10 text-xs"
+                          >
+                            <Trophy className="h-3 w-3" />
+                            Score
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
