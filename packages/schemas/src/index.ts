@@ -114,18 +114,63 @@ export const matchSchema = z.object({
   player2Id: objectIdSchema.optional(),
   player1Name: z.string().optional(),
   player2Name: z.string().optional(),
+  
+  // Flexible scoring system
+  scoringFormat: z.object({
+    pointsPerGame: z.number().min(1).default(21), // 11, 15, 21, etc.
+    gamesPerMatch: z.number().min(1).default(3), // Best of 3, 5, etc.
+    winBy: z.number().min(1).default(2), // Must win by 2 points
+    maxPoints: z.number().optional(), // Cap at 30 for example
+  }).default({
+    pointsPerGame: 21,
+    gamesPerMatch: 3,
+    winBy: 2,
+  }),
+  
+  // Detailed score tracking
+  games: z.array(z.object({
+    gameNumber: z.number().min(1),
+    player1Score: z.number().min(0).default(0),
+    player2Score: z.number().min(0).default(0),
+    winner: z.enum(["player1", "player2"]).optional(),
+    duration: z.number().optional(), // Duration in minutes
+    completedAt: z.date().optional(),
+  })).default([]),
+  
+  // Legacy support - keep for backward compatibility
   player1Score: z.array(z.number()).default([]), // Game scores [21, 19, 21]
   player2Score: z.array(z.number()).default([]), // Game scores [19, 21, 19]
+  
+  // Match result
   winnerId: objectIdSchema.optional(),
   winnerName: z.string().optional(),
+  matchResult: z.object({
+    player1GamesWon: z.number().min(0).default(0),
+    player2GamesWon: z.number().min(0).default(0),
+    totalDuration: z.number().optional(), // Total match duration in minutes
+    completedAt: z.date().optional(),
+  }).optional(),
+  
+  // Match status and scheduling
   status: z.enum(["scheduled", "in_progress", "completed", "walkover", "cancelled"]).default("scheduled"),
   court: z.string().optional(),
+  venue: z.string().optional(),
   scheduledDate: z.date().optional(),
   scheduledTime: z.string().optional(), // "10:00 AM"
   startTime: z.date().optional(),
   endTime: z.date().optional(),
   duration: z.number().optional(), // Minutes
+  
+  // Officials
+  refereeId: objectIdSchema.optional(),
+  refereeName: z.string().optional(),
+  umpireId: objectIdSchema.optional(),
+  umpireName: z.string().optional(),
+  
+  // Additional info
   notes: z.string().optional(),
+  walkoverReason: z.string().optional(),
+  
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
 });

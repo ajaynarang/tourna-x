@@ -441,12 +441,34 @@ function TournamentCard({
                 <button
                   onClick={() => {
                     setShowMenu(false);
-                    router.push(`/admin/tournaments/${tournament._id}/participants`);
+                    router.push(`/admin/tournaments/${tournament._id}`);
                   }}
                   className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
                 >
                   <Eye className="h-4 w-4" />
                   View Details
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    router.push(`/admin/tournaments/${tournament._id}/participants`);
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                >
+                  <Users className="h-4 w-4" />
+                  Manage Participants
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    router.push(`/admin/tournaments/${tournament._id}/fixtures`);
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                >
+                  <Trophy className="h-4 w-4" />
+                  Generate Fixtures
                 </button>
 
                 {['draft', 'published'].includes(tournament.status) && (
@@ -512,7 +534,7 @@ function TournamentCard({
 
       {/* Tournament Info */}
       <button
-        onClick={() => router.push(`/admin/tournaments/${tournament._id}/participants`)}
+        onClick={() => router.push(`/admin/tournaments/${tournament._id}`)}
         className="w-full text-left"
       >
         <h3 className="text-primary mb-3 text-lg font-semibold group-hover:text-green-400 transition-colors">

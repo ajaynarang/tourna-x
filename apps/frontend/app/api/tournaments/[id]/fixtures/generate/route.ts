@@ -54,6 +54,14 @@ function generateKnockoutBracket(participants: any[], category: string, ageGroup
         player2Id: null,
         player1Name: 'TBD',
         player2Name: 'TBD',
+        // Flexible scoring system
+        scoringFormat: {
+          pointsPerGame: 21,
+          gamesPerMatch: 3,
+          winBy: 2,
+          maxPoints: 30,
+        },
+        games: [],
         player1Score: [],
         player2Score: [],
         status: 'scheduled',
@@ -68,12 +76,12 @@ function generateKnockoutBracket(participants: any[], category: string, ageGroup
         
         if (player1Index < participants.length) {
           matchData.player1Id = participants[player1Index].userId;
-          matchData.player1Name = participants[player1Index].name;
+          matchData.player1Name = participants[player1Index].name || 'Player ' + (player1Index + 1);
         }
         
         if (player2Index < participants.length) {
           matchData.player2Id = participants[player2Index].userId;
-          matchData.player2Name = participants[player2Index].name;
+          matchData.player2Name = participants[player2Index].name || 'Player ' + (player2Index + 1);
         }
       }
       
@@ -99,8 +107,16 @@ function generateRoundRobin(participants: any[], category: string, ageGroup?: st
         matchNumber: matches.length + 1,
         player1Id: participants[i].userId,
         player2Id: participants[j].userId,
-        player1Name: participants[i].name,
-        player2Name: participants[j].name,
+        player1Name: participants[i].name || 'Player ' + (i + 1),
+        player2Name: participants[j].name || 'Player ' + (j + 1),
+        // Flexible scoring system
+        scoringFormat: {
+          pointsPerGame: 21,
+          gamesPerMatch: 3,
+          winBy: 2,
+          maxPoints: 30,
+        },
+        games: [],
         player1Score: [],
         player2Score: [],
         status: 'scheduled',
@@ -177,12 +193,14 @@ export async function POST(
             category: 1,
             gender: 1,
             ageGroup: 1,
-            name: '$userDetails.name',
-            phone: '$userDetails.phone'
+            name: { $ifNull: ['$userDetails.name', 'Unknown Player'] },
+            phone: { $ifNull: ['$userDetails.phone', ''] }
           }
         }
       ])
       .toArray();
+
+    console.log('Participants fetched for fixture generation:', participants);
 
     if (participants.length < 2) {
       return NextResponse.json(

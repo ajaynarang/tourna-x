@@ -1,79 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
+import { getDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
 import { ObjectId } from 'mongodb';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 // Helper function to get authenticated user
-async function getAuthenticatedUser(request: NextRequest) {
-  const db = await connectToDatabase();
-  const sessionToken = request.cookies.get('session')?.value;
-
-  if (!sessionToken) {
-    return null;
+async function getAuthenticatedUser() {
+  const session = await getServerSession(authOptions);
+  if (!session?.userId) {
+    throw new Error('Unauthorized');
   }
 
-  const session = await db.collection(COLLECTIONS.SESSIONS).findOne({
-    sessionToken,
-    expiresAt: { $gt: new Date() }
-  });
-
-  if (!session) {
-    return null;
-  }
-
+  const db = await getDatabase();
   const user = await db.collection(COLLECTIONS.USERS).findOne({
     _id: new ObjectId(session.userId)
   });
 
+  if (!user) {
+    throw new Error('User not found');
+  }
+
   return user;
 }
 
-// Badminton scoring validation
-function validateBadmintonScore(player1Score: number, player2Score: number): boolean {
-  // Normal win: 21 points with 2-point margin
-  if (player1Score === 21 && player2Score <= 19) return true;
-  if (player2Score === 21 && player1Score <= 19) return true;
+// Helper function to determine game winner
+function determineGameWinner(player1Score: number, player2Score: number, scoringFormat: any): 'player1' | 'player2' | null {
+  const { pointsPerGame, winBy, maxPoints } = scoringFormat;
   
-  // Deuce win: Must win by 2, max 30
-  if (player1Score >= 20 && player2Score >= 20) {
-    if (Math.abs(player1Score - player2Score) === 2) return true;
-    if (player1Score === 30 || player2Score === 30) return true;
+  // Check if either player has reached the winning score
+  if (player1Score >= pointsPerGame || player2Score >= pointsPerGame) {
+    // Check win by margin
+    if (Math.abs(player1Score - player2Score) >= winBy) {
+      return player1Score > player2Score ? 'player1' : 'player2';
+    }
+    
+    // Check if we've hit max points (sudden death)
+    if (maxPoints && (player1Score >= maxPoints || player2Score >= maxPoints)) {
+      return player1Score > player2Score ? 'player1' : 'player2';
+    }
   }
   
-  return false;
+  return null;
 }
 
-function determineMatchWinner(sets: { player1Score: number[], player2Score: number[] }): 'player1' | 'player2' | null {
-  const wins = { player1: 0, player2: 0 };
+// Helper function to determine match winner
+function determineMatchWinner(games: any[], scoringFormat: any): 'player1' | 'player2' | null {
+  const { gamesPerMatch } = scoringFormat;
+  const gamesToWin = Math.ceil(gamesPerMatch / 2);
   
-  sets.player1Score.forEach((score1, index) => {
-    const score2 = sets.player2Score[index];
-    if (score2 !== undefined && score1 > score2) wins.player1++;
-    else wins.player2++;
+  let player1GamesWon = 0;
+  let player2GamesWon = 0;
+  
+  games.forEach(game => {
+    if (game.winner === 'player1') player1GamesWon++;
+    if (game.winner === 'player2') player2GamesWon++;
   });
   
-  if (wins.player1 > wins.player2) return 'player1';
-  if (wins.player2 > wins.player1) return 'player2';
+  if (player1GamesWon >= gamesToWin) return 'player1';
+  if (player2GamesWon >= gamesToWin) return 'player2';
+  
   return null;
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const db = await connectToDatabase();
-    const user = await getAuthenticatedUser(request);
-    const { id } = await params;
+    const user = await getAuthenticatedUser();
+    const { id } = params;
+    
+    const body = await request.json();
+    const { action, gameNumber, player1Score, player2Score, scoringFormat } = body;
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is admin or referee for this match
+    const db = await getDatabase();
     const match = await db.collection(COLLECTIONS.MATCHES).findOne({
       _id: new ObjectId(id)
     });
@@ -85,137 +86,202 @@ export async function POST(
       );
     }
 
+    // Check if user has permission to score this match
+    // Admin can score any match, players can only score their own matches
     const isAdmin = user.roles?.includes('admin');
-    const isReferee = await db.collection(COLLECTIONS.REFEREES).findOne({
-      tournamentId: match.tournamentId,
-      userId: user._id,
-      isActive: true
-    });
-
-    if (!isAdmin && !isReferee) {
+    const isPlayerInMatch = match.player1Id?.toString() === user._id?.toString() || 
+                           match.player2Id?.toString() === user._id?.toString();
+    
+    if (!isAdmin && !isPlayerInMatch) {
       return NextResponse.json(
-        { success: false, error: 'Admin or referee access required' },
+        { success: false, error: 'Not authorized to score this match' },
         { status: 403 }
       );
     }
 
-    const { player1Score, player2Score, currentSet, isComplete } = await request.json();
+    let updatedMatch = { ...match };
 
-    // Validate scores
-    if (currentSet && player1Score[currentSet - 1] !== undefined && player2Score[currentSet - 1] !== undefined) {
-      const score1 = player1Score[currentSet - 1];
-      const score2 = player2Score[currentSet - 1];
-      
-      if (!validateBadmintonScore(score1, score2)) {
+    switch (action) {
+      case 'start_match':
+        updatedMatch.status = 'in_progress';
+        updatedMatch.startTime = new Date();
+        break;
+
+      case 'update_score':
+        if (!gameNumber || player1Score === undefined || player2Score === undefined) {
+          return NextResponse.json(
+            { success: false, error: 'Missing required fields: gameNumber, player1Score, player2Score' },
+            { status: 400 }
+          );
+        }
+
+        // Initialize games array if empty
+        if (!updatedMatch.games) {
+          updatedMatch.games = [];
+        }
+
+        // Find or create the game
+        let game = updatedMatch.games.find((g: any) => g.gameNumber === gameNumber);
+        if (!game) {
+          game = {
+            gameNumber,
+            player1Score: 0,
+            player2Score: 0,
+          };
+          updatedMatch.games.push(game);
+        }
+
+        // Update scores
+        game.player1Score = player1Score;
+        game.player2Score = player2Score;
+
+        // Check if game is won
+        const gameWinner = determineGameWinner(player1Score, player2Score, scoringFormat || updatedMatch.scoringFormat);
+        if (gameWinner) {
+          game.winner = gameWinner;
+          game.completedAt = new Date();
+        }
+
+        // Check if match is won
+        const matchWinner = determineMatchWinner(updatedMatch.games, scoringFormat || updatedMatch.scoringFormat);
+        if (matchWinner) {
+          updatedMatch.status = 'completed';
+          updatedMatch.endTime = new Date();
+          updatedMatch.winnerId = matchWinner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id;
+          updatedMatch.winnerName = matchWinner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
+          
+          // Calculate match result
+          const player1GamesWon = updatedMatch.games.filter((g: any) => g.winner === 'player1').length;
+          const player2GamesWon = updatedMatch.games.filter((g: any) => g.winner === 'player2').length;
+          
+          updatedMatch.matchResult = {
+            player1GamesWon,
+            player2GamesWon,
+            totalDuration: updatedMatch.startTime ? 
+              Math.round((updatedMatch.endTime.getTime() - updatedMatch.startTime.getTime()) / 60000) : undefined,
+            completedAt: updatedMatch.endTime,
+          };
+
+          // Update legacy score arrays for backward compatibility
+          updatedMatch.player1Score = updatedMatch.games.map((g: any) => g.player1Score);
+          updatedMatch.player2Score = updatedMatch.games.map((g: any) => g.player2Score);
+        }
+        break;
+
+      case 'complete_game':
+        if (!gameNumber) {
+          return NextResponse.json(
+            { success: false, error: 'Missing gameNumber' },
+            { status: 400 }
+          );
+        }
+
+        const gameToComplete = updatedMatch.games.find((g: any) => g.gameNumber === gameNumber);
+        if (gameToComplete && !gameToComplete.winner) {
+          const winner = determineGameWinner(
+            gameToComplete.player1Score, 
+            gameToComplete.player2Score, 
+            scoringFormat || updatedMatch.scoringFormat
+          );
+          
+          if (winner) {
+            gameToComplete.winner = winner;
+            gameToComplete.completedAt = new Date();
+          }
+        }
+        break;
+
+      case 'end_match':
+        updatedMatch.status = 'completed';
+        updatedMatch.endTime = new Date();
+        
+        // Calculate final result
+        const finalWinner = determineMatchWinner(updatedMatch.games, scoringFormat || updatedMatch.scoringFormat);
+        if (finalWinner) {
+          updatedMatch.winnerId = finalWinner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id;
+          updatedMatch.winnerName = finalWinner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
+        }
+        break;
+
+      case 'walkover':
+        const { walkoverReason, winner } = body;
+        updatedMatch.status = 'walkover';
+        updatedMatch.endTime = new Date();
+        updatedMatch.walkoverReason = walkoverReason;
+        
+        if (winner === 'player1') {
+          updatedMatch.winnerId = updatedMatch.player1Id;
+          updatedMatch.winnerName = updatedMatch.player1Name;
+        } else if (winner === 'player2') {
+          updatedMatch.winnerId = updatedMatch.player2Id;
+          updatedMatch.winnerName = updatedMatch.player2Name;
+        }
+        break;
+
+      case 'cancel_match':
+        updatedMatch.status = 'cancelled';
+        updatedMatch.endTime = new Date();
+        break;
+
+      default:
         return NextResponse.json(
-          { success: false, error: 'Invalid badminton score' },
+          { success: false, error: 'Invalid action' },
           { status: 400 }
         );
-      }
     }
 
-    // Update match
-    const updateData: any = {
-      player1Score,
-      player2Score,
-      updatedAt: new Date(),
-    };
-
-    if (isComplete) {
-      const winner = determineMatchWinner({ player1Score, player2Score });
-      if (winner) {
-        updateData.winnerId = winner === 'player1' ? match.player1Id : match.player2Id;
-        updateData.winnerName = winner === 'player1' ? match.player1Name : match.player2Name;
-        updateData.status = 'completed';
-        updateData.endTime = new Date();
-      }
-    } else {
-      updateData.status = 'in_progress';
-      if (!match.startTime) {
-        updateData.startTime = new Date();
-      }
-    }
-
-    const result = await db.collection(COLLECTIONS.MATCHES).updateOne(
+    // Update the match in database
+    updatedMatch.updatedAt = new Date();
+    
+    await db.collection(COLLECTIONS.MATCHES).updateOne(
       { _id: new ObjectId(id) },
-      { $set: updateData }
+      { $set: updatedMatch }
     );
 
-    if (result.matchedCount === 0) {
+    return NextResponse.json({
+      success: true,
+      match: updatedMatch,
+      message: `Match ${action} successful`
+    });
+
+  } catch (error) {
+    console.error('Error updating match score:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update match score' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params;
+    const db = await getDatabase();
+    
+    const match = await db.collection(COLLECTIONS.MATCHES).findOne({
+      _id: new ObjectId(id)
+    });
+
+    if (!match) {
       return NextResponse.json(
         { success: false, error: 'Match not found' },
         { status: 404 }
       );
     }
 
-    // If match is completed, handle bracket progression for knockout tournaments
-    if (isComplete && updateData.status === 'completed') {
-      await handleBracketProgression(db, match, updateData.winnerId);
-    }
-
     return NextResponse.json({
       success: true,
-      message: 'Score updated successfully',
-      data: updateData
+      match
     });
 
   } catch (error) {
-    console.error('Error updating match score:', error);
+    console.error('Error fetching match:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to update score' },
+      { success: false, error: 'Failed to fetch match' },
       { status: 500 }
     );
-  }
-}
-
-async function handleBracketProgression(db: any, match: any, winnerId: string) {
-  try {
-    // Get tournament format
-    const tournament = await db.collection(COLLECTIONS.TOURNAMENTS).findOne({
-      _id: match.tournamentId
-    });
-
-    if (tournament?.format !== 'knockout') return;
-
-    // Find next match in bracket
-    const nextRound = match.roundNumber + 1;
-    const nextMatchNumber = Math.ceil(match.matchNumber / 2);
-    
-    const nextMatch = await db.collection(COLLECTIONS.MATCHES).findOne({
-      tournamentId: match.tournamentId,
-      category: match.category,
-      ageGroup: match.ageGroup,
-      roundNumber: nextRound,
-      matchNumber: nextMatchNumber
-    });
-
-    if (nextMatch) {
-      // Determine which player slot to fill
-      const isPlayer1Slot = match.matchNumber % 2 === 1;
-      
-      const updateField = isPlayer1Slot ? 'player1Id' : 'player2Id';
-      const updateNameField = isPlayer1Slot ? 'player1Name' : 'player2Name';
-      
-      // Get winner details
-      const winner = await db.collection(COLLECTIONS.PARTICIPANTS).findOne({
-        tournamentId: match.tournamentId,
-        userId: winnerId
-      });
-
-      if (winner) {
-        await db.collection(COLLECTIONS.MATCHES).updateOne(
-          { _id: nextMatch._id },
-          {
-            $set: {
-              [updateField]: winnerId,
-              [updateNameField]: winner.name,
-              updatedAt: new Date()
-            }
-          }
-        );
-      }
-    }
-  } catch (error) {
-    console.error('Error handling bracket progression:', error);
   }
 }

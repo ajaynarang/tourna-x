@@ -38,7 +38,7 @@ export async function GET(
 
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid tournament ID' },
+        { success: false, error: 'Invalid tournament ID format' },
         { status: 400 }
       );
     }
@@ -53,7 +53,6 @@ export async function GET(
         { status: 404 }
       );
     }
-
     return NextResponse.json({
       success: true,
       data: tournament

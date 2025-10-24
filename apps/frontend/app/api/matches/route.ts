@@ -34,13 +34,15 @@ export async function GET(request: NextRequest) {
       query.category = category;
     }
 
-    // Get matches with pagination
-    const skip = (page - 1) * limit;
+    // Get matches with pagination - no need for limit when fetching for a specific tournament
+    const skip = tournamentId ? 0 : (page - 1) * limit;
+    const actualLimit = tournamentId ? 1000 : limit; // Get all matches for a tournament
+    
     const matches = await db.collection(COLLECTIONS.MATCHES)
       .find(query)
-      .sort({ createdAt: -1 })
+      .sort({ roundNumber: 1, matchNumber: 1 })
       .skip(skip)
-      .limit(limit)
+      .limit(actualLimit)
       .toArray();
 
     const total = await db.collection(COLLECTIONS.MATCHES).countDocuments(query);
@@ -50,9 +52,9 @@ export async function GET(request: NextRequest) {
       data: matches,
       pagination: {
         page,
-        limit,
+        limit: actualLimit,
         total,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / actualLimit)
       }
     });
 

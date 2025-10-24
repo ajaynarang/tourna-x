@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
 import { Button } from '@repo/ui';
@@ -19,7 +20,10 @@ import {
   Eye,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  Target,
+  TrendingUp,
+  Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -44,6 +48,7 @@ interface Tournament {
 
 export default function TournamentsPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [filteredTournaments, setFilteredTournaments] = useState<Tournament[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -116,13 +121,13 @@ export default function TournamentsPage() {
     switch (status) {
       case 'published':
       case 'registration_open':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-500 text-white';
       case 'ongoing':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-500 text-white';
       case 'completed':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-500 text-white';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-500 text-white';
     }
   };
 
@@ -157,32 +162,41 @@ export default function TournamentsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-16 w-16 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent mb-4"></div>
+          <p className="text-gray-600 text-lg">Discovering tournaments...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                Tournament Directory
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Discover and join tournaments in your area
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
+                  Discover Tournaments
+                </h1>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-100 to-blue-100 rounded-full border border-green-200">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <span className="text-xs font-semibold text-green-700">{tournaments.length} Active</span>
+                </div>
+              </div>
+              <p className="text-gray-600 text-lg">
+                Find and join tournaments that match your skills and interests
               </p>
             </div>
             {user && (
-              <div className="mt-4 lg:mt-0">
-                <Button asChild>
-                  <Link href="/register">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Register for Tournament
+              <div className="flex gap-2">
+                <Button asChild size="lg" variant="outline">
+                  <Link href="/player/dashboard">
+                    <Trophy className="h-5 w-5 mr-2" />
+                    My Dashboard
                   </Link>
                 </Button>
               </div>
@@ -191,79 +205,98 @@ export default function TournamentsPage() {
         </div>
 
         {/* Search and Filters */}
-        <Card className="mb-8">
+        <Card className="mb-8 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-4 space-y-4 lg:space-y-0">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
-                    placeholder="Search tournaments..."
+                    placeholder="Search tournaments by name, venue, or location..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-12 h-12 text-base border-2 focus:border-blue-400"
                   />
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Select value={filters.sport} onValueChange={(value) => setFilters({ ...filters, sport: value })}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Sport" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sports</SelectItem>
-                    <SelectItem value="badminton">Badminton</SelectItem>
-                    <SelectItem value="tennis">Tennis</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-gray-500" />
+                <div className="flex flex-wrap gap-2">
+                  <Select value={filters.sport} onValueChange={(value) => setFilters({ ...filters, sport: value })}>
+                    <SelectTrigger className="w-40 h-12">
+                      <SelectValue placeholder="Sport" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sports</SelectItem>
+                      <SelectItem value="badminton">Badminton</SelectItem>
+                      <SelectItem value="tennis">Tennis</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="registration_open">Registration Open</SelectItem>
-                    <SelectItem value="ongoing">Ongoing</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
+                    <SelectTrigger className="w-48 h-12">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="registration_open">Registration Open</SelectItem>
+                      <SelectItem value="ongoing">Ongoing</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select value={filters.tournamentType} onValueChange={(value) => setFilters({ ...filters, tournamentType: value })}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="society_only">Society Only</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select value={filters.tournamentType} onValueChange={(value) => setFilters({ ...filters, tournamentType: value })}>
+                    <SelectTrigger className="w-40 h-12">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="society_only">Society Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
+
+            {/* Active Filters Summary */}
+            {(searchTerm || Object.values(filters).some(f => f !== 'all')) && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-600">
+                    Showing <strong className="text-blue-600">{filteredTournaments.length}</strong> of <strong>{tournaments.length}</strong> tournaments
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setFilters({ sport: 'all', status: 'all', tournamentType: 'all' });
+                    }}
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
-
-        {/* Results Count */}
-        <div className="mb-6">
-          <p className="text-sm text-gray-600">
-            Showing {filteredTournaments.length} of {tournaments.length} tournaments
-          </p>
-        </div>
 
         {/* Tournaments Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredTournaments.length === 0 ? (
             <div className="col-span-full">
-              <Card>
+              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                 <CardContent className="p-12 text-center">
-                  <Trophy className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No tournaments found</h3>
-                  <p className="text-gray-600 mb-4">
+                  <div className="inline-flex p-4 bg-gray-100 rounded-full mb-4">
+                    <Trophy className="h-16 w-16 text-gray-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">No tournaments found</h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
                     {searchTerm || Object.values(filters).some(f => f !== 'all')
-                      ? 'Try adjusting your search or filters'
-                      : 'No tournaments are currently available'
+                      ? 'Try adjusting your search criteria or filters to find more tournaments'
+                      : 'No tournaments are currently available. Check back later for new opportunities!'
                     }
                   </p>
                   {(searchTerm || Object.values(filters).some(f => f !== 'all')) && (
@@ -274,130 +307,201 @@ export default function TournamentsPage() {
                         setFilters({ sport: 'all', status: 'all', tournamentType: 'all' });
                       }}
                     >
-                      Clear Filters
+                      Clear All Filters
                     </Button>
                   )}
                 </CardContent>
               </Card>
             </div>
           ) : (
-            filteredTournaments.map((tournament) => (
-              <Card key={tournament._id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg mb-2">{tournament.name}</CardTitle>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Badge className={getStatusColor(tournament.status)}>
-                          {getStatusText(tournament.status)}
-                        </Badge>
-                        {tournament.tournamentType === 'society_only' && (
-                          <Badge variant="outline">
-                            Society Only
+            filteredTournaments.map((tournament) => {
+              const eligible = isEligibleForTournament(tournament);
+              const registrationOpen = canRegister(tournament);
+              const isFull = tournament.participantCount >= tournament.maxParticipants;
+              
+              return (
+                <Card 
+                  key={tournament._id} 
+                  className="border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-white/80 backdrop-blur-sm group cursor-pointer"
+                  onClick={() => router.push(`/tournaments/${tournament._id}`)}
+                >
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <CardTitle className="text-xl mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                          {tournament.name}
+                        </CardTitle>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className={getStatusColor(tournament.status)}>
+                            {getStatusText(tournament.status)}
                           </Badge>
+                          {tournament.tournamentType === 'society_only' && (
+                            <Badge variant="outline" className="border-purple-300 text-purple-700">
+                              Society Only
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    {/* Key Info */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex items-start gap-2">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <Trophy className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600">Sport</div>
+                          <div className="font-semibold text-sm text-gray-900 capitalize">{tournament.sport}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2">
+                        <div className="p-2 bg-green-100 rounded-lg">
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600">Entry Fee</div>
+                          <div className="font-semibold text-sm text-gray-900">₹{tournament.entryFee}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 col-span-2">
+                        <div className="p-2 bg-purple-100 rounded-lg">
+                          <Calendar className="h-4 w-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600">Tournament Dates</div>
+                          <div className="font-semibold text-sm text-gray-900">
+                            {new Date(tournament.startDate).toLocaleDateString('en-IN', { 
+                              day: 'numeric', 
+                              month: 'short' 
+                            })}
+                            {tournament.startDate !== tournament.endDate && (
+                              <> - {new Date(tournament.endDate).toLocaleDateString('en-IN', { 
+                                day: 'numeric', 
+                                month: 'short', 
+                                year: 'numeric' 
+                              })}</>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 col-span-2">
+                        <div className="p-2 bg-orange-100 rounded-lg">
+                          <MapPin className="h-4 w-4 text-orange-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600">Venue</div>
+                          <div className="font-semibold text-sm text-gray-900">{tournament.venue}</div>
+                          <div className="text-xs text-gray-500">{tournament.location}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Capacity Bar */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <Users className="h-4 w-4" />
+                          <span>Participants</span>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900">
+                          {tournament.participantCount}/{tournament.maxParticipants}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                        <div 
+                          className={`h-2.5 rounded-full transition-all ${
+                            isFull ? 'bg-red-500' : 'bg-green-500'
+                          }`}
+                          style={{ width: `${(tournament.participantCount / tournament.maxParticipants) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Categories */}
+                    {tournament.categories && tournament.categories.length > 0 && (
+                      <div>
+                        <div className="text-xs text-gray-600 mb-2 flex items-center gap-1">
+                          <Target className="h-3 w-3" />
+                          Categories:
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {tournament.categories.slice(0, 3).map((category) => (
+                            <Badge key={category} variant="secondary" className="text-xs px-2 py-1">
+                              {category}
+                            </Badge>
+                          ))}
+                          {tournament.categories.length > 3 && (
+                            <Badge variant="secondary" className="text-xs px-2 py-1">
+                              +{tournament.categories.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Eligibility Check */}
+                    {tournament.tournamentType === 'society_only' && tournament.allowedSociety && (
+                      <div className={`flex items-center gap-2 text-sm p-2 rounded-lg ${
+                        eligible 
+                          ? 'bg-green-50 text-green-700' 
+                          : 'bg-red-50 text-red-700'
+                      }`}>
+                        {eligible ? (
+                          <>
+                            <CheckCircle className="h-4 w-4" />
+                            You're eligible
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-4 w-4" />
+                            {tournament.allowedSociety} only
+                          </>
                         )}
                       </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Trophy className="h-4 w-4 mr-2" />
-                      <span className="capitalize">{tournament.sport}</span>
-                    </div>
-                    
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      <span>{new Date(tournament.startDate).toLocaleDateString()}</span>
-                      {tournament.startDate !== tournament.endDate && (
-                        <span> - {new Date(tournament.endDate).toLocaleDateString()}</span>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center text-sm text-gray-600">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      <span>{tournament.venue}, {tournament.location}</span>
-                    </div>
-                    
-                    <div className="flex items-center text-sm text-gray-600">
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      <span>₹{tournament.entryFee} entry fee</span>
-                    </div>
-                    
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Users className="h-4 w-4 mr-2" />
-                      <span>{tournament.participantCount}/{tournament.maxParticipants} participants</span>
-                    </div>
-                  </div>
+                    )}
 
-                  {/* Categories */}
-                  {tournament.categories && tournament.categories.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Categories:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {tournament.categories.map((category) => (
-                          <Badge key={category} variant="secondary" className="text-xs">
-                            {category}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Eligibility Check */}
-                  {tournament.tournamentType === 'society_only' && tournament.allowedSociety && (
-                    <div className="mb-4">
-                      {isEligibleForTournament(tournament) ? (
-                        <div className="flex items-center text-sm text-green-600">
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          You are eligible for this tournament
-                        </div>
-                      ) : (
-                        <div className="flex items-center text-sm text-red-600">
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Only for {tournament.allowedSociety} residents
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" asChild className="flex-1">
-                      <Link href={`/tournaments/${tournament._id}`}>
-                        <Eye className="h-4 w-4 mr-1" />
-                        View Details
-                      </Link>
-                    </Button>
-                    
-                    {canRegister(tournament) && (
-                      <Button size="sm" asChild className="flex-1">
-                        <Link href={`/register?tournament=${tournament._id}`}>
-                          <Plus className="h-4 w-4 mr-1" />
-                          Register
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="outline" size="sm" asChild className="flex-1">
+                        <Link href={`/tournaments/${tournament._id}`}>
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Details
                         </Link>
                       </Button>
-                    )}
-                    
-                    {tournament.status === 'registration_open' && tournament.participantCount >= tournament.maxParticipants && (
-                      <div className="flex items-center text-sm text-red-600">
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Full
-                      </div>
-                    )}
-                    
-                    {tournament.status === 'ongoing' && (
-                      <div className="flex items-center text-sm text-blue-600">
-                        <Clock className="h-4 w-4 mr-1" />
-                        Ongoing
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                      
+                      {registrationOpen && (
+                        <Button size="sm" asChild className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                          <Link href={`/tournaments/${tournament._id}`}>
+                            <Sparkles className="h-4 w-4 mr-1" />
+                            Register
+                          </Link>
+                        </Button>
+                      )}
+                      
+                      {isFull && tournament.status === 'registration_open' && (
+                        <div className="flex-1 flex items-center justify-center text-sm text-red-600 font-medium">
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Full
+                        </div>
+                      )}
+                      
+                      {tournament.status === 'ongoing' && (
+                        <div className="flex-1 flex items-center justify-center text-sm text-blue-600 font-medium">
+                          <Clock className="h-4 w-4 mr-1" />
+                          Ongoing
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
       </div>

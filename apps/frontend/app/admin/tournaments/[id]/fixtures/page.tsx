@@ -3,7 +3,27 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/auth-guard';
+import { LiveScoring } from '@/components/live-scoring';
+import { Match as BaseMatch } from '@repo/schemas';
 import { motion } from 'framer-motion';
+
+// Extended Match interface with new scoring fields
+interface Match extends BaseMatch {
+  games?: Array<{
+    gameNumber: number;
+    player1Score: number;
+    player2Score: number;
+    winner?: 'player1' | 'player2';
+    duration?: number;
+    completedAt?: string;
+  }>;
+  matchResult?: {
+    player1GamesWon: number;
+    player2GamesWon: number;
+    totalDuration?: number;
+    completedAt?: string;
+  };
+}
 import {
   ArrowLeft,
   Calendar,
@@ -16,27 +36,9 @@ import {
   XCircle,
   Play,
   Loader2,
+  Target,
 } from 'lucide-react';
 import Link from 'next/link';
-
-interface Match {
-  _id: string;
-  round: string;
-  roundNumber: number;
-  matchNumber: number;
-  player1Id: string | null;
-  player2Id: string | null;
-  player1Name: string;
-  player2Name: string;
-  player1Score: number[];
-  player2Score: number[];
-  status: string;
-  scheduledDate?: string;
-  scheduledTime?: string;
-  venue?: string;
-  category: string;
-  winnerId?: string;
-}
 
 interface Tournament {
   _id: string;
@@ -62,6 +64,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showScoringModal, setShowScoringModal] = useState(false);
   const [scheduleData, setScheduleData] = useState({
     date: '',
     time: '',
@@ -107,6 +110,18 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
       venue: match.venue || tournament?.venue || '',
     });
     setShowScheduleModal(true);
+  };
+
+  const handleScoreMatch = (match: Match) => {
+    setSelectedMatch(match);
+    setShowScoringModal(true);
+  };
+
+  const handleScoreUpdate = (updatedMatch: Match) => {
+    // Update the match in the local state
+    setMatches(prevMatches => 
+      prevMatches.map(m => m._id === updatedMatch._id ? updatedMatch : m)
+    );
   };
 
   const handleSaveSchedule = async () => {
@@ -245,7 +260,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
             </h2>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {matchesByRound[round].map((match) => (
+              {matchesByRound[round]?.map((match) => (
                 <div key={match._id} className="glass-card-intense rounded-xl p-6">
                   {/* Match Header */}
                   <div className="mb-4 flex items-start justify-between">
@@ -269,7 +284,9 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
                     >
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-gray-400" />
-                        <span className="text-primary font-medium">{match.player1Name}</span>
+                        <span className={`font-medium ${match.player1Name === 'TBD' || !match.player1Name ? 'text-gray-500 italic' : 'text-primary'}`}>
+                          {match.player1Name || 'TBD'}
+                        </span>
                       </div>
                       {match.status === 'completed' && match.player1Score.length > 0 && (
                         <span className="text-primary font-bold">
@@ -289,7 +306,9 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
                     >
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-gray-400" />
-                        <span className="text-primary font-medium">{match.player2Name}</span>
+                        <span className={`font-medium ${match.player2Name === 'TBD' || !match.player2Name ? 'text-gray-500 italic' : 'text-primary'}`}>
+                          {match.player2Name || 'TBD'}
+                        </span>
                       </div>
                       {match.status === 'completed' && match.player2Score.length > 0 && (
                         <span className="text-primary font-bold">
@@ -327,15 +346,29 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
 
                   {/* Actions */}
                   {match.status !== 'completed' && (
-                    <button
-                      onClick={() => handleScheduleMatch(match)}
-                      className="glass-card w-full rounded-lg px-4 py-2 text-sm font-medium text-secondary transition-all hover:bg-white/10"
-                    >
-                      <span className="flex items-center justify-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {match.scheduledDate ? 'Reschedule' : 'Schedule Match'}
-                      </span>
-                    </button>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => handleScheduleMatch(match)}
+                        className="glass-card w-full rounded-lg px-4 py-2 text-sm font-medium text-secondary transition-all hover:bg-white/10"
+                      >
+                        <span className="flex items-center justify-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          {match.scheduledDate ? 'Reschedule' : 'Schedule Match'}
+                        </span>
+                      </button>
+                      
+                      {(match.status === 'scheduled' || match.status === 'in_progress') && (
+                        <button
+                          onClick={() => handleScoreMatch(match)}
+                          className="glass-card-intense w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:bg-green-600/80"
+                        >
+                          <span className="flex items-center justify-center gap-2">
+                            <Target className="h-4 w-4" />
+                            {match.status === 'scheduled' ? 'Start Scoring' : 'Live Score'}
+                          </span>
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}
@@ -419,6 +452,36 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
                 Save Schedule
               </button>
             </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Scoring Modal */}
+      {showScoringModal && selectedMatch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="glass-card-intense w-full max-w-2xl rounded-2xl p-6"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-primary text-xl font-bold">Live Scoring</h3>
+              <button
+                onClick={() => {
+                  setShowScoringModal(false);
+                  setSelectedMatch(null);
+                }}
+                className="glass-card rounded-lg p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <XCircle className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <LiveScoring 
+              matchId={selectedMatch._id} 
+              onScoreUpdate={handleScoreUpdate}
+            />
           </motion.div>
         </div>
       )}

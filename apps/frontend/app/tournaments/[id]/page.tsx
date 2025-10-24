@@ -24,7 +24,8 @@ import {
   Loader2,
   Sparkles,
   Target,
-  Award
+  Award,
+  Edit
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -46,7 +47,26 @@ interface Tournament {
   format: string;
   description?: string;
   rules?: string;
-  prizes?: string;
+  prizes?: string | {
+    winner: Array<{
+      type: string;
+      value: number;
+      description: string;
+      currency: string;
+    }>;
+    runnerUp: Array<{
+      type: string;
+      value: number;
+      description: string;
+      currency: string;
+    }>;
+    semiFinalist: Array<{
+      type: string;
+      value: number;
+      description: string;
+      currency: string;
+    }>;
+  };
   contactPerson?: string;
   contactPhone?: string;
   participantCount: number;
@@ -102,11 +122,11 @@ export default function TournamentDetailPage() {
           }
         }
       } else {
-        setError('Tournament not found');
+        setError(result.error || 'Tournament not found');
       }
     } catch (error) {
       console.error('Error fetching tournament:', error);
-      setError('Failed to load tournament');
+      setError('Failed to load tournament. Please check if the tournament ID is valid.');
     } finally {
       setIsLoading(false);
     }
@@ -238,16 +258,21 @@ export default function TournamentDetailPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Button variant="outline" asChild size="sm">
-            <Link href="/tournaments">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Tournaments
-            </Link>
-          </Button>
+    <div className="relative z-10 min-h-screen p-8">
+      <div className="mx-auto max-w-6xl">
+        {/* Header */}
+        <div className="mb-8 flex items-center gap-4">
+          <Link
+            href="/tournaments"
+            className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-transform hover:scale-105"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Tournaments
+          </Link>
+          <div>
+            <h1 className="text-primary text-3xl font-bold">{tournament.name}</h1>
+            <p className="text-secondary mt-1">{tournament.sport.charAt(0).toUpperCase() + tournament.sport.slice(1)} Tournament</p>
+          </div>
         </div>
 
         {/* Hero Section */}
@@ -681,6 +706,57 @@ export default function TournamentDetailPage() {
           </CardContent>
         </Card>
 
+        {/* Admin Management Section */}
+        {user && user.roles?.includes('admin') && (
+          <Card className="mb-8 border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardHeader>
+              <CardTitle className="flex items-center text-blue-800">
+                <Award className="h-5 w-5 mr-2" />
+                Tournament Management
+              </CardTitle>
+              <CardDescription className="text-blue-700">
+                Admin tools for managing this tournament
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex flex-col items-center justify-center space-y-2 border-blue-300 hover:bg-blue-100"
+                  asChild
+                >
+                  <Link href={`/admin/tournaments/${id}/participants`}>
+                    <Users className="h-6 w-6 text-blue-600" />
+                    <span className="text-sm font-medium">Manage Participants</span>
+                  </Link>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex flex-col items-center justify-center space-y-2 border-green-300 hover:bg-green-100"
+                  asChild
+                >
+                  <Link href={`/admin/tournaments/${id}/fixtures`}>
+                    <Target className="h-6 w-6 text-green-600" />
+                    <span className="text-sm font-medium">Generate Fixtures</span>
+                  </Link>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex flex-col items-center justify-center space-y-2 border-purple-300 hover:bg-purple-100"
+                  asChild
+                >
+                  <Link href={`/admin/tournaments/${id}/edit`}>
+                    <Edit className="h-6 w-6 text-purple-600" />
+                    <span className="text-sm font-medium">Edit Tournament</span>
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Additional Information */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Description */}
@@ -747,7 +823,48 @@ export default function TournamentDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 whitespace-pre-wrap">{tournament.prizes}</p>
+                {typeof tournament.prizes === 'string' ? (
+                  <p className="text-gray-700 whitespace-pre-wrap">{tournament.prizes}</p>
+                ) : (
+                  <div className="space-y-4">
+                    {tournament.prizes.winner && tournament.prizes.winner.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-600 mb-2">Winner</h4>
+                        <ul className="text-gray-700 space-y-1">
+                          {tournament.prizes.winner.map((prize, index) => (
+                            <li key={index}>
+                              • {prize.description}: {prize.value} {prize.currency}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {tournament.prizes.runnerUp && tournament.prizes.runnerUp.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-600 mb-2">Runner Up</h4>
+                        <ul className="text-gray-700 space-y-1">
+                          {tournament.prizes.runnerUp.map((prize, index) => (
+                            <li key={index}>
+                              • {prize.description}: {prize.value} {prize.currency}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {tournament.prizes.semiFinalist && tournament.prizes.semiFinalist.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-600 mb-2">Semi Finalist</h4>
+                        <ul className="text-gray-700 space-y-1">
+                          {tournament.prizes.semiFinalist.map((prize, index) => (
+                            <li key={index}>
+                              • {prize.description}: {prize.value} {prize.currency}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
