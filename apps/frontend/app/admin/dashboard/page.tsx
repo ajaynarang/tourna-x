@@ -102,24 +102,27 @@ export default function AdminDashboard() {
       // Fetch tournaments
       const tournamentsResponse = await fetch('/api/tournaments');
       const tournamentsData = await tournamentsResponse.json();
-      setTournaments(tournamentsData.slice(0, 5)); // Show only recent 5
+      setTournaments(tournamentsData.data?.slice(0, 5) || []); // Show only recent 5
 
       // Fetch participants
       const participantsResponse = await fetch('/api/participants');
       const participantsData = await participantsResponse.json();
-      setParticipants(participantsData.slice(0, 5)); // Show only recent 5
+      setParticipants(participantsData.data?.slice(0, 5) || []); // Show only recent 5
 
       // Calculate enhanced stats
-      const totalTournaments = tournamentsData.length;
-      const activeTournaments = tournamentsData.filter((t: Tournament) => 
+      const tournaments = tournamentsData.data || [];
+      const participants = participantsData.data || [];
+      
+      const totalTournaments = tournaments.length;
+      const activeTournaments = tournaments.filter((t: Tournament) => 
         ['published', 'registration_open', 'ongoing'].includes(t.status)
       ).length;
-      const totalParticipants = participantsData.length;
-      const totalRevenue = tournamentsData.reduce((sum: number, t: Tournament) => 
+      const totalParticipants = participants.length;
+      const totalRevenue = tournaments.reduce((sum: number, t: Tournament) => 
         sum + (t.participantCount * t.entryFee), 0
       );
-      const pendingApprovals = participantsData.filter((p: Participant) => !p.isApproved).length;
-      const upcomingMatches = tournamentsData.filter((t: Tournament) => 
+      const pendingApprovals = participants.filter((p: Participant) => !p.isApproved).length;
+      const upcomingMatches = tournaments.filter((t: Tournament) => 
         t.status === 'ongoing'
       ).length;
 

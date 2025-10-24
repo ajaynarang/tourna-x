@@ -180,7 +180,7 @@ export default function SchedulingPage({ params }: { params: Promise<{ id: strin
           body: JSON.stringify({
             court: courtName,
             scheduledDate: selectedDate,
-            scheduledTime: timeSlot.time,
+            scheduledTime: timeSlot?.time || '',
             duration: 60
           })
         });

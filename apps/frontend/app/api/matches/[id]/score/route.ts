@@ -48,7 +48,7 @@ function determineMatchWinner(sets: { player1Score: number[], player2Score: numb
   
   sets.player1Score.forEach((score1, index) => {
     const score2 = sets.player2Score[index];
-    if (score1 > score2) wins.player1++;
+    if (score2 !== undefined && score1 > score2) wins.player1++;
     else wins.player2++;
   });
   

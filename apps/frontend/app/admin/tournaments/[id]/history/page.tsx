@@ -1,31 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
 import { Button } from '@repo/ui';
-import { Badge } from '@repo/ui';
-import { 
+import { motion } from 'framer-motion';
+import {
+  AlertCircle,
   ArrowLeft,
-  Trophy,
-  Users,
-  Calendar,
-  TrendingUp,
-  BarChart3,
-  Target,
   Award,
-  Clock,
-  MapPin,
-  Filter,
+  BarChart3,
+  Calendar,
   CheckCircle,
-  Search,
+  Clock,
   Download,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Search,
+  Target,
+  TrendingUp,
+  Trophy,
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 interface Tournament {
   _id: string;

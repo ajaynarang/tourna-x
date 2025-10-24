@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
-import { getAuthUser } from '@/lib/auth-utils';
+// Remove circular import
 import { ObjectId } from 'mongodb';
 
 export async function getAuthUser(request: NextRequest) {

@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     // Validate tournament data
     const validatedData = insertTournamentSchema.parse({
       ...tournamentData,
-      createdBy: user._id,
+      createdBy: user._id.toString(),
       createdAt: new Date(),
       updatedAt: new Date(),
     });

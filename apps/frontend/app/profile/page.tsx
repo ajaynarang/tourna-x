@@ -416,7 +416,7 @@ export default function ProfilePage() {
           >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-yellow-500/20 rounded-lg">
-                <Award className="h-5 w-5 text-yellow-400" />
+                <Trophy className="h-5 w-5 text-yellow-400" />
               </div>
               <div>
                 <p className="text-sm text-tertiary">Titles</p>

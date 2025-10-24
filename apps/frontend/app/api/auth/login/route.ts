@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     const sessionData = insertSessionSchema.parse({
-      userId: user._id,
+      userId: user._id.toString(),
       sessionToken,
       expiresAt,
     });

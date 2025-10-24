@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
     });
 
-    const result = await db.collection(COLLECTIONS.NOTIFICATIONS).insertOne(validatedData);
+    const result = await db.collection(COLLECTIONS.NOTIFICATIONS).insertOne(validatedData as any);
     
     return NextResponse.json({
       success: true,
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating notification:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validation error', details: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { success: false, error: 'Failed to create notification' },

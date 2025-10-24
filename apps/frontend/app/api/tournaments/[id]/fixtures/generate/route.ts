@@ -185,13 +185,13 @@ export async function POST(
       
       let matches;
       if (tournament.format === 'knockout') {
-        matches = generateKnockoutBracket(groupParticipants, category, ageGroup === 'open' ? undefined : ageGroup);
+        matches = generateKnockoutBracket(groupParticipants, category || '', ageGroup === 'open' ? '' : (ageGroup || ''));
       } else {
-        matches = generateRoundRobin(groupParticipants, category, ageGroup === 'open' ? undefined : ageGroup);
+        matches = generateRoundRobin(groupParticipants, category || '', ageGroup === 'open' ? '' : (ageGroup || ''));
       }
       
       // Add tournament ID to each match
-      matches.forEach(match => {
+      matches.forEach((match: any) => {
         match.tournamentId = new ObjectId(id);
       });
       

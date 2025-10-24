@@ -341,7 +341,7 @@ export default function CreateTournamentPage() {
                   <label key={gender} className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={formData.gender.includes(gender)}
+                      checked={formData.gender.includes(gender as any)}
                       onChange={(e) => {
                         if (e.target.checked) {
                           updateFormData('gender', [...formData.gender, gender]);
@@ -596,7 +596,7 @@ export default function CreateTournamentPage() {
   const getStepIcon = (step: number) => {
     const icons = [Trophy, Users, Settings, DollarSign, Eye];
     const Icon = icons[step - 1];
-    return <Icon className="h-5 w-5" />;
+    return Icon ? <Icon className="h-5 w-5" /> : null;
   };
 
   return (

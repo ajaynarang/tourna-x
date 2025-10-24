@@ -180,7 +180,7 @@ export default function TournamentRegistrationPage({ params }: { params: Promise
         break;
       
       case 4:
-        if (tournament?.entryFee > 0 && !formData.paymentMethod.trim()) {
+        if (tournament?.entryFee && tournament.entryFee > 0 && !formData.paymentMethod.trim()) {
           newErrors.paymentMethod = 'Payment method is required';
         }
         break;
@@ -562,7 +562,7 @@ export default function TournamentRegistrationPage({ params }: { params: Promise
   const getStepIcon = (step: number) => {
     const icons = [User, Trophy, UserPlus, CheckCircle];
     const Icon = icons[step - 1];
-    return <Icon className="h-5 w-5" />;
+    return Icon ? <Icon className="h-5 w-5" /> : null;
   };
 
   if (isLoading) {
