@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd ../.. && pnpm run build",
+  "buildCommand": "cd ../.. && pnpm install && pnpm run build:frontend",
   "installCommand": "cd ../.. && pnpm install",
   "framework": "nextjs",
   "env": {
