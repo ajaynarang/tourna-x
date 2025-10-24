@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
 import { ObjectId } from 'mongodb';
+import { ObjectId } from 'mongodb';
 
 // Helper function to get authenticated user
 async function getAuthenticatedUser(request: NextRequest) {
@@ -22,7 +23,7 @@ async function getAuthenticatedUser(request: NextRequest) {
   }
 
   const user = await db.collection(COLLECTIONS.USERS).findOne({
-    _id: session.userId
+    _id: new ObjectId(session.userId)
   });
 
   return user;

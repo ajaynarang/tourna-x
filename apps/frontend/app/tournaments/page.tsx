@@ -66,10 +66,17 @@ export default function TournamentsPage() {
     try {
       setIsLoading(true);
       const response = await fetch('/api/tournaments');
-      const data = await response.json();
-      setTournaments(data.filter((t: Tournament) => t.isPublished));
+      const result = await response.json();
+      
+      if (result.success && Array.isArray(result.data)) {
+        setTournaments(result.data.filter((t: Tournament) => t.isPublished));
+      } else {
+        console.error('Failed to fetch tournaments:', result.error);
+        setTournaments([]);
+      }
     } catch (error) {
       console.error('Error fetching tournaments:', error);
+      setTournaments([]);
     } finally {
       setIsLoading(false);
     }

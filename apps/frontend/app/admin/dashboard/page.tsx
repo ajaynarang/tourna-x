@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { AuthGuard } from '@/components/auth-guard';
 import { 
   Trophy, 
   Users, 
@@ -33,6 +34,14 @@ interface Stats {
 }
 
 export default function AdminDashboard() {
+  return (
+    <AuthGuard requiredRoles={['admin']}>
+      <AdminDashboardContent />
+    </AuthGuard>
+  );
+}
+
+function AdminDashboardContent() {
   const router = useRouter();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [stats, setStats] = useState<Stats>({

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { AuthGuard } from '@/components/auth-guard';
 import { 
   Plus,
   Search,
@@ -44,6 +45,14 @@ interface Tournament {
 }
 
 export default function AdminTournamentsPage() {
+  return (
+    <AuthGuard requiredRoles={['admin']}>
+      <AdminTournamentsContent />
+    </AuthGuard>
+  );
+}
+
+function AdminTournamentsContent() {
   const router = useRouter();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [filteredTournaments, setFilteredTournaments] = useState<Tournament[]>([]);

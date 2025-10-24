@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { RoleSwitcher } from '@/components/role-switcher';
 import { motion } from 'framer-motion';
 import {
   Search,
@@ -111,6 +112,7 @@ export function AppHeader({ onCommandPaletteToggle, pageTitle, pageSubtitle }: A
 
             {/* Action Icons (mobile only - shown in first row) */}
             <div className="flex items-center gap-2 sm:gap-3 lg:hidden">
+              <RoleSwitcher />
               <ThemeToggle />
 
               <button
@@ -200,6 +202,7 @@ export function AppHeader({ onCommandPaletteToggle, pageTitle, pageSubtitle }: A
 
           {/* Action Icons (desktop only - shown in right section) */}
           <div className="hidden items-center gap-2 sm:gap-3 lg:flex">
+            <RoleSwitcher />
             <ThemeToggle />
 
             <button

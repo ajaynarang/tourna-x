@@ -33,9 +33,24 @@ interface TournamentFormData {
   allowedSociety: string;
   rules: string;
   prizes: {
-    winner: number;
-    runnerUp: number;
-    semiFinalist: number;
+    winner: Array<{
+      type: 'money' | 'trophy' | 'medal' | 'certificate' | 'voucher' | 'merchandise' | 'other';
+      value: number;
+      description: string;
+      currency: string;
+    }>;
+    runnerUp: Array<{
+      type: 'money' | 'trophy' | 'medal' | 'certificate' | 'voucher' | 'merchandise' | 'other';
+      value: number;
+      description: string;
+      currency: string;
+    }>;
+    semiFinalist: Array<{
+      type: 'money' | 'trophy' | 'medal' | 'certificate' | 'voucher' | 'merchandise' | 'other';
+      value: number;
+      description: string;
+      currency: string;
+    }>;
   };
 }
 
@@ -57,9 +72,24 @@ interface Tournament {
   allowedSociety: string;
   rules: string;
   prizes: {
-    winner: number;
-    runnerUp: number;
-    semiFinalist: number;
+    winner: Array<{
+      type: string;
+      value: number;
+      description: string;
+      currency: string;
+    }>;
+    runnerUp: Array<{
+      type: string;
+      value: number;
+      description: string;
+      currency: string;
+    }>;
+    semiFinalist: Array<{
+      type: string;
+      value: number;
+      description: string;
+      currency: string;
+    }>;
   };
   status: string;
 }
@@ -84,9 +114,9 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
     allowedSociety: '',
     rules: '',
     prizes: {
-      winner: 0,
-      runnerUp: 0,
-      semiFinalist: 0,
+      winner: [],
+      runnerUp: [],
+      semiFinalist: [],
     },
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -121,7 +151,11 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
             tournamentType: tournament.tournamentType || 'open',
             allowedSociety: tournament.allowedSociety || '',
             rules: tournament.rules || '',
-            prizes: tournament.prizes || { winner: 0, runnerUp: 0, semiFinalist: 0 },
+            prizes: tournament.prizes || {
+              winner: [],
+              runnerUp: [],
+              semiFinalist: [],
+            },
           });
         } else {
           setError('Failed to load tournament');
@@ -193,7 +227,7 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
         <div className="mb-8 flex items-center gap-4">
           <Link
             href="/admin/tournaments"
-            className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-transform hover:scale-105"
+            className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium  transition-transform hover:scale-105"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Tournaments
@@ -285,74 +319,69 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
             <div className="space-y-6">
               <div>
                 <label className="text-primary mb-3 block text-sm font-medium">
-                  Categories <span className="text-red-400">*</span>
+                  Playing Format <span className="text-red-400">*</span>
                 </label>
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="flex flex-wrap gap-3">
                   {['singles', 'doubles', 'mixed'].map((category) => (
-                    <label
+                    <button
                       key={category}
-                      className="glass-card flex cursor-pointer items-center gap-3 rounded-lg p-4 transition-all hover:scale-105"
+                      type="button"
+                      onClick={() => toggleArrayItem('categories', category)}
+                      className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                        formData.categories.includes(category)
+                          ? 'bg-green-500 text-white'
+                          : 'glass-card text-secondary hover:text-primary'
+                      }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={formData.categories.includes(category)}
-                        onChange={() => toggleArrayItem('categories', category)}
-                        className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-primary capitalize">{category}</span>
-                    </label>
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </button>
                   ))}
                 </div>
               </div>
 
               <div>
                 <label className="text-primary mb-3 block text-sm font-medium">
-                  Gender Categories
+                  Gender <span className="text-red-400">*</span>
                 </label>
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="flex flex-wrap gap-3">
                   {['men', 'women', 'mixed'].map((gender) => (
-                    <label
+                    <button
                       key={gender}
-                      className="glass-card flex cursor-pointer items-center gap-3 rounded-lg p-4 transition-all hover:scale-105"
+                      type="button"
+                      onClick={() => toggleArrayItem('gender', gender)}
+                      className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                        formData.gender.includes(gender)
+                          ? 'bg-blue-500 text-white'
+                          : 'glass-card text-secondary hover:text-primary'
+                      }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={formData.gender.includes(gender)}
-                        onChange={() => toggleArrayItem('gender', gender)}
-                        className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-primary capitalize">{gender}</span>
-                    </label>
+                      {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                    </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="text-primary mb-2 block text-sm font-medium">
+                <label className="text-primary mb-3 block text-sm font-medium">
                   Tournament Format <span className="text-red-400">*</span>
                 </label>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex flex-wrap gap-3">
                   {[
-                    { value: 'knockout', label: 'Knockout', desc: 'Single elimination' },
-                    { value: 'round_robin', label: 'Round Robin', desc: 'Everyone plays everyone' },
+                    { value: 'knockout', label: 'Knockout' },
+                    { value: 'round_robin', label: 'Round Robin' },
                   ].map((format) => (
-                    <label
+                    <button
                       key={format.value}
-                      className="glass-card flex cursor-pointer items-center gap-3 rounded-lg p-4 transition-all hover:scale-105"
+                      type="button"
+                      onClick={() => updateField('format', format.value)}
+                      className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                        formData.format === format.value
+                          ? 'bg-purple-500 text-white'
+                          : 'glass-card text-secondary hover:text-primary'
+                      }`}
                     >
-                      <input
-                        type="radio"
-                        name="format"
-                        value={format.value}
-                        checked={formData.format === format.value}
-                        onChange={(e) => updateField('format', e.target.value)}
-                        className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <div>
-                        <div className="text-primary font-medium">{format.label}</div>
-                        <div className="text-secondary text-sm">{format.desc}</div>
-                      </div>
-                    </label>
+                      {format.label}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -396,6 +425,65 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
 
+          {/* Tournament Type */}
+          <div className="glass-card-intense p-6">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-500">
+                <MapPin className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-primary text-xl font-semibold">Tournament Type</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateField('tournamentType', 'open');
+                    updateField('allowedSociety', '');
+                  }}
+                  className={`rounded-lg p-4 text-left transition-all ${
+                    formData.tournamentType === 'open'
+                      ? 'bg-green-500/20 ring-2 ring-green-500'
+                      : 'glass-card hover:bg-white/5'
+                  }`}
+                >
+                  <div className="text-primary mb-1 font-semibold">Open Tournament</div>
+                  <div className="text-tertiary text-sm">Anyone can register</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => updateField('tournamentType', 'society_only')}
+                  className={`rounded-lg p-4 text-left transition-all ${
+                    formData.tournamentType === 'society_only'
+                      ? 'bg-blue-500/20 ring-2 ring-blue-500'
+                      : 'glass-card hover:bg-white/5'
+                  }`}
+                >
+                  <div className="text-primary mb-1 font-semibold">Society Only</div>
+                  <div className="text-tertiary text-sm">Restricted to society members</div>
+                </button>
+              </div>
+
+              {formData.tournamentType === 'society_only' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                >
+                  <FormField
+                    label="Society Name"
+                    required
+                    value={formData.allowedSociety}
+                    onChange={(e) => updateField('allowedSociety', e.target.value)}
+                    placeholder="e.g., Green Valley Apartments"
+                  />
+                </motion.div>
+              )}
+            </div>
+          </div>
+
           {/* Fees and Prizes */}
           <div className="glass-card-intense p-6">
             <div className="mb-6 flex items-center gap-3">
@@ -427,42 +515,148 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
 
               <div>
                 <label className="text-primary mb-3 block text-sm font-medium">
-                  Prize Money (₹)
+                  Prize Details
                 </label>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="text-secondary mb-1 block text-xs">Winner</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.prizes.winner}
-                      onChange={(e) => updateField('prizes', { ...formData.prizes, winner: parseInt(e.target.value) || 0 })}
-                      className="glass-card w-full rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-secondary mb-1 block text-xs">Runner Up</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.prizes.runnerUp}
-                      onChange={(e) => updateField('prizes', { ...formData.prizes, runnerUp: parseInt(e.target.value) || 0 })}
-                      className="glass-card w-full rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-secondary mb-1 block text-xs">Semi Finalist</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.prizes.semiFinalist}
-                      onChange={(e) => updateField('prizes', { ...formData.prizes, semiFinalist: parseInt(e.target.value) || 0 })}
-                      className="glass-card w-full rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="0"
-                    />
-                  </div>
+                <div className="space-y-6">
+                  {[
+                    { key: 'winner' as const, label: 'Winner', icon: '🏆' },
+                    { key: 'runnerUp' as const, label: 'Runner Up', icon: '🥈' },
+                    { key: 'semiFinalist' as const, label: 'Semi Finalist', icon: '🥉' },
+                  ].map(({ key, label, icon }) => (
+                    <div key={key} className="glass-card rounded-lg p-4">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">{icon}</span>
+                          <span className="text-primary font-medium">{label}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newPrize = { type: 'money', value: 0, description: '', currency: 'INR' };
+                            updateField('prizes', {
+                              ...formData.prizes,
+                              [key]: [...formData.prizes[key as keyof typeof formData.prizes], newPrize]
+                            });
+                          }}
+                          className="text-primary hover:text-green-400 text-sm font-medium transition-colors"
+                        >
+                          + Add Prize
+                        </button>
+                      </div>
+                      
+                      {formData.prizes[key as keyof typeof formData.prizes].length === 0 ? (
+                        <div className="text-secondary text-center py-4 text-sm">
+                          No prizes added yet. Click "Add Prize" to get started.
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {formData.prizes[key as keyof typeof formData.prizes].map((prize, index) => (
+                            <div key={index} className="glass-card rounded-lg p-3">
+                              <div className="grid gap-3 sm:grid-cols-4">
+                                <div>
+                                  <label className="text-secondary mb-1 block text-xs">Prize Type</label>
+                                  <select
+                                    value={prize.type}
+                                    onChange={(e) => {
+                                      const updatedPrizes = [...formData.prizes[key as keyof typeof formData.prizes]];
+                                      updatedPrizes[index] = { ...prize, type: e.target.value as any };
+                                      updateField('prizes', {
+                                        ...formData.prizes,
+                                        [key]: updatedPrizes
+                                      });
+                                    }}
+                                    className="glass-card w-full rounded-lg px-2 py-1 text-gray-900 dark:text-white outline-none transition-all focus:ring-2 focus:ring-green-500/50 text-sm"
+                                  >
+                                    <option value="money">💰 Money</option>
+                                    <option value="trophy">🏆 Trophy</option>
+                                    <option value="medal">🥇 Medal</option>
+                                    <option value="certificate">📜 Certificate</option>
+                                    <option value="voucher">🎫 Gift Voucher</option>
+                                    <option value="merchandise">🎁 Merchandise</option>
+                                    <option value="other">📦 Other</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="text-secondary mb-1 block text-xs">
+                                    {prize.type === 'money' ? 'Amount' : 'Quantity'}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={prize.value}
+                                    onChange={(e) => {
+                                      const updatedPrizes = [...formData.prizes[key as keyof typeof formData.prizes]];
+                                      updatedPrizes[index] = { ...prize, value: parseInt(e.target.value) || 0 };
+                                      updateField('prizes', {
+                                        ...formData.prizes,
+                                        [key]: updatedPrizes
+                                      });
+                                    }}
+                                    className="glass-card w-full rounded-lg px-2 py-1 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 outline-none transition-all focus:ring-2 focus:ring-green-500/50 text-sm"
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-secondary mb-1 block text-xs">Description</label>
+                                  <input
+                                    type="text"
+                                    value={prize.description}
+                                    onChange={(e) => {
+                                      const updatedPrizes = [...formData.prizes[key as keyof typeof formData.prizes]];
+                                      updatedPrizes[index] = { ...prize, description: e.target.value };
+                                      updateField('prizes', {
+                                        ...formData.prizes,
+                                        [key]: updatedPrizes
+                                      });
+                                    }}
+                                    className="glass-card w-full rounded-lg px-2 py-1 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 outline-none transition-all focus:ring-2 focus:ring-green-500/50 text-sm"
+                                    placeholder={prize.type === 'money' ? 'e.g., Cash Prize' : 'e.g., Gold Trophy'}
+                                  />
+                                </div>
+                                <div className="flex items-end gap-2">
+                                  {prize.type === 'money' && (
+                                    <div className="flex-1">
+                                      <label className="text-secondary mb-1 block text-xs">Currency</label>
+                                      <select
+                                        value={prize.currency}
+                                        onChange={(e) => {
+                                          const updatedPrizes = [...formData.prizes[key as keyof typeof formData.prizes]];
+                                          updatedPrizes[index] = { ...prize, currency: e.target.value };
+                                          updateField('prizes', {
+                                            ...formData.prizes,
+                                            [key]: updatedPrizes
+                                          });
+                                        }}
+                                        className="glass-card w-full rounded-lg px-2 py-1 text-gray-900 dark:text-white outline-none transition-all focus:ring-2 focus:ring-green-500/50 text-sm"
+                                      >
+                                        <option value="INR">₹ INR</option>
+                                        <option value="USD">$ USD</option>
+                                        <option value="EUR">€ EUR</option>
+                                      </select>
+                                    </div>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updatedPrizes = formData.prizes[key as keyof typeof formData.prizes].filter((_, i) => i !== index);
+                                      updateField('prizes', {
+                                        ...formData.prizes,
+                                        [key]: updatedPrizes
+                                      });
+                                    }}
+                                    className="text-red-400 hover:text-red-300 p-1 transition-colors"
+                                    title="Remove prize"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

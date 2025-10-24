@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
+import { ObjectId } from 'mongodb';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Find user
     const user = await db.collection(COLLECTIONS.USERS).findOne({
-      _id: session.userId
+      _id: new ObjectId(session.userId)
     });
 
     if (!user) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
+import { AuthGuard } from '@/components/auth-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
 import { Button } from '@repo/ui';
 import { Badge } from '@repo/ui';
@@ -66,10 +67,25 @@ interface Participant {
 }
 
 export default function PlayerDashboard() {
+  return (
+    <AuthGuard requiredRoles={['player']}>
+      <PlayerDashboardContent />
+    </AuthGuard>
+  );
+}
+
+function PlayerDashboardContent() {
   const { user } = useAuth();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [participations, setParticipations] = useState<Participant[]>([]);
+  const [playerStats, setPlayerStats] = useState({
+    totalMatches: 0,
+    wins: 0,
+    losses: 0,
+    winRate: 0,
+    totalTournaments: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   // Mock data for AI recommendations and player stats
@@ -90,12 +106,6 @@ export default function PlayerDashboard() {
     }
   ];
 
-  const playerStats = {
-    totalMatches: 15,
-    winRate: 73.3,
-    currentStreak: 4,
-    ranking: 12
-  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -105,25 +115,41 @@ export default function PlayerDashboard() {
     try {
       setIsLoading(true);
       
-      // Fetch available tournaments
-      const tournamentsResponse = await fetch('/api/tournaments');
-      const tournamentsData = await tournamentsResponse.json();
-      setTournaments(tournamentsData.filter((t: Tournament) => 
-        ['published', 'registration_open'].includes(t.status)
-      ));
-
-      // Fetch player's matches
-      const matchesResponse = await fetch('/api/player/matches');
-      const matchesData = await matchesResponse.json();
-      setMatches(matchesData.slice(0, 5)); // Show only upcoming 5
-
-      // Fetch player's participations
-      const participationsResponse = await fetch('/api/player/participations');
-      const participationsData = await participationsResponse.json();
-      setParticipations(participationsData.slice(0, 5)); // Show only recent 5
+      // Fetch dashboard data (includes tournaments, matches, participations)
+      const dashboardResponse = await fetch('/api/player/dashboard');
+      const dashboardResult = await dashboardResponse.json();
+      
+      if (dashboardResult.success && dashboardResult.data) {
+        const data = dashboardResult.data;
+        
+        // Set tournaments (filter for published/registration_open)
+        const availableTournaments = data.availableTournaments || [];
+        setTournaments(availableTournaments.filter((t: Tournament) => 
+          ['published', 'registration_open'].includes(t.status)
+        ));
+        
+        // Set matches (upcoming matches)
+        setMatches(data.upcomingMatches || []);
+        
+        // Set participations (recent participations)
+        setParticipations(data.recentParticipations || []);
+        
+        // Set player stats
+        if (data.player) {
+          setPlayerStats(data.player.stats || {});
+        }
+      } else {
+        console.error('Failed to fetch dashboard data:', dashboardResult.error);
+        setTournaments([]);
+        setMatches([]);
+        setParticipations([]);
+      }
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setTournaments([]);
+      setMatches([]);
+      setParticipations([]);
     } finally {
       setIsLoading(false);
     }
@@ -313,12 +339,12 @@ export default function PlayerDashboard() {
                   <div className="text-xs text-gray-600">Win Rate</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">{playerStats.currentStreak}</div>
-                  <div className="text-xs text-gray-600">Current Streak</div>
+                  <div className="text-2xl font-bold text-purple-600">{playerStats.wins}</div>
+                  <div className="text-xs text-gray-600">Wins</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">#{playerStats.ranking}</div>
-                  <div className="text-xs text-gray-600">Ranking</div>
+                  <div className="text-2xl font-bold text-orange-600">{playerStats.totalTournaments}</div>
+                  <div className="text-xs text-gray-600">Tournaments</div>
                 </div>
               </div>
             </div>

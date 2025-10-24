@@ -51,12 +51,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (response.ok) {
           const userData = await response.json();
-          setUser(userData);
-          // Set initial role - prefer admin if available, otherwise player
-          if (userData.roles?.includes('admin')) {
-            setCurrentRole('admin');
-          } else if (userData.roles?.includes('player')) {
-            setCurrentRole('player');
+          if (userData.success && userData.user) {
+            setUser(userData.user);
+            // Set initial role - prefer admin if available, otherwise player
+            if (userData.user.roles?.includes('admin')) {
+              setCurrentRole('admin');
+            } else if (userData.user.roles?.includes('player')) {
+              setCurrentRole('player');
+            }
           }
         }
       } catch (error) {
