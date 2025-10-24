@@ -13,8 +13,7 @@ import {
   Calendar, 
   Users,
   BarChart3,
-  Bell,
-  Archive
+  Bell
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -48,7 +47,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const commonCommands = [
     { name: 'Profile', href: '/profile', icon: User },
     { name: 'Notifications', href: '/notifications', icon: Bell },
-    { name: 'Archive', href: '/archive', icon: Archive },
   ];
 
   const commands = currentRole === 'admin' 

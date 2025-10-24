@@ -18,6 +18,7 @@ import {
   Clock,
   MapPin,
   Filter,
+  CheckCircle,
   Search,
   Download,
   Eye,
@@ -289,7 +290,7 @@ export default function MatchHistoryPage({ params }: { params: Promise<{ id: str
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-2">
                       <h4 className="text-lg font-semibold text-primary group-hover:text-primary/80 transition-colors">
-                        {match.round} - Match {match.matchNumber}
+                        {match.round} - Match {index + 1}
                       </h4>
                       {getStatusBadge(match.status)}
                     </div>

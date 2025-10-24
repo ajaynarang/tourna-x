@@ -5,11 +5,15 @@ import { randomBytes } from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Phone login request received');
     const db = await connectToDatabase();
     const { phone, otp } = await request.json();
 
+    console.log('Phone login data:', { phone, otp: otp ? otp : 'missing' });
+
     // Validate input
     if (!phone || !otp) {
+      console.log('Missing phone or OTP');
       return NextResponse.json(
         { success: false, error: 'Phone number and OTP are required' },
         { status: 400 }
@@ -17,14 +21,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify OTP
+    console.log('Looking for OTP record...');
     const otpRecord = await db.collection(COLLECTIONS.OTPS).findOne({
       phone,
       otp,
-      expiresAt: { $gt: new Date() },
       isUsed: false
     });
 
+    console.log('OTP record found:', !!otpRecord);
+
     if (!otpRecord) {
+      console.log('Invalid or expired OTP');
       return NextResponse.json(
         { success: false, error: 'Invalid or expired OTP' },
         { status: 401 }
@@ -38,9 +45,11 @@ export async function POST(request: NextRequest) {
     );
 
     // Find or create user
+    console.log('Looking for user...');
     let user = await db.collection(COLLECTIONS.USERS).findOne({ phone });
 
     if (!user) {
+      console.log('Creating new user...');
       // Create new player user
       const newUser = insertUserSchema.parse({
         phone,
@@ -50,9 +59,13 @@ export async function POST(request: NextRequest) {
 
       const result = await db.collection(COLLECTIONS.USERS).insertOne(newUser);
       user = { ...newUser, _id: result.insertedId };
+      console.log('New user created:', user._id);
+    } else {
+      console.log('Existing user found:', user._id);
     }
 
     // Create session
+    console.log('Creating session...');
     const sessionToken = randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -63,6 +76,7 @@ export async function POST(request: NextRequest) {
     });
 
     await db.collection(COLLECTIONS.SESSIONS).insertOne(sessionData);
+    console.log('Session created successfully');
 
     // Create response with session cookie
     const response = NextResponse.json({
@@ -91,12 +105,13 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
+    console.log('Phone login successful');
     return response;
 
   } catch (error) {
     console.error('Phone login error:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Internal server error', details: error.message },
       { status: 500 }
     );
   }

@@ -134,15 +134,15 @@ export default function LiveScoringPage({ params }: { params: Promise<{ id: stri
 
     if (increment) {
       if (player === 'player1') {
-        newPlayer1Score[currentSet - 1]++;
+        newPlayer1Score[currentSet - 1] = (newPlayer1Score[currentSet - 1] || 0) + 1;
       } else {
-        newPlayer2Score[currentSet - 1]++;
+        newPlayer2Score[currentSet - 1] = (newPlayer2Score[currentSet - 1] || 0) + 1;
       }
     } else {
-      if (player === 'player1' && newPlayer1Score[currentSet - 1] > 0) {
-        newPlayer1Score[currentSet - 1]--;
-      } else if (player === 'player2' && newPlayer2Score[currentSet - 1] > 0) {
-        newPlayer2Score[currentSet - 1]--;
+      if (player === 'player1' && (newPlayer1Score[currentSet - 1] || 0) > 0) {
+        newPlayer1Score[currentSet - 1] = (newPlayer1Score[currentSet - 1] || 0) - 1;
+      } else if (player === 'player2' && (newPlayer2Score[currentSet - 1] || 0) > 0) {
+        newPlayer2Score[currentSet - 1] = (newPlayer2Score[currentSet - 1] || 0) - 1;
       }
     }
 
@@ -223,8 +223,10 @@ export default function LiveScoringPage({ params }: { params: Promise<{ id: stri
     const setWins = { player1: 0, player2: 0 };
     player1Score.forEach((score1, index) => {
       const score2 = player2Score[index];
-      if (score1 > score2) setWins.player1++;
-      else setWins.player2++;
+      if (score2 !== undefined) {
+        if (score1 > score2) setWins.player1++;
+        else setWins.player2++;
+      }
     });
 
     const winner = setWins.player1 > setWins.player2 ? 'player1' : 'player2';
@@ -290,8 +292,10 @@ export default function LiveScoringPage({ params }: { params: Promise<{ id: stri
     const setWins = { player1: 0, player2: 0 };
     player1Score.forEach((score1, index) => {
       const score2 = player2Score[index];
-      if (score1 > score2) setWins.player1++;
-      else setWins.player2++;
+      if (score2 !== undefined) {
+        if (score1 > score2) setWins.player1++;
+        else setWins.player2++;
+      }
     });
     
     if (setWins.player1 > setWins.player2) return 'player1';
@@ -467,7 +471,7 @@ export default function LiveScoringPage({ params }: { params: Promise<{ id: stri
                 ) : match.status !== 'completed' ? (
                   <>
                     <Button
-                      onClick={saveScore}
+                      onClick={() => saveScore()}
                       disabled={isSaving}
                       variant="outline"
                       className="w-full"

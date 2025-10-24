@@ -14,7 +14,6 @@ import {
   Users,
   BarChart3,
   Bell,
-  Archive,
   Command
 } from 'lucide-react';
 import Link from 'next/link';
@@ -131,14 +130,6 @@ export function AppHeader({ onCommandPaletteToggle }: AppHeaderProps) {
                     >
                       <User className="h-4 w-4" />
                       Profile
-                    </Link>
-                    <Link
-                      href="/archive"
-                      className="flex items-center gap-2 p-2 text-sm text-primary hover:bg-white/5 rounded"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Archive className="h-4 w-4" />
-                      Archive
                     </Link>
                     <div className="border-t border-white/10 my-1" />
                     <button

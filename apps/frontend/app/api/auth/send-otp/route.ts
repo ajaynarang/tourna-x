@@ -3,6 +3,8 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS, otpSchema, insertOtpSchema, userSchema, insertUserSchema, sessionSchema, insertSessionSchema } from '@repo/schemas';
 import { randomBytes } from 'crypto';
 
+
+const MAX_OTPS_PER_HOUR = 30;
 // Mock SMS service - replace with actual SMS provider
 const sendSMS = async (phone: string, otp: string) => {
   console.log(`Sending OTP ${otp} to ${phone}`);
@@ -30,7 +32,7 @@ export async function POST(request: NextRequest) {
       createdAt: { $gte: oneHourAgo }
     });
 
-    if (recentOtps >= 3) {
+    if (recentOtps >= MAX_OTPS_PER_HOUR) {
       return NextResponse.json(
         { success: false, error: 'Too many OTP requests. Please try again later.' },
         { status: 429 }

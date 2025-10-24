@@ -163,8 +163,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ phone }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send OTP');
+      if (response.ok) {
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to send OTP');
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send OTP');
       }
     } catch (error) {
       console.error('Send OTP error:', error);
