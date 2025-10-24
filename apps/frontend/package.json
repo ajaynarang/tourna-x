@@ -40,6 +40,7 @@
     "tailwind-merge": "^2.2.1",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
+    "typescript": "5.9.2",
     "wouter": "^3.4.2",
     "zustand": "^5.0.8"
   },
@@ -52,8 +53,7 @@
     "@types/react-dom": "^18.2.0",
     "eslint": "^9.33.0",
     "eslint-config-next": "16.0.0",
-    "playwright": "^1.54.2",
-    "typescript": "5.9.2"
+    "playwright": "^1.54.2"
   },
   "engines": {
     "node": ">=20.x"
