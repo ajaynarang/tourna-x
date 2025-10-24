@@ -54,17 +54,48 @@ export default function LiveScoring({
   const [showSettings, setShowSettings] = useState(true);
   const [matchScore, setMatchScore] = useState<MatchScore>(initializeMatch(scoringFormat));
 
+  // Keyboard shortcuts for quick point analysis
+  React.useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!showAnalysis || !currentPoint) return;
+
+      const allCategories = [...pointCategories.winner, ...pointCategories.error];
+      const key = e.key;
+
+      // Numbers 1-9 for quick selection
+      if (key >= '1' && key <= '9') {
+        const index = parseInt(key) - 1;
+        if (index < allCategories.length) {
+          e.preventDefault();
+          handleAnalysisSelect(allCategories[index]?.id || '');
+        }
+      }
+
+      // Escape to skip
+      if (key === 'Escape') {
+        e.preventDefault();
+        skipAnalysis();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [showAnalysis, currentPoint]);
+
   const pointCategories = {
     winner: [
-      { id: 'smash', label: '🏸 Smash', color: 'bg-red-500' },
-      { id: 'drop', label: '💧 Drop Shot', color: 'bg-blue-500' },
-      { id: 'net', label: '🎯 Net Kill', color: 'bg-purple-500' },
-      { id: 'clear', label: '🌙 Clear', color: 'bg-yellow-500' },
-      { id: 'drive', label: '⚡ Drive', color: 'bg-orange-500' },
+      { id: 'smash', label: '🏸 Smash', color: 'bg-red-600 hover:bg-red-700', description: 'Power shot' },
+      { id: 'drop', label: '💧 Drop', color: 'bg-blue-600 hover:bg-blue-700', description: 'Soft shot' },
+      { id: 'net', label: '🎯 Net Kill', color: 'bg-purple-600 hover:bg-purple-700', description: 'At net' },
+      { id: 'clear', label: '🌙 Clear', color: 'bg-amber-600 hover:bg-amber-700', description: 'Deep shot' },
+      { id: 'drive', label: '⚡ Drive', color: 'bg-orange-600 hover:bg-orange-700', description: 'Fast & flat' },
+      { id: 'lob', label: '🎈 Lob', color: 'bg-teal-600 hover:bg-teal-700', description: 'High defensive' },
     ],
     error: [
-      { id: 'unforced', label: '❌ Opponent Error', color: 'bg-gray-500' },
-      { id: 'forced', label: '💪 Forced Error', color: 'bg-green-500' },
+      { id: 'net_error', label: '🕸️ Net Error', color: 'bg-gray-600 hover:bg-gray-700', description: 'Hit net' },
+      { id: 'out', label: '📤 Out', color: 'bg-slate-600 hover:bg-slate-700', description: 'Out of bounds' },
+      { id: 'service_fault', label: '🚫 Service Fault', color: 'bg-zinc-600 hover:bg-zinc-700', description: 'Bad serve' },
+      { id: 'forced_error', label: '💪 Forced Error', color: 'bg-green-600 hover:bg-green-700', description: 'Pressure play' },
     ]
   };
 
@@ -383,35 +414,51 @@ export default function LiveScoring({
 
       {/* Quick Stats */}
       {trackingEnabled && history.length > 0 && (
-        <div className="max-w-4xl mx-auto mb-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <BarChart3 size={20} className="text-gray-900 dark:text-white" />
-            <h3 className="font-semibold text-gray-900 dark:text-white">Quick Stats</h3>
-          </div>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-gray-900 dark:text-white font-semibold mb-2">{playerA.name}</p>
-              {Object.entries(stats.A).map(([key, value]) => {
-                const category = [...pointCategories.winner, ...pointCategories.error].find(c => c.id === key);
-                return (
-                  <div key={key} className="flex justify-between text-gray-600 dark:text-gray-400">
-                    <span>{category?.label || key}</span>
-                    <span className="font-semibold">{value}</span>
-                  </div>
-                );
-              })}
+        <div className="max-w-4xl mx-auto mb-8 px-6">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 size={20} className="text-gray-900 dark:text-white" />
+              <h3 className="font-semibold text-gray-900 dark:text-white">Point Analysis</h3>
             </div>
-            <div>
-              <p className="text-gray-900 dark:text-white font-semibold mb-2">{playerB.name}</p>
-              {Object.entries(stats.B).map(([key, value]) => {
-                const category = [...pointCategories.winner, ...pointCategories.error].find(c => c.id === key);
-                return (
-                  <div key={key} className="flex justify-between text-gray-600 dark:text-gray-400">
-                    <span>{category?.label || key}</span>
-                    <span className="font-semibold">{value}</span>
-                  </div>
-                );
-              })}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Player A Stats */}
+              <div>
+                <p className="text-gray-900 dark:text-white font-semibold mb-3 text-lg">{playerA.name}</p>
+                <div className="space-y-2">
+                  {Object.entries(stats.A).map(([key, value]) => {
+                    const category = [...pointCategories.winner, ...pointCategories.error].find(c => c.id === key);
+                    if (!category) return null;
+                    return (
+                      <div key={key} className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className={`w-3 h-3 rounded-full ${category.color.split(' ')[0]}`}></div>
+                          <span className="text-gray-700 dark:text-gray-300 text-sm">{category.label}</span>
+                        </div>
+                        <span className="font-bold text-gray-900 dark:text-white text-lg">{value}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Player B Stats */}
+              <div>
+                <p className="text-gray-900 dark:text-white font-semibold mb-3 text-lg">{playerB.name}</p>
+                <div className="space-y-2">
+                  {Object.entries(stats.B).map(([key, value]) => {
+                    const category = [...pointCategories.winner, ...pointCategories.error].find(c => c.id === key);
+                    if (!category) return null;
+                    return (
+                      <div key={key} className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className={`w-3 h-3 rounded-full ${category.color.split(' ')[0]}`}></div>
+                          <span className="text-gray-700 dark:text-gray-300 text-sm">{category.label}</span>
+                        </div>
+                        <span className="font-bold text-gray-900 dark:text-white text-lg">{value}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -419,56 +466,96 @@ export default function LiveScoring({
 
       {/* Analysis Modal */}
       {showAnalysis && currentPoint && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                How did {currentPoint.player === 'A' ? playerA.name : playerB.name} score?
-              </h3>
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+          onClick={skipAnalysis}
+        >
+          <div 
+            className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-3xl p-4 sm:p-6 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-start mb-4 sm:mb-6">
+              <div>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                  How did {currentPoint.player === 'A' ? playerA.name : playerB.name} score?
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Tap a reason or tap outside to skip</p>
+              </div>
               <button
                 onClick={skipAnalysis}
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0"
+                title="Skip (Esc)"
               >
-                <X size={24} />
+                <X size={20} className="sm:w-6 sm:h-6" />
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 sm:space-y-5">
+              {/* Winning Shots */}
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-semibold">Winning Shots</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {pointCategories.winner.map(cat => (
+                <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                  <Trophy size={16} className="text-green-600 dark:text-green-400 sm:w-[18px] sm:h-[18px]" />
+                  <p className="text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Winning Shots</p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                  {pointCategories.winner.map((cat, index) => (
                     <button
                       key={cat.id}
                       onClick={() => handleAnalysisSelect(cat.id)}
-                      className={`${cat.color} py-3 px-4 rounded-xl font-semibold hover:opacity-90 transition transform active:scale-95 text-white shadow-sm`}
+                      className={`${cat.color} py-3 sm:py-4 px-3 sm:px-4 rounded-xl font-semibold transition transform active:scale-95 text-white shadow-lg hover:shadow-xl group relative overflow-hidden touch-manipulation`}
+                      title={`${cat.description} (Press ${index + 1})`}
                     >
-                      {cat.label}
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                          <span className="text-base sm:text-lg">{cat.label}</span>
+                          <span className="text-xs bg-white/20 rounded px-1.5 py-0.5 font-mono">{index + 1}</span>
+                        </div>
+                        <div className="text-[10px] sm:text-xs opacity-90">{cat.description}</div>
+                      </div>
+                      <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
                     </button>
                   ))}
                 </div>
               </div>
 
+              {/* Opponent Errors */}
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-semibold">Opponent Mistakes</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {pointCategories.error.map(cat => (
-                    <button
-                      key={cat.id}
-                      onClick={() => handleAnalysisSelect(cat.id)}
-                      className={`${cat.color} py-3 px-4 rounded-xl font-semibold hover:opacity-90 transition transform active:scale-95 text-white shadow-sm`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                  <X size={16} className="text-gray-600 dark:text-gray-400 sm:w-[18px] sm:h-[18px]" />
+                  <p className="text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Opponent Errors</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  {pointCategories.error.map((cat, index) => {
+                    const keyNumber = pointCategories.winner.length + index + 1;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => handleAnalysisSelect(cat.id)}
+                        className={`${cat.color} py-3 sm:py-4 px-3 sm:px-4 rounded-xl font-semibold transition transform active:scale-95 text-white shadow-lg hover:shadow-xl group relative overflow-hidden touch-manipulation`}
+                        title={`${cat.description} (Press ${keyNumber})`}
+                      >
+                        <div className="relative z-10">
+                          <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                            <span className="text-base sm:text-lg">{cat.label}</span>
+                            <span className="text-xs bg-white/20 rounded px-1.5 py-0.5 font-mono">{keyNumber}</span>
+                          </div>
+                          <div className="text-[10px] sm:text-xs opacity-90">{cat.description}</div>
+                        </div>
+                        <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
+              {/* Skip Button */}
               <button
                 onClick={skipAnalysis}
-                className="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-3 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition font-medium"
+                className="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-3 sm:py-4 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition font-semibold border-2 border-gray-200 dark:border-gray-700 touch-manipulation"
               >
-                Skip Analysis
+                <span className="text-sm sm:text-base">Skip Analysis</span>
+                <span className="text-xs ml-2 opacity-60 hidden sm:inline">(Esc)</span>
               </button>
             </div>
           </div>
