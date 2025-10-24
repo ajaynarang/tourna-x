@@ -271,7 +271,7 @@ export default function TournamentDetailPage() {
           </Link>
           <div>
             <h1 className="text-primary text-3xl font-bold">{tournament.name}</h1>
-            <p className="text-secondary mt-1">{tournament.sport.charAt(0).toUpperCase() + tournament.sport.slice(1)} Tournament</p>
+            <p className="text-muted-foreground mt-1">{tournament.sport.charAt(0).toUpperCase() + tournament.sport.slice(1)} Tournament</p>
           </div>
         </div>
 

@@ -180,7 +180,7 @@ export function AppHeader({ onCommandPaletteToggle, pageTitle, pageSubtitle }: A
                     <div className="py-2">
                       <Link
                         href="/profile"
-                        className="text-secondary flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/5"
+                        className="text-muted-foreground flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/5"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
                         <UserIcon className="h-4 w-4" />
@@ -188,7 +188,7 @@ export function AppHeader({ onCommandPaletteToggle, pageTitle, pageSubtitle }: A
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="text-secondary flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-red-500/10 hover:text-red-400"
+                        className="text-muted-foreground flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-red-500/10 hover:text-red-400"
                       >
                         <LogOut className="h-4 w-4" />
                         Sign Out
@@ -270,7 +270,7 @@ export function AppHeader({ onCommandPaletteToggle, pageTitle, pageSubtitle }: A
                   <div className="py-2">
                     <Link
                       href="/profile"
-                      className="text-secondary flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/5"
+                      className="text-muted-foreground flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/5"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       <UserIcon className="h-4 w-4" />
@@ -278,7 +278,7 @@ export function AppHeader({ onCommandPaletteToggle, pageTitle, pageSubtitle }: A
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="text-secondary flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-red-500/10 hover:text-red-400"
+                      className="text-muted-foreground flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-red-500/10 hover:text-red-400"
                     >
                       <LogOut className="h-4 w-4" />
                       Sign Out

@@ -196,7 +196,7 @@ function PlayerDashboardContent() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-primary text-3xl font-bold">Welcome back, {user?.name || 'Player'}!</h1>
-              <p className="text-secondary mt-1">Your personalized tournament experience and performance insights</p>
+              <p className="text-muted-foreground mt-1">Your personalized tournament experience and performance insights</p>
             </div>
             <button
               onClick={fetchDashboardData}
@@ -280,7 +280,7 @@ function PlayerDashboardContent() {
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-primary text-xl font-semibold">Upcoming Matches</h3>
-                  <p className="text-secondary text-sm">Your scheduled matches</p>
+                  <p className="text-muted-foreground text-sm">Your scheduled matches</p>
                 </div>
                 <Link
                   href="/player/matches"
@@ -297,7 +297,7 @@ function PlayerDashboardContent() {
                       <Calendar className="h-10 w-10 text-green-400" />
                     </div>
                     <h3 className="text-primary mb-2 text-xl font-semibold">No Upcoming Matches</h3>
-                    <p className="text-secondary mb-6">Register for tournaments to see your matches here</p>
+                    <p className="text-muted-foreground mb-6">Register for tournaments to see your matches here</p>
                     <button
                       onClick={() => router.push('/tournaments')}
                       className="bg-primary inline-flex items-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-transform hover:scale-105"
@@ -326,7 +326,7 @@ function PlayerDashboardContent() {
                             </span>
                           </div>
                           
-                          <div className="text-secondary space-y-2 text-sm">
+                          <div className="text-muted-foreground space-y-2 text-sm">
                             <div className="flex items-center gap-2">
                               <Users className="h-4 w-4" />
                               <span>vs. <strong>{match.player2Name}</strong></span>
@@ -361,7 +361,7 @@ function PlayerDashboardContent() {
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-primary text-xl font-semibold">Open Tournaments</h3>
-                  <p className="text-secondary text-sm">Join these tournaments</p>
+                  <p className="text-muted-foreground text-sm">Join these tournaments</p>
                 </div>
                 <Link
                   href="/tournaments"
@@ -378,7 +378,7 @@ function PlayerDashboardContent() {
                       <Trophy className="h-10 w-10 text-green-400" />
                     </div>
                     <h3 className="text-primary mb-2 text-xl font-semibold">No Tournaments Available</h3>
-                    <p className="text-secondary">Check back later for new tournaments</p>
+                    <p className="text-muted-foreground">Check back later for new tournaments</p>
                   </div>
                 ) : (
                   tournaments.slice(0, 3).map((tournament, index) => (
@@ -400,7 +400,7 @@ function PlayerDashboardContent() {
                             </span>
                           </div>
                           
-                          <div className="text-secondary space-y-2 text-sm">
+                          <div className="text-muted-foreground space-y-2 text-sm">
                             <div className="flex items-center gap-2">
                               <Trophy className="h-4 w-4" />
                               <span className="capitalize">{tournament.sport}</span>
@@ -436,7 +436,7 @@ function PlayerDashboardContent() {
           <div className="glass-card-intense p-6">
             <div className="mb-6">
               <h3 className="text-primary text-xl font-semibold">My Registrations</h3>
-              <p className="text-secondary text-sm">Recent tournament registrations and their status</p>
+              <p className="text-muted-foreground text-sm">Recent tournament registrations and their status</p>
             </div>
             
             <div className="space-y-4">
@@ -446,7 +446,7 @@ function PlayerDashboardContent() {
                     <Users className="h-10 w-10 text-green-400" />
                   </div>
                   <h3 className="text-primary mb-2 text-xl font-semibold">No Registrations Yet</h3>
-                  <p className="text-secondary mb-6">Register for tournaments to see your participations here</p>
+                  <p className="text-muted-foreground mb-6">Register for tournaments to see your participations here</p>
                   <button
                     onClick={() => router.push('/tournaments')}
                     className="bg-primary inline-flex items-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-transform hover:scale-105"
@@ -488,7 +488,7 @@ function PlayerDashboardContent() {
                             )}
                           </span>
                         </div>
-                        <div className="text-xs text-secondary">
+                        <div className="text-xs text-muted-foreground">
                           <strong>Category:</strong> {participation.category}
                         </div>
                         <div className="text-xs text-tertiary">
@@ -543,7 +543,7 @@ function StatCard({
       <div className="text-primary mb-1 text-3xl font-bold">{value}</div>
 
       {/* Title */}
-      <div className="text-secondary text-sm font-medium">{title}</div>
+      <div className="text-muted-foreground text-sm font-medium">{title}</div>
     </motion.button>
   );
 }
@@ -572,7 +572,7 @@ function QuickActionCard({
     >
       <div className="flex items-center justify-between">
         <div className="text-left">
-          <div className="text-secondary text-sm mb-1">{description}</div>
+          <div className="text-muted-foreground text-sm mb-1">{description}</div>
           <div className="text-primary text-lg font-semibold">{title}</div>
         </div>
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color} transition-transform group-hover:scale-110`}>

@@ -202,7 +202,7 @@ function AdminTournamentsContent() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-primary text-3xl font-bold">Tournaments</h1>
-            <p className="text-secondary mt-1">Manage all your tournaments</p>
+            <p className="text-muted-foreground mt-1">Manage all your tournaments</p>
           </div>
           <button
             onClick={() => router.push('/admin/tournaments/create')}
@@ -273,7 +273,7 @@ function AdminTournamentsContent() {
             <h3 className="text-primary mb-2 text-xl font-semibold">
               {searchTerm || statusFilter !== 'all' ? 'No tournaments found' : 'No tournaments yet'}
             </h3>
-            <p className="text-secondary mb-6">
+            <p className="text-muted-foreground mb-6">
               {searchTerm || statusFilter !== 'all'
                 ? 'Try adjusting your filters'
                 : 'Create your first tournament to get started'}
@@ -541,7 +541,7 @@ function TournamentCard({
           {tournament.name}
         </h3>
 
-        <div className="text-secondary space-y-2 text-sm">
+        <div className="text-muted-foreground space-y-2 text-sm">
           <div className="flex items-center gap-2">
             <Trophy className="h-4 w-4" />
             <span>{tournament.sport}</span>

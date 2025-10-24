@@ -170,7 +170,7 @@ function PlayerMatchesContent() {
             <div className="flex items-center gap-4">
               <Link
                 href="/player/dashboard"
-                className="text-secondary hover:text-primary flex items-center gap-2 text-sm transition-colors"
+                className="text-muted-foreground hover:text-primary flex items-center gap-2 text-sm transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back to Dashboard
@@ -178,7 +178,7 @@ function PlayerMatchesContent() {
             </div>
             <div>
               <h1 className="text-primary text-3xl font-bold">My Matches</h1>
-              <p className="text-secondary mt-1">Track your tournament matches and performance</p>
+              <p className="text-muted-foreground mt-1">Track your tournament matches and performance</p>
             </div>
             <button
               onClick={fetchMatches}
@@ -264,7 +264,7 @@ function PlayerMatchesContent() {
                 <Calendar className="h-10 w-10 text-green-400" />
               </div>
               <h3 className="text-primary mb-2 text-xl font-semibold">No Matches Found</h3>
-              <p className="text-secondary mb-6 max-w-md mx-auto">
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 {filter === 'upcoming' 
                   ? "You don't have any upcoming matches scheduled. Register for tournaments to start playing!"
                   : filter === 'completed'
@@ -316,7 +316,7 @@ function PlayerMatchesContent() {
                             {match.status.replace('_', ' ').toUpperCase()}
                           </span>
                         </div>
-                        <p className="text-sm text-secondary">
+                        <p className="text-sm text-muted-foreground">
                           <strong>Round:</strong> {match.round}
                         </p>
                       </div>
@@ -337,11 +337,11 @@ function PlayerMatchesContent() {
                       {/* Match Details */}
                       <div className="space-y-3">
                         <h4 className="font-semibold text-primary text-sm mb-3">Match Details</h4>
-                        <div className="flex items-center gap-2 text-sm text-secondary">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Users className="h-4 w-4 text-tertiary" />
                           <span><strong>Opponent:</strong> {match.player2Name}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-secondary">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4 text-tertiary" />
                           <span><strong>Date:</strong> {new Date(match.scheduledDate).toLocaleDateString('en-IN', {
                             day: 'numeric',
@@ -349,7 +349,7 @@ function PlayerMatchesContent() {
                             year: 'numeric'
                           })}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-secondary">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Clock className="h-4 w-4 text-tertiary" />
                           <span><strong>Time:</strong> {new Date(match.scheduledDate).toLocaleTimeString('en-IN', {
                             hour: '2-digit',
@@ -357,7 +357,7 @@ function PlayerMatchesContent() {
                           })}</span>
                         </div>
                         {match.court && (
-                          <div className="flex items-center gap-2 text-sm text-secondary">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <MapPin className="h-4 w-4 text-tertiary" />
                             <span><strong>Court:</strong> {match.court}</span>
                           </div>
@@ -400,7 +400,7 @@ function PlayerMatchesContent() {
                               <div className="text-lg font-semibold text-primary mb-1">
                                 {match.status === 'scheduled' ? 'Scheduled' : 'In Progress'}
                               </div>
-                              <div className="text-sm text-secondary">
+                              <div className="text-sm text-muted-foreground">
                                 {match.status === 'scheduled' ? 'Match will start soon' : 'Live match in progress'}
                               </div>
                             </div>
@@ -460,7 +460,7 @@ function StatCard({
     <div className="glass-card-intense p-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-secondary text-sm mb-1">{title}</div>
+          <div className="text-muted-foreground text-sm mb-1">{title}</div>
           <div className="text-primary text-3xl font-bold">{value}</div>
         </div>
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color}`}>

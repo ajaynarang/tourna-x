@@ -280,7 +280,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
         >
           <Link
             href="/admin/fixtures"
-            className="text-secondary hover:text-primary mb-4 inline-flex items-center gap-2 text-sm transition-colors"
+            className="text-muted-foreground hover:text-primary mb-4 inline-flex items-center gap-2 text-sm transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Fixtures
@@ -289,7 +289,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-primary mb-2 text-3xl font-bold">Tournament Fixtures</h1>
-              <p className="text-secondary">{tournament?.name}</p>
+              <p className="text-muted-foreground">{tournament?.name}</p>
             </div>
 
             <Link
@@ -381,7 +381,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
                       {match.scheduledDate && (
                         <div className="flex items-center gap-2 text-sm">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          <span className="text-secondary">
+                          <span className="text-muted-foreground">
                             {new Date(match.scheduledDate).toLocaleDateString()}
                           </span>
                         </div>
@@ -389,13 +389,13 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
                       {match.scheduledTime && (
                         <div className="flex items-center gap-2 text-sm">
                           <Clock className="h-4 w-4 text-gray-400" />
-                          <span className="text-secondary">{match.scheduledTime}</span>
+                          <span className="text-muted-foreground">{match.scheduledTime}</span>
                         </div>
                       )}
                       {match.venue && (
                         <div className="flex items-center gap-2 text-sm">
                           <MapPin className="h-4 w-4 text-gray-400" />
-                          <span className="text-secondary">{match.venue}</span>
+                          <span className="text-muted-foreground">{match.venue}</span>
                         </div>
                       )}
                     </div>
@@ -406,7 +406,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
                     <div className="space-y-2">
                       <button
                         onClick={() => handleScheduleMatch(match)}
-                        className="glass-card w-full rounded-lg px-4 py-2 text-sm font-medium text-secondary transition-all hover:bg-white/10"
+                        className="glass-card w-full rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-white/10"
                       >
                         <span className="flex items-center justify-center gap-2">
                           <Calendar className="h-4 w-4" />
@@ -435,8 +435,8 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
 
         {matches.length === 0 && (
           <div className="py-12 text-center">
-            <Trophy className="text-secondary mx-auto h-16 w-16" />
-            <p className="text-secondary mt-4">No fixtures generated yet</p>
+            <Trophy className="text-muted-foreground mx-auto h-16 w-16" />
+            <p className="text-muted-foreground mt-4">No fixtures generated yet</p>
           </div>
         )}
       </div>
@@ -450,7 +450,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
             className="glass-card-intense w-full max-w-md rounded-2xl p-6"
           >
             <h3 className="text-primary mb-4 text-xl font-bold">Schedule Match</h3>
-            <p className="text-secondary mb-6 text-sm">
+            <p className="text-muted-foreground mb-6 text-sm">
               {selectedMatch.player1Name} vs {selectedMatch.player2Name}
             </p>
 
@@ -497,7 +497,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
                   setShowScheduleModal(false);
                   setSelectedMatch(null);
                 }}
-                className="glass-card flex-1 rounded-lg px-4 py-2 font-medium text-secondary transition-all hover:bg-white/10"
+                className="glass-card flex-1 rounded-lg px-4 py-2 font-medium text-muted-foreground transition-all hover:bg-white/10"
               >
                 Cancel
               </button>

@@ -215,14 +215,14 @@ function MatchScoringContent() {
           <div className="flex items-center gap-4 mb-4">
             <Link
               href="/player/matches"
-              className="text-secondary hover:text-primary flex items-center gap-2 text-sm transition-colors"
+              className="text-muted-foreground hover:text-primary flex items-center gap-2 text-sm transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Matches
             </Link>
           </div>
           <h1 className="text-3xl font-bold text-primary mb-2">Match Scoring</h1>
-          <p className="text-secondary">Live scoring for your tournament match</p>
+          <p className="text-muted-foreground">Live scoring for your tournament match</p>
         </div>
 
         {/* Match Details */}
@@ -314,7 +314,7 @@ function MatchScoringContent() {
           >
             Start Live Scoring
           </Button>
-          <p className="text-sm text-secondary mt-2">
+          <p className="text-sm text-muted-foreground mt-2">
             Begin tracking points and analyzing match performance
           </p>
         </div>

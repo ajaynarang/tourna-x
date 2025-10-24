@@ -196,7 +196,7 @@ function TournamentRegistrationContent({ params }: { params: Promise<{ id: strin
             <CheckCircle className="h-12 w-12 text-green-500" />
           </div>
           <h2 className="text-primary mb-2 text-2xl font-bold">Registration Successful!</h2>
-          <p className="text-secondary mb-6">
+          <p className="text-muted-foreground mb-6">
             Your registration has been submitted for approval.
           </p>
           <p className="text-tertiary text-sm">
@@ -222,14 +222,14 @@ function TournamentRegistrationContent({ params }: { params: Promise<{ id: strin
         >
           <Link
             href={`/tournaments/${tournamentId}`}
-            className="text-secondary hover:text-primary mb-4 inline-flex items-center gap-2 text-sm transition-colors"
+            className="text-muted-foreground hover:text-primary mb-4 inline-flex items-center gap-2 text-sm transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Tournament
           </Link>
 
           <h1 className="text-primary mb-2 text-3xl font-bold">Register for Tournament</h1>
-          <p className="text-secondary">Complete the form below to register</p>
+          <p className="text-muted-foreground">Complete the form below to register</p>
         </motion.div>
 
         {/* Tournament Summary Card */}
@@ -242,29 +242,29 @@ function TournamentRegistrationContent({ params }: { params: Promise<{ id: strin
           <div className="mb-4 flex items-start justify-between">
             <div>
               <h2 className="text-primary mb-1 text-xl font-semibold">{tournament.name}</h2>
-              <p className="text-secondary text-sm">{tournament.sport}</p>
+              <p className="text-muted-foreground text-sm">{tournament.sport}</p>
             </div>
             <Trophy className="h-8 w-8 text-green-400" />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex items-center gap-2 text-sm">
-              <Calendar className="text-secondary h-4 w-4" />
-              <span className="text-secondary">
+              <Calendar className="text-muted-foreground h-4 w-4" />
+              <span className="text-muted-foreground">
                 {new Date(tournament.startDate).toLocaleDateString()}
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <MapPin className="text-secondary h-4 w-4" />
-              <span className="text-secondary">{tournament.venue}</span>
+              <MapPin className="text-muted-foreground h-4 w-4" />
+              <span className="text-muted-foreground">{tournament.venue}</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <DollarSign className="text-secondary h-4 w-4" />
-              <span className="text-secondary">₹{tournament.registrationFee}</span>
+              <DollarSign className="text-muted-foreground h-4 w-4" />
+              <span className="text-muted-foreground">₹{tournament.registrationFee}</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <Users className="text-secondary h-4 w-4" />
-              <span className="text-secondary">
+              <Users className="text-muted-foreground h-4 w-4" />
+              <span className="text-muted-foreground">
                 {tournament.currentParticipants}/{tournament.maxParticipants} registered
               </span>
             </div>
@@ -318,7 +318,7 @@ function TournamentRegistrationContent({ params }: { params: Promise<{ id: strin
                         className={`rounded-lg border-2 p-3 text-sm font-medium transition-all ${
                           formData.category === category
                             ? 'border-green-500 bg-green-500/10 text-green-500'
-                            : 'border-gray-200 dark:border-white/10 text-secondary hover:border-green-500/50'
+                            : 'border-gray-200 dark:border-white/10 text-muted-foreground hover:border-green-500/50'
                         }`}
                       >
                         {category}
@@ -341,7 +341,7 @@ function TournamentRegistrationContent({ params }: { params: Promise<{ id: strin
                         className={`rounded-lg border-2 p-3 text-sm font-medium transition-all ${
                           formData.gender === g
                             ? 'border-green-500 bg-green-500/10 text-green-500'
-                            : 'border-gray-200 dark:border-white/10 text-secondary hover:border-green-500/50'
+                            : 'border-gray-200 dark:border-white/10 text-muted-foreground hover:border-green-500/50'
                         }`}
                       >
                         {g.charAt(0).toUpperCase() + g.slice(1)}
@@ -356,7 +356,7 @@ function TournamentRegistrationContent({ params }: { params: Promise<{ id: strin
             {isDoublesFormat && (
               <div className="glass-card-intense rounded-2xl p-6">
                 <h3 className="text-primary mb-4 text-lg font-semibold">Partner Details</h3>
-                <p className="text-secondary mb-4 text-sm">
+                <p className="text-muted-foreground mb-4 text-sm">
                   This is a doubles tournament. Please provide your partner's information.
                 </p>
 
@@ -426,7 +426,7 @@ function TournamentRegistrationContent({ params }: { params: Promise<{ id: strin
             {/* Medical Information Section */}
             <div className="glass-card-intense rounded-2xl p-6">
               <h3 className="text-primary mb-4 text-lg font-semibold">Medical Information</h3>
-              <p className="text-secondary mb-4 text-sm">
+              <p className="text-muted-foreground mb-4 text-sm">
                 Please mention any medical conditions, allergies, or injuries we should be aware of.
               </p>
 
@@ -448,7 +448,7 @@ function TournamentRegistrationContent({ params }: { params: Promise<{ id: strin
                   onChange={(e) => setFormData({ ...formData, agreedToTerms: e.target.checked })}
                   className="mt-1 h-5 w-5 rounded border-gray-300 text-green-500 focus:ring-2 focus:ring-green-500"
                 />
-                <span className="text-secondary text-sm">
+                <span className="text-muted-foreground text-sm">
                   I agree to the{' '}
                   <Link href="/terms" className="text-green-500 hover:text-green-400">
                     terms and conditions
@@ -464,7 +464,7 @@ function TournamentRegistrationContent({ params }: { params: Promise<{ id: strin
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="glass-card flex-1 rounded-lg px-6 py-3 font-medium text-secondary transition-all hover:bg-white/10"
+                className="glass-card flex-1 rounded-lg px-6 py-3 font-medium text-muted-foreground transition-all hover:bg-white/10"
               >
                 Cancel
               </button>

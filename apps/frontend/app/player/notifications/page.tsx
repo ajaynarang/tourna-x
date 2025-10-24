@@ -262,7 +262,7 @@ function PlayerNotificationsContent() {
             <div className="flex items-center gap-4">
               <Link
                 href="/player/dashboard"
-                className="text-secondary hover:text-primary flex items-center gap-2 text-sm transition-colors"
+                className="text-muted-foreground hover:text-primary flex items-center gap-2 text-sm transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back to Dashboard
@@ -277,7 +277,7 @@ function PlayerNotificationsContent() {
                   </span>
                 )}
               </div>
-              <p className="text-secondary">Stay updated with your tournament activities</p>
+              <p className="text-muted-foreground">Stay updated with your tournament activities</p>
             </div>
             <button
               onClick={fetchNotifications}
@@ -374,7 +374,7 @@ function PlayerNotificationsContent() {
                     <Bell className="h-10 w-10 text-green-400" />
                   </div>
                   <h3 className="text-primary mb-2 text-xl font-semibold">No Notifications</h3>
-                  <p className="text-secondary max-w-md mx-auto">
+                  <p className="text-muted-foreground max-w-md mx-auto">
                     {searchTerm || filter !== 'all' 
                       ? 'No notifications match your current filters.'
                       : 'You have no notifications at the moment. Check back later for updates!'
@@ -406,7 +406,7 @@ function PlayerNotificationsContent() {
                           
                           <div className="flex-1">
                             <div className="flex items-start justify-between mb-2">
-                              <h4 className={`font-semibold text-lg ${!notification.isRead ? 'text-primary' : 'text-secondary'}`}>
+                              <h4 className={`font-semibold text-lg ${!notification.isRead ? 'text-primary' : 'text-muted-foreground'}`}>
                                 {notification.title}
                               </h4>
                               {!notification.isRead && (
@@ -414,7 +414,7 @@ function PlayerNotificationsContent() {
                               )}
                             </div>
                             
-                            <p className="text-secondary mb-4">
+                            <p className="text-muted-foreground mb-4">
                               {notification.message}
                             </p>
                             
@@ -477,7 +477,7 @@ function PlayerNotificationsContent() {
                     <Sparkles className="h-5 w-5 text-blue-400" />
                     Notification Channels
                   </h3>
-                  <p className="text-secondary text-sm">Choose how you want to receive notifications</p>
+                  <p className="text-muted-foreground text-sm">Choose how you want to receive notifications</p>
                 </div>
                 
                 <div className="space-y-4">
@@ -488,7 +488,7 @@ function PlayerNotificationsContent() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-primary">Email Notifications</h4>
-                        <p className="text-sm text-secondary">Receive updates via email</p>
+                        <p className="text-sm text-muted-foreground">Receive updates via email</p>
                       </div>
                     </div>
                     <button
@@ -511,7 +511,7 @@ function PlayerNotificationsContent() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-primary">SMS Notifications</h4>
-                        <p className="text-sm text-secondary">Get text message alerts</p>
+                        <p className="text-sm text-muted-foreground">Get text message alerts</p>
                       </div>
                     </div>
                     <button
@@ -534,7 +534,7 @@ function PlayerNotificationsContent() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-primary">Push Notifications</h4>
-                        <p className="text-sm text-secondary">Browser push notifications</p>
+                        <p className="text-sm text-muted-foreground">Browser push notifications</p>
                       </div>
                     </div>
                     <button
@@ -561,7 +561,7 @@ function PlayerNotificationsContent() {
                     <Settings className="h-5 w-5 text-purple-400" />
                     Notification Preferences
                   </h3>
-                  <p className="text-secondary text-sm">Select which notifications you want to receive</p>
+                  <p className="text-muted-foreground text-sm">Select which notifications you want to receive</p>
                 </div>
                 
                 <div className="space-y-4">
@@ -572,7 +572,7 @@ function PlayerNotificationsContent() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-primary">Tournament Updates</h4>
-                        <p className="text-sm text-secondary">Updates about your tournaments</p>
+                        <p className="text-sm text-muted-foreground">Updates about your tournaments</p>
                       </div>
                     </div>
                     <button
@@ -595,7 +595,7 @@ function PlayerNotificationsContent() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-primary">Match Reminders</h4>
-                        <p className="text-sm text-secondary">Pre-match notifications</p>
+                        <p className="text-sm text-muted-foreground">Pre-match notifications</p>
                       </div>
                     </div>
                     <button
@@ -618,7 +618,7 @@ function PlayerNotificationsContent() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-primary">Registration Updates</h4>
-                        <p className="text-sm text-secondary">Registration status changes</p>
+                        <p className="text-sm text-muted-foreground">Registration status changes</p>
                       </div>
                     </div>
                     <button
@@ -641,7 +641,7 @@ function PlayerNotificationsContent() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-primary">Match Results</h4>
-                        <p className="text-sm text-secondary">When results are available</p>
+                        <p className="text-sm text-muted-foreground">When results are available</p>
                       </div>
                     </div>
                     <button

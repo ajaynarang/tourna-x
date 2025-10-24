@@ -204,7 +204,7 @@ function PlayerStatsContent() {
             <div className="flex items-center gap-4">
               <Link
                 href="/player/dashboard"
-                className="text-secondary hover:text-primary flex items-center gap-2 text-sm transition-colors"
+                className="text-muted-foreground hover:text-primary flex items-center gap-2 text-sm transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back to Dashboard
@@ -212,7 +212,7 @@ function PlayerStatsContent() {
             </div>
             <div>
               <h1 className="text-primary text-3xl font-bold">Statistics & Achievements</h1>
-              <p className="text-secondary mt-1">Track your progress and unlock achievements</p>
+              <p className="text-muted-foreground mt-1">Track your progress and unlock achievements</p>
             </div>
           </div>
         </motion.div>
@@ -259,7 +259,7 @@ function PlayerStatsContent() {
             </div>
             <div className="text-center">
               <div className="text-5xl font-bold text-orange-400 mb-2">{stats.currentStreak}</div>
-              <div className="text-sm text-secondary">Consecutive Wins</div>
+              <div className="text-sm text-muted-foreground">Consecutive Wins</div>
               {stats.currentStreak > 0 && (
                 <span className="mt-3 inline-block rounded-full bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-400">
                   🔥 On Fire!
@@ -277,7 +277,7 @@ function PlayerStatsContent() {
             </div>
             <div className="text-center">
               <div className="text-5xl font-bold text-yellow-400 mb-2">{stats.longestStreak}</div>
-              <div className="text-sm text-secondary">Best Performance</div>
+              <div className="text-sm text-muted-foreground">Best Performance</div>
             </div>
           </div>
 
@@ -290,7 +290,7 @@ function PlayerStatsContent() {
             </div>
             <div className="text-center">
               <div className="text-5xl font-bold text-blue-400 mb-2">{stats.totalPoints}</div>
-              <div className="text-sm text-secondary">Career Points</div>
+              <div className="text-sm text-muted-foreground">Career Points</div>
             </div>
           </div>
         </motion.div>
@@ -303,7 +303,7 @@ function PlayerStatsContent() {
                 <BarChart3 className="h-5 w-5 text-purple-400" />
                 Performance Overview
               </h3>
-              <p className="text-secondary text-sm">Your win/loss distribution</p>
+              <p className="text-muted-foreground text-sm">Your win/loss distribution</p>
             </div>
             
             <div className="space-y-4">
@@ -353,7 +353,7 @@ function PlayerStatsContent() {
                     <Award className="h-5 w-5 text-yellow-400" />
                     Unlocked Achievements
                   </h3>
-                  <p className="text-secondary text-sm">
+                  <p className="text-muted-foreground text-sm">
                     {unlockedAchievements.length} of {achievements.length} achievements unlocked
                   </p>
                 </div>
@@ -385,7 +385,7 @@ function PlayerStatsContent() {
                           </div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-primary mb-1">{achievement.title}</h4>
-                            <p className="text-sm text-secondary mb-2">{achievement.description}</p>
+                            <p className="text-sm text-muted-foreground mb-2">{achievement.description}</p>
                             <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-400">
                               <CheckCircle2 className="h-3 w-3" />
                               Unlocked
@@ -409,7 +409,7 @@ function PlayerStatsContent() {
                     <Target className="h-5 w-5 text-tertiary" />
                     In Progress
                   </h3>
-                  <p className="text-secondary text-sm">Keep playing to unlock these achievements</p>
+                  <p className="text-muted-foreground text-sm">Keep playing to unlock these achievements</p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -431,14 +431,14 @@ function PlayerStatsContent() {
                           </div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-primary mb-1">{achievement.title}</h4>
-                            <p className="text-sm text-secondary">{achievement.description}</p>
+                            <p className="text-sm text-muted-foreground">{achievement.description}</p>
                           </div>
                         </div>
                         
                         {/* Progress Bar */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-secondary">Progress</span>
+                            <span className="text-muted-foreground">Progress</span>
                             <span className="font-semibold text-primary">
                               {achievement.progress} / {achievement.maxProgress}
                             </span>
@@ -480,7 +480,7 @@ function StatCard({
     <div className="glass-card-intense p-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-secondary text-sm mb-1">{title}</div>
+          <div className="text-muted-foreground text-sm mb-1">{title}</div>
           <div className="text-primary text-3xl font-bold">{value}</div>
         </div>
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color}`}>

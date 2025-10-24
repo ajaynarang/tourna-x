@@ -103,7 +103,7 @@ function PlayerWelcomeContent() {
           <h1 className="text-4xl lg:text-5xl font-bold text-primary mb-3">
             Welcome to Tourna-X! 👋
           </h1>
-          <p className="text-xl text-secondary">
+          <p className="text-xl text-muted-foreground">
             Hi <strong className="text-blue-400">{user?.name}</strong>, let's get you started on your tournament journey
           </p>
         </motion.div>

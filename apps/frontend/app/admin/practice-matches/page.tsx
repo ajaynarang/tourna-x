@@ -6,6 +6,14 @@ import { Card, CardContent } from '@repo/ui';
 import { Button } from '@repo/ui';
 import { Badge } from '@repo/ui';
 import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@repo/ui';
+import { 
   Dumbbell,
   Plus,
   Clock,
@@ -67,6 +75,15 @@ export default function PracticeMatchesPage() {
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'singles' | 'doubles' | 'mixed'>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{
+    isOpen: boolean;
+    matchId: string | null;
+    matchName: string;
+  }>({
+    isOpen: false,
+    matchId: null,
+    matchName: '',
+  });
 
   useEffect(() => {
     fetchMatches();
@@ -95,13 +112,21 @@ export default function PracticeMatchesPage() {
     }
   };
 
-  const handleDeleteMatch = async (matchId: string, e: React.MouseEvent) => {
+  const handleDeleteMatch = (matchId: string, matchName: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this practice match?')) return;
+    setDeleteConfirmDialog({
+      isOpen: true,
+      matchId,
+      matchName,
+    });
+  };
+
+  const confirmDeleteMatch = async () => {
+    if (!deleteConfirmDialog.matchId) return;
 
     try {
-      console.log('Deleting match:', matchId);
-      const response = await fetch(`/api/practice-matches/${matchId}`, {
+      console.log('Deleting match:', deleteConfirmDialog.matchId);
+      const response = await fetch(`/api/practice-matches/${deleteConfirmDialog.matchId}`, {
         method: 'DELETE',
       });
 
@@ -113,6 +138,12 @@ export default function PracticeMatchesPage() {
         console.log('Match deleted successfully, refreshing list...');
         // Successfully deleted, refresh the matches list
         await fetchMatches();
+        // Close the dialog
+        setDeleteConfirmDialog({
+          isOpen: false,
+          matchId: null,
+          matchName: '',
+        });
       } else {
         console.log('Delete failed:', data.error);
         // Show specific error message from API
@@ -191,17 +222,18 @@ export default function PracticeMatchesPage() {
             
             <div className="flex items-center gap-2">
               {/* Mobile Filter Toggle */}
-              <button
+              <Button
                 onClick={() => setShowFilters(!showFilters)}
-                className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                variant="outline"
+                className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-xl"
               >
                 <Filter className="h-4 w-4" />
                 <span className="text-sm font-medium">Filters</span>
-              </button>
+              </Button>
               
               <Button
                 onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25"
+                variant="default"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">New Match</span>
@@ -376,7 +408,8 @@ export default function PracticeMatchesPage() {
                         <div className="flex items-center gap-2">
                           {match.status !== 'completed' && match.status !== 'cancelled' && (
                             <Button
-                              onClick={(e) => handleDeleteMatch(match._id, e)}
+                              type="button"
+                              onClick={(e) => handleDeleteMatch(match._id, formatPlayers(match), e)}
                               variant="outline"
                               size="sm"
                               className="border-gray-300 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-300 dark:hover:border-red-800 hover:text-red-600 dark:hover:text-red-400"
@@ -406,6 +439,62 @@ export default function PracticeMatchesPage() {
           }}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog 
+        open={deleteConfirmDialog.isOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirmDialog({
+              isOpen: false,
+              matchId: null,
+              matchName: '',
+            });
+          }
+        }}
+      >
+        <DialogContent 
+          className="sm:max-w-md"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-red-600 dark:text-red-400">Delete Practice Match</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the practice match "{deleteConfirmDialog.matchName}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDeleteConfirmDialog({
+                  isOpen: false,
+                  matchId: null,
+                  matchName: '',
+                });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                confirmDeleteMatch();
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete Match
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

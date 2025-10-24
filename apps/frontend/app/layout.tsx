@@ -8,14 +8,8 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 export const metadata: Metadata = {
   title: 'Tourna-X - Tournament Management System',
   description: 'Modern tournament management system for badminton and tennis',
-  manifest: '/manifest.json',
-  themeColor: '#3b82f6',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Tourna-X',
-  },
+  // Only include manifest in production
+  ...(process.env.NODE_ENV === 'production' && { manifest: '/manifest.json' }),
   icons: {
     icon: [
       { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
@@ -26,15 +20,6 @@ export const metadata: Metadata = {
       { url: '/icons/icon-180x180.png', sizes: '180x180', type: 'image/png' },
     ],
   },
-  other: {
-    'mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-status-bar-style': 'default',
-    'apple-mobile-web-app-title': 'Tourna-X',
-    'application-name': 'Tourna-X',
-    'msapplication-TileColor': '#3b82f6',
-    'msapplication-config': '/browserconfig.xml',
-  },
 }
 
 export default function RootLayout({
@@ -44,6 +29,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <meta name="theme-color" content="#3b82f6" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        {/* PWA meta tags - only in production */}
+        {process.env.NODE_ENV === 'production' && (
+          <>
+            <meta name="apple-mobile-web-app-capable" content="yes" />
+            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+            <meta name="apple-mobile-web-app-title" content="Tourna-X" />
+            <meta name="application-name" content="Tourna-X" />
+            <meta name="msapplication-TileColor" content="#3b82f6" />
+            <meta name="msapplication-config" content="/browserconfig.xml" />
+            <link rel="apple-touch-icon" href="/icons/icon-152x152.png" />
+            <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png" />
+          </>
+        )}
+      </head>
       <body className={inter.variable}>
         <RootLayoutClient>{children}</RootLayoutClient>
       </body>

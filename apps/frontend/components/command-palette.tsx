@@ -365,7 +365,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                   className={`font-medium transition-colors ${
                                     isSelected
                                       ? 'text-primary'
-                                      : 'text-secondary'
+                                      : 'text-muted-foreground'
                                   }`}
                                 >
                                   {cmd.title}

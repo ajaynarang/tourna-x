@@ -17,9 +17,10 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
   // Check if we're on landing page or auth pages (no header)
   const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/register';
 
-  // Register service worker for PWA
+  // Register service worker for PWA (only in production)
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
+    // Only register service worker in production
+    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
         .then((registration) => {
           console.log('SW registered: ', registration);
@@ -27,6 +28,8 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
         .catch((registrationError) => {
           console.log('SW registration failed: ', registrationError);
         });
+    } else if (process.env.NODE_ENV === 'development') {
+      console.log('PWA disabled for local development');
     }
   }, []);
 

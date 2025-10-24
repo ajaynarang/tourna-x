@@ -174,7 +174,7 @@ function PlayerProfileContent() {
             <div className="flex items-center gap-4">
               <Link
                 href="/player/dashboard"
-                className="text-secondary hover:text-primary flex items-center gap-2 text-sm transition-colors"
+                className="text-muted-foreground hover:text-primary flex items-center gap-2 text-sm transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back to Dashboard
@@ -182,7 +182,7 @@ function PlayerProfileContent() {
             </div>
             <div>
               <h1 className="text-primary text-3xl font-bold">My Profile</h1>
-              <p className="text-secondary mt-1">Manage your personal information and view your stats</p>
+              <p className="text-muted-foreground mt-1">Manage your personal information and view your stats</p>
             </div>
             <div className="flex items-center gap-2">
               {isEditing ? (
@@ -265,7 +265,7 @@ function PlayerProfileContent() {
                     <h3 className="text-2xl font-bold text-primary">
                       {profileData.name || 'Player'}
                     </h3>
-                    <p className="text-sm text-secondary">Tournament Player</p>
+                    <p className="text-sm text-muted-foreground">Tournament Player</p>
                     {profileData.society && (
                       <p className="text-sm text-tertiary mt-1 flex items-center">
                         <Home className="h-3 w-3 mr-1" />
@@ -280,7 +280,7 @@ function PlayerProfileContent() {
                     <User className="h-5 w-5 text-blue-400" />
                     Personal Information
                   </h4>
-                  <p className="text-secondary text-sm">Your basic profile details</p>
+                  <p className="text-muted-foreground text-sm">Your basic profile details</p>
                 </div>
                 {/* Form Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -405,7 +405,7 @@ function PlayerProfileContent() {
                     <Home className="h-5 w-5 text-green-400" />
                     Address Information
                   </h4>
-                  <p className="text-secondary text-sm">Your residential details</p>
+                  <p className="text-muted-foreground text-sm">Your residential details</p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -489,15 +489,15 @@ function PlayerProfileContent() {
                 <div className="space-y-4">
                   <div className="text-center p-4 glass-card rounded-lg">
                     <div className="text-3xl font-bold text-purple-400">{playerStats.totalMatches}</div>
-                    <div className="text-sm text-secondary">Total Matches</div>
+                    <div className="text-sm text-muted-foreground">Total Matches</div>
                   </div>
                   <div className="text-center p-4 glass-card rounded-lg">
                     <div className="text-3xl font-bold text-green-400">{playerStats.winRate.toFixed(0)}%</div>
-                    <div className="text-sm text-secondary">Win Rate</div>
+                    <div className="text-sm text-muted-foreground">Win Rate</div>
                   </div>
                   <div className="text-center p-4 glass-card rounded-lg">
                     <div className="text-3xl font-bold text-blue-400">#{playerStats.ranking}</div>
-                    <div className="text-sm text-secondary">Ranking</div>
+                    <div className="text-sm text-muted-foreground">Ranking</div>
                   </div>
                 </div>
               </div>
@@ -520,7 +520,7 @@ function PlayerProfileContent() {
                     </div>
                     <div>
                       <div className="font-semibold text-sm text-primary">{playerStats.wins} Wins</div>
-                      <div className="text-xs text-secondary">Total victories</div>
+                      <div className="text-xs text-muted-foreground">Total victories</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 glass-card rounded-lg">
@@ -529,7 +529,7 @@ function PlayerProfileContent() {
                     </div>
                     <div>
                       <div className="font-semibold text-sm text-primary">{playerStats.totalTournaments} Tournaments</div>
-                      <div className="text-xs text-secondary">Participated</div>
+                      <div className="text-xs text-muted-foreground">Participated</div>
                     </div>
                   </div>
                 </div>

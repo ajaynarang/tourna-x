@@ -142,7 +142,7 @@ export default function CreateTournamentPage() {
             Back to Tournaments
           </Link>
           <h1 className="text-primary text-3xl font-bold">Create Tournament</h1>
-          <p className="text-secondary mt-2">Set up a new badminton or tennis tournament</p>
+          <p className="text-muted-foreground mt-2">Set up a new badminton or tennis tournament</p>
         </div>
 
         {/* Error Message */}
@@ -304,7 +304,7 @@ export default function CreateTournamentPage() {
                       className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
                         formData.categories.includes(category)
                           ? 'bg-green-500 text-white'
-                          : 'glass-card text-secondary hover:text-primary'
+                          : 'glass-card text-muted-foreground hover:text-primary'
                       }`}
                     >
                       {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -326,7 +326,7 @@ export default function CreateTournamentPage() {
                       className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
                         formData.gender.includes(gender)
                           ? 'bg-blue-500 text-white'
-                          : 'glass-card text-secondary hover:text-primary'
+                          : 'glass-card text-muted-foreground hover:text-primary'
                       }`}
                     >
                       {gender.charAt(0).toUpperCase() + gender.slice(1)}
@@ -469,7 +469,7 @@ export default function CreateTournamentPage() {
                     </div>
                     
                     {formData.prizes[key as keyof typeof formData.prizes].length === 0 ? (
-                      <div className="text-secondary text-center py-4 text-sm">
+                      <div className="text-muted-foreground text-center py-4 text-sm">
                         No prizes added yet. Click "Add Prize" to get started.
                       </div>
                     ) : (
@@ -478,7 +478,7 @@ export default function CreateTournamentPage() {
                           <div key={index} className="glass-card rounded-lg p-3">
                             <div className="grid gap-3 sm:grid-cols-4">
                               <div>
-                                <label className="text-secondary mb-1 block text-xs">Prize Type</label>
+                                <label className="text-muted-foreground mb-1 block text-xs">Prize Type</label>
                                 <select
                                   value={prize.type}
                                   onChange={(e) => {
@@ -501,7 +501,7 @@ export default function CreateTournamentPage() {
                                 </select>
                               </div>
                               <div>
-                                <label className="text-secondary mb-1 block text-xs">
+                                <label className="text-muted-foreground mb-1 block text-xs">
                                   {prize.type === 'money' ? 'Amount' : 'Quantity'}
                                 </label>
                                 <input
@@ -521,7 +521,7 @@ export default function CreateTournamentPage() {
                                 />
                               </div>
                               <div>
-                                <label className="text-secondary mb-1 block text-xs">Description</label>
+                                <label className="text-muted-foreground mb-1 block text-xs">Description</label>
                                 <input
                                   type="text"
                                   value={prize.description}
@@ -540,7 +540,7 @@ export default function CreateTournamentPage() {
                               <div className="flex items-end gap-2">
                                 {prize.type === 'money' && (
                                   <div className="flex-1">
-                                    <label className="text-secondary mb-1 block text-xs">Currency</label>
+                                    <label className="text-muted-foreground mb-1 block text-xs">Currency</label>
                                     <select
                                       value={prize.currency}
                                       onChange={(e) => {

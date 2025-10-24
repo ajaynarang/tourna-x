@@ -224,7 +224,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
           </Link>
           <div className="flex-1">
             <h1 className="text-primary text-3xl font-bold">{tournament.name}</h1>
-            <p className="text-secondary mt-1">{tournament.sport.charAt(0).toUpperCase() + tournament.sport.slice(1)} Tournament</p>
+            <p className="text-muted-foreground mt-1">{tournament.sport.charAt(0).toUpperCase() + tournament.sport.slice(1)} Tournament</p>
           </div>
           <div className="flex items-center gap-2">
             <span className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${statusConfig.color} ${statusConfig.bg}`}>
@@ -314,7 +314,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
                 <Calendar className="h-6 w-6 text-blue-500" />
               </div>
               <div>
-                <div className="text-secondary text-sm">Tournament Dates</div>
+                <div className="text-muted-foreground text-sm">Tournament Dates</div>
                 <div className="text-primary font-semibold">
                   {new Date(tournament.startDate).toLocaleDateString('en-IN', { 
                     day: 'numeric', 
@@ -336,7 +336,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
                 <MapPin className="h-6 w-6 text-green-500" />
               </div>
               <div>
-                <div className="text-secondary text-sm">Venue</div>
+                <div className="text-muted-foreground text-sm">Venue</div>
                 <div className="text-primary font-semibold">{tournament.venue}</div>
                 <div className="text-tertiary text-xs">{tournament.location}</div>
               </div>
@@ -347,7 +347,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
                 <DollarSign className="h-6 w-6 text-purple-500" />
               </div>
               <div>
-                <div className="text-secondary text-sm">Entry Fee</div>
+                <div className="text-muted-foreground text-sm">Entry Fee</div>
                 <div className="text-primary font-semibold">₹{tournament.entryFee}</div>
               </div>
             </div>
@@ -357,7 +357,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
                 <Users className="h-6 w-6 text-orange-500" />
               </div>
               <div>
-                <div className="text-secondary text-sm">Participants</div>
+                <div className="text-muted-foreground text-sm">Participants</div>
                 <div className="text-primary font-semibold">
                   {tournament.participantCount} / {tournament.maxParticipants}
                 </div>
@@ -384,24 +384,24 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
 
             <div className="space-y-4">
               <div>
-                <div className="text-secondary text-sm">Tournament Format</div>
+                <div className="text-muted-foreground text-sm">Tournament Format</div>
                 <div className="text-primary font-semibold capitalize">{tournament.format}</div>
               </div>
               <div>
-                <div className="text-secondary text-sm">Tournament Type</div>
+                <div className="text-muted-foreground text-sm">Tournament Type</div>
                 <div className="text-primary font-semibold capitalize">
                   {tournament.tournamentType.replace('_', ' ')}
                 </div>
               </div>
               {tournament.allowedSociety && (
                 <div>
-                  <div className="text-secondary text-sm">Allowed Society</div>
+                  <div className="text-muted-foreground text-sm">Allowed Society</div>
                   <div className="text-primary font-semibold">{tournament.allowedSociety}</div>
                 </div>
               )}
               {tournament.registrationDeadline && (
                 <div>
-                  <div className="text-secondary text-sm">Registration Deadline</div>
+                  <div className="text-muted-foreground text-sm">Registration Deadline</div>
                   <div className="text-primary font-semibold">
                     {new Date(tournament.registrationDeadline).toLocaleDateString('en-IN', {
                       day: 'numeric',
@@ -432,7 +432,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
 
             <div className="space-y-4">
               <div>
-                <div className="text-secondary text-sm mb-2">Available Categories</div>
+                <div className="text-muted-foreground text-sm mb-2">Available Categories</div>
                 <div className="flex flex-wrap gap-2">
                   {tournament.categories.map((category) => (
                     <span
@@ -446,7 +446,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
               </div>
               {tournament.ageGroups && tournament.ageGroups.length > 0 && (
                 <div>
-                  <div className="text-secondary text-sm mb-2">Age Groups</div>
+                  <div className="text-muted-foreground text-sm mb-2">Age Groups</div>
                   <div className="flex flex-wrap gap-2">
                     {tournament.ageGroups.map((ageGroup) => (
                       <span
@@ -480,7 +480,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
                   </div>
                   <h2 className="text-primary text-xl font-semibold">Description</h2>
                 </div>
-                <p className="text-secondary whitespace-pre-wrap">{tournament.description}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap">{tournament.description}</p>
               </motion.div>
             )}
 
@@ -498,7 +498,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
                   </div>
                   <h2 className="text-primary text-xl font-semibold">Rules & Regulations</h2>
                 </div>
-                <p className="text-secondary whitespace-pre-wrap">{tournament.rules}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap">{tournament.rules}</p>
               </motion.div>
             )}
 
@@ -517,13 +517,13 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
                   <h2 className="text-primary text-xl font-semibold">Prizes</h2>
                 </div>
                 {typeof tournament.prizes === 'string' ? (
-                  <p className="text-secondary whitespace-pre-wrap">{tournament.prizes}</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{tournament.prizes}</p>
                 ) : (
                   <div className="space-y-4">
                     {tournament.prizes.winner && tournament.prizes.winner.length > 0 && (
                       <div>
                         <h4 className="text-primary mb-2 font-semibold">Winner</h4>
-                        <ul className="text-secondary space-y-1">
+                        <ul className="text-muted-foreground space-y-1">
                           {tournament.prizes.winner.map((prize, index) => (
                             <li key={index}>
                               • {prize.description}: {prize.value} {prize.currency}
@@ -535,7 +535,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
                     {tournament.prizes.runnerUp && tournament.prizes.runnerUp.length > 0 && (
                       <div>
                         <h4 className="text-primary mb-2 font-semibold">Runner Up</h4>
-                        <ul className="text-secondary space-y-1">
+                        <ul className="text-muted-foreground space-y-1">
                           {tournament.prizes.runnerUp.map((prize, index) => (
                             <li key={index}>
                               • {prize.description}: {prize.value} {prize.currency}
@@ -547,7 +547,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
                     {tournament.prizes.semiFinalist && tournament.prizes.semiFinalist.length > 0 && (
                       <div>
                         <h4 className="text-primary mb-2 font-semibold">Semi Finalist</h4>
-                        <ul className="text-secondary space-y-1">
+                        <ul className="text-muted-foreground space-y-1">
                           {tournament.prizes.semiFinalist.map((prize, index) => (
                             <li key={index}>
                               • {prize.description}: {prize.value} {prize.currency}
@@ -580,13 +580,13 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
             <div className="grid gap-4 sm:grid-cols-2">
               {tournament.contactPerson && (
                 <div>
-                  <div className="text-secondary text-sm">Contact Person</div>
+                  <div className="text-muted-foreground text-sm">Contact Person</div>
                   <div className="text-primary font-semibold">{tournament.contactPerson}</div>
                 </div>
               )}
               {tournament.contactPhone && (
                 <div>
-                  <div className="text-secondary text-sm">Contact Phone</div>
+                  <div className="text-muted-foreground text-sm">Contact Phone</div>
                   <div className="text-primary font-semibold">{tournament.contactPhone}</div>
                 </div>
               )}

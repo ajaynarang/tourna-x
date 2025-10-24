@@ -266,7 +266,7 @@ function TournamentParticipantsContent({ params }: { params: Promise<{ id: strin
         >
           <Link
             href="/admin/tournaments"
-            className="text-secondary hover:text-primary mb-4 inline-flex items-center gap-2 text-sm transition-colors"
+            className="text-muted-foreground hover:text-primary mb-4 inline-flex items-center gap-2 text-sm transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Tournaments
@@ -275,7 +275,7 @@ function TournamentParticipantsContent({ params }: { params: Promise<{ id: strin
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-primary mb-2 text-3xl font-bold">Manage Participants</h1>
-              <p className="text-secondary">{tournament?.name}</p>
+              <p className="text-muted-foreground">{tournament?.name}</p>
             </div>
 
             <button
@@ -298,7 +298,7 @@ function TournamentParticipantsContent({ params }: { params: Promise<{ id: strin
           <div className="glass-card-intense rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-secondary text-sm">Total Participants</p>
+                <p className="text-muted-foreground text-sm">Total Participants</p>
                 <p className="text-primary mt-1 text-2xl font-bold">{participants.length}</p>
               </div>
               <Users className="h-8 w-8 text-blue-500" />
@@ -308,7 +308,7 @@ function TournamentParticipantsContent({ params }: { params: Promise<{ id: strin
           <div className="glass-card-intense rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-secondary text-sm">Approved</p>
+                <p className="text-muted-foreground text-sm">Approved</p>
                 <p className="text-primary mt-1 text-2xl font-bold">{approvedCount}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
@@ -318,7 +318,7 @@ function TournamentParticipantsContent({ params }: { params: Promise<{ id: strin
           <div className="glass-card-intense rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-secondary text-sm">Pending Approval</p>
+                <p className="text-muted-foreground text-sm">Pending Approval</p>
                 <p className="text-primary mt-1 text-2xl font-bold">{pendingCount}</p>
               </div>
               <Clock className="h-8 w-8 text-yellow-500" />
@@ -368,21 +368,21 @@ function TournamentParticipantsContent({ params }: { params: Promise<{ id: strin
         >
           {filteredParticipants.length === 0 ? (
             <div className="py-12 text-center">
-              <Users className="text-secondary mx-auto h-12 w-12" />
-              <p className="text-secondary mt-4">No participants found</p>
+              <Users className="text-muted-foreground mx-auto h-12 w-12" />
+              <p className="text-muted-foreground mt-4">No participants found</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="border-b border-white/10">
                   <tr>
-                    <th className="text-secondary px-6 py-4 text-left text-sm font-medium">Participant</th>
-                    <th className="text-secondary px-6 py-4 text-left text-sm font-medium">Contact</th>
-                    <th className="text-secondary px-6 py-4 text-left text-sm font-medium">Category</th>
-                    <th className="text-secondary px-6 py-4 text-left text-sm font-medium">Gender</th>
-                    <th className="text-secondary px-6 py-4 text-left text-sm font-medium">Status</th>
-                    <th className="text-secondary px-6 py-4 text-left text-sm font-medium">Payment</th>
-                    <th className="text-secondary px-6 py-4 text-right text-sm font-medium">Actions</th>
+                    <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Participant</th>
+                    <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Contact</th>
+                    <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Category</th>
+                    <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Gender</th>
+                    <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Status</th>
+                    <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Payment</th>
+                    <th className="text-muted-foreground px-6 py-4 text-right text-sm font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
@@ -400,21 +400,21 @@ function TournamentParticipantsContent({ params }: { params: Promise<{ id: strin
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-sm">
                             <Phone className="h-4 w-4 text-gray-400" />
-                            <span className="text-secondary">{participant.userId.phone}</span>
+                            <span className="text-muted-foreground">{participant.userId.phone}</span>
                           </div>
                           {participant.userId.email && (
                             <div className="flex items-center gap-2 text-sm">
                               <Mail className="h-4 w-4 text-gray-400" />
-                              <span className="text-secondary">{participant.userId.email}</span>
+                              <span className="text-muted-foreground">{participant.userId.email}</span>
                             </div>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-secondary text-sm">{participant.category}</span>
+                        <span className="text-muted-foreground text-sm">{participant.category}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-secondary text-sm capitalize">{participant.gender}</span>
+                        <span className="text-muted-foreground text-sm capitalize">{participant.gender}</span>
                       </td>
                       <td className="px-6 py-4">{getStatusBadge(participant)}</td>
                       <td className="px-6 py-4">
@@ -482,7 +482,7 @@ function TournamentParticipantsContent({ params }: { params: Promise<{ id: strin
             className="glass-card-intense w-full max-w-md rounded-2xl p-6"
           >
             <h3 className="text-primary mb-4 text-xl font-bold">Add Participant</h3>
-            <p className="text-secondary mb-6 text-sm">
+            <p className="text-muted-foreground mb-6 text-sm">
               Select a player from your registered players list to add them to this tournament.
             </p>
 
@@ -512,7 +512,7 @@ function TournamentParticipantsContent({ params }: { params: Promise<{ id: strin
                   setShowAddModal(false);
                   setSelectedPlayer('');
                 }}
-                className="glass-card flex-1 rounded-lg px-4 py-2 font-medium text-secondary transition-all hover:bg-white/10"
+                className="glass-card flex-1 rounded-lg px-4 py-2 font-medium text-muted-foreground transition-all hover:bg-white/10"
                 disabled={isAdding}
               >
                 Cancel

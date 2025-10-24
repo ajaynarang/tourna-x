@@ -149,7 +149,7 @@ function AdminFixturesContent() {
           className="mb-8"
         >
           <h1 className="text-primary mb-2 text-3xl font-bold">Fixture Management</h1>
-          <p className="text-secondary">Generate and manage tournament fixtures</p>
+          <p className="text-muted-foreground">Generate and manage tournament fixtures</p>
         </motion.div>
 
         {/* Ready for Fixtures */}
@@ -181,21 +181,21 @@ function AdminFixturesContent() {
 
                   <div className="mb-4 space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-secondary">Format:</span>
+                      <span className="text-muted-foreground">Format:</span>
                       <span className="text-primary font-medium capitalize">{tournament.format}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-secondary">Participants:</span>
+                      <span className="text-muted-foreground">Participants:</span>
                       <span className={`font-medium ${tournament.participantCount < 2 ? 'text-red-500' : 'text-primary'}`}>
                         {tournament.participantCount}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-secondary">Status:</span>
+                      <span className="text-muted-foreground">Status:</span>
                       <span className="text-primary font-medium capitalize">{tournament.status}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-secondary">Start Date:</span>
+                      <span className="text-muted-foreground">Start Date:</span>
                       <span className="text-primary font-medium">
                         {new Date(tournament.startDate).toLocaleDateString()}
                       </span>
@@ -261,11 +261,11 @@ function AdminFixturesContent() {
 
                   <div className="mb-4 space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-secondary">Format:</span>
+                      <span className="text-muted-foreground">Format:</span>
                       <span className="text-primary font-medium capitalize">{tournament.format}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-secondary">Status:</span>
+                      <span className="text-muted-foreground">Status:</span>
                       <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-500">
                         <CheckCircle className="h-3 w-3" />
                         Fixtures Ready
@@ -276,7 +276,7 @@ function AdminFixturesContent() {
                   <div className="flex gap-2">
                     <Link
                       href={`/admin/tournaments/${tournament._id}/fixtures`}
-                      className="glass-card flex-1 rounded-lg px-4 py-2 text-center text-sm font-medium text-secondary transition-all hover:bg-white/10"
+                      className="glass-card flex-1 rounded-lg px-4 py-2 text-center text-sm font-medium text-muted-foreground transition-all hover:bg-white/10"
                     >
                       <span className="flex items-center justify-center gap-2">
                         <Eye className="h-4 w-4" />
@@ -306,9 +306,9 @@ function AdminFixturesContent() {
             animate={{ opacity: 1, y: 0 }}
             className="py-12 text-center"
           >
-            <Trophy className="text-secondary mx-auto h-16 w-16" />
+            <Trophy className="text-muted-foreground mx-auto h-16 w-16" />
             <h3 className="text-primary mt-4 text-lg font-semibold">No Tournaments Found</h3>
-            <p className="text-secondary mt-2">
+            <p className="text-muted-foreground mt-2">
               Create a tournament and register participants to generate fixtures
             </p>
             <Link

@@ -232,7 +232,7 @@ function AdminDashboardContent() {
               <Trophy className="h-10 w-10 text-green-400" />
             </div>
             <h3 className="text-primary mb-2 text-xl font-semibold">No Active Tournaments</h3>
-            <p className="text-secondary mb-6">Get started by creating your first tournament</p>
+            <p className="text-muted-foreground mb-6">Get started by creating your first tournament</p>
             <button
               onClick={() => router.push('/admin/tournaments/create')}
               className="bg-primary mx-auto inline-flex items-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-transform hover:scale-105"
@@ -292,7 +292,7 @@ function StatCard({
       <div className="text-primary mb-1 text-3xl font-bold">{value}</div>
 
       {/* Title */}
-      <div className="text-secondary text-sm font-medium">{title}</div>
+      <div className="text-muted-foreground text-sm font-medium">{title}</div>
     </motion.button>
   );
 }
@@ -329,7 +329,7 @@ function TournamentCard({ tournament }: { tournament: Tournament }) {
             </span>
           </div>
 
-          <div className="text-secondary mb-4 flex items-center gap-4 text-sm">
+          <div className="text-muted-foreground mb-4 flex items-center gap-4 text-sm">
             <span className="flex items-center gap-2">
               <Trophy className="h-4 w-4" />
               {tournament.sport}
