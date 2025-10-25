@@ -14,6 +14,7 @@ import {
   User,
   Users,
   Target,
+  History,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -80,21 +81,21 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       category: 'Navigate',
     },
     {
-      id: 'admin-scoring',
-      title: 'Scoring',
-      subtitle: 'Manage scores',
-      icon: Settings,
-      action: () => router.push('/admin/scoring'),
-      keywords: ['scoring', 'results', 'points'],
-      category: 'Navigate',
-    },
-    {
       id: 'admin-practice-matches',
       title: 'Practice Matches',
       subtitle: 'Record daily practice',
       icon: Target,
       action: () => router.push('/admin/practice-matches'),
       keywords: ['practice', 'matches', 'daily', 'training', 'practice sessions'],
+      category: 'Navigate',
+    },
+    {
+      id: 'admin-tournament-matches',
+      title: 'Tournament Matches',
+      subtitle: 'View match history & stats',
+      icon: History,
+      action: () => router.push('/admin/tournament-matches'),
+      keywords: ['tournament', 'matches', 'history', 'results', 'completed'],
       category: 'Navigate',
     },
     {

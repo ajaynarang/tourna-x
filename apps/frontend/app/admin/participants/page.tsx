@@ -38,6 +38,7 @@ interface Tournament {
   }>;
   allowMultipleAgeGroups: boolean;
   maxParticipants: number;
+  hasFixtures?: boolean; // Track if fixtures have been generated
 }
 
 interface Participant {
@@ -126,7 +127,26 @@ function AdminParticipantsContent() {
       const tournamentsRes = await fetch('/api/tournaments');
       const tournamentsData = await tournamentsRes.json();
       if (tournamentsData.success) {
-        setTournaments(tournamentsData.data || []);
+        const tournamentsList = tournamentsData.data || [];
+        
+        // Check if fixtures exist for each tournament
+        const tournamentsWithFixtureStatus = await Promise.all(
+          tournamentsList.map(async (tournament: Tournament) => {
+            try {
+              const fixturesRes = await fetch(`/api/tournaments/${tournament._id}/fixtures`);
+              const fixturesData = await fixturesRes.json();
+              return {
+                ...tournament,
+                hasFixtures: fixturesData.success && fixturesData.data && fixturesData.data.length > 0
+              };
+            } catch (error) {
+              console.error(`Error checking fixtures for tournament ${tournament._id}:`, error);
+              return { ...tournament, hasFixtures: false };
+            }
+          })
+        );
+        
+        setTournaments(tournamentsWithFixtureStatus);
       }
 
       // Fetch all participants
@@ -195,6 +215,15 @@ function AdminParticipantsContent() {
   };
 
   const handleReject = async (participantId: string) => {
+    const participant = participants.find(p => p._id === participantId);
+    const tournament = tournaments.find(t => t._id === participant?.tournamentId);
+    
+    // Extra check in case UI state is stale
+    if (tournament?.hasFixtures) {
+      alert('Cannot reject participant - fixtures have already been generated for this tournament. Rejecting participants would disrupt the bracket structure.');
+      return;
+    }
+    
     try {
       const response = await fetch(`/api/participants/${participantId}/reject`, {
         method: 'POST',
@@ -203,13 +232,25 @@ function AdminParticipantsContent() {
       const data = await response.json();
       if (data.success) {
         fetchData();
+      } else {
+        alert(data.error || 'Failed to reject participant');
       }
     } catch (error) {
       console.error('Error rejecting participant:', error);
+      alert('Failed to reject participant');
     }
   };
 
   const handleRemove = async (participantId: string, participantName: string) => {
+    const participant = participants.find(p => p._id === participantId);
+    const tournament = tournaments.find(t => t._id === participant?.tournamentId);
+    
+    // Extra check in case UI state is stale
+    if (tournament?.hasFixtures) {
+      alert('Cannot remove participant - fixtures have already been generated for this tournament. Removing participants would disrupt the bracket structure.');
+      return;
+    }
+    
     if (!confirm(`Are you sure you want to remove ${participantName} from this tournament?`)) {
       return;
     }
@@ -717,32 +758,57 @@ function AdminParticipantsContent() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
-                          {!participant.isApproved ? (
-                            <>
-                              <button
-                                onClick={() => handleApprove(participant._id)}
-                                className="rounded-lg p-2 text-green-500 transition-colors hover:bg-green-500/10"
-                                title="Approve"
-                              >
-                                <Check className="h-5 w-5" />
-                              </button>
-                              <button
-                                onClick={() => handleReject(participant._id)}
-                                className="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-500/10"
-                                title="Reject"
-                              >
-                                <X className="h-5 w-5" />
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => handleRemove(participant._id, participant.userId.name)}
-                              className="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-500/10"
-                              title="Remove from tournament"
-                            >
-                              <Trash2 className="h-5 w-5" />
-                            </button>
-                          )}
+                          {(() => {
+                            const tournament = tournaments.find(t => t._id === participant.tournamentId);
+                            const hasFixtures = tournament?.hasFixtures || false;
+                            
+                            if (!participant.isApproved) {
+                              return (
+                                <>
+                                  <button
+                                    onClick={() => handleApprove(participant._id)}
+                                    className="rounded-lg p-2 text-green-500 transition-colors hover:bg-green-500/10"
+                                    title="Approve"
+                                  >
+                                    <Check className="h-5 w-5" />
+                                  </button>
+                                  <button
+                                    onClick={() => !hasFixtures && handleReject(participant._id)}
+                                    disabled={hasFixtures}
+                                    className={`rounded-lg p-2 transition-colors ${
+                                      hasFixtures 
+                                        ? 'text-gray-400 cursor-not-allowed opacity-50' 
+                                        : 'text-red-500 hover:bg-red-500/10'
+                                    }`}
+                                    title={hasFixtures 
+                                      ? 'Cannot reject - fixtures have been generated for this tournament' 
+                                      : 'Reject'
+                                    }
+                                  >
+                                    <X className="h-5 w-5" />
+                                  </button>
+                                </>
+                              );
+                            } else {
+                              return (
+                                <button
+                                  onClick={() => !hasFixtures && handleRemove(participant._id, participant.userId.name)}
+                                  disabled={hasFixtures}
+                                  className={`rounded-lg p-2 transition-colors ${
+                                    hasFixtures 
+                                      ? 'text-gray-400 cursor-not-allowed opacity-50' 
+                                      : 'text-red-500 hover:bg-red-500/10'
+                                  }`}
+                                  title={hasFixtures 
+                                    ? 'Cannot remove - fixtures have been generated for this tournament' 
+                                    : 'Remove from tournament'
+                                  }
+                                >
+                                  <Trash2 className="h-5 w-5" />
+                                </button>
+                              );
+                            }
+                          })()}
                         </div>
                       </td>
                     </tr>

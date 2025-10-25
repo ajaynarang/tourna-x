@@ -448,14 +448,30 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
                 <div>
                   <div className="text-muted-foreground text-sm mb-2">Age Groups</div>
                   <div className="flex flex-wrap gap-2">
-                    {tournament.ageGroups.map((ageGroup) => (
-                      <span
-                        key={ageGroup}
-                        className="glass-card rounded-full px-3 py-1 text-sm font-medium text-primary"
-                      >
-                        {ageGroup}
-                      </span>
-                    ))}
+                    {tournament.ageGroups.map((ageGroup) => {
+                      const isString = typeof ageGroup === 'string';
+                      const name = isString ? ageGroup : ageGroup.name;
+                      const minAge = !isString && ageGroup.minAge;
+                      const maxAge = !isString && ageGroup.maxAge;
+                      
+                      let ageRange = '';
+                      if (minAge && maxAge) {
+                        ageRange = ` (${minAge}-${maxAge} years)`;
+                      } else if (minAge) {
+                        ageRange = ` (${minAge}+ years)`;
+                      } else if (maxAge) {
+                        ageRange = ` (up to ${maxAge} years)`;
+                      }
+                      
+                      return (
+                        <span
+                          key={name}
+                          className="glass-card rounded-full px-3 py-1 text-sm font-medium text-primary"
+                        >
+                          {name}{ageRange}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               )}

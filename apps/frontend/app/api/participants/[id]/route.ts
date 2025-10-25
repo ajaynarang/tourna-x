@@ -43,6 +43,21 @@ export async function DELETE(
       );
     }
 
+    // Check if fixtures have been generated for this tournament
+    const fixturesExist = await db.collection(COLLECTIONS.MATCHES).countDocuments({
+      tournamentId: participant.tournamentId
+    });
+
+    if (fixturesExist > 0) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Cannot remove participant - fixtures have already been generated for this tournament. Removing participants would disrupt the bracket structure.' 
+        },
+        { status: 400 }
+      );
+    }
+
     // Get tournament details for notification
     const tournament = await db.collection(COLLECTIONS.TOURNAMENTS).findOne({
       _id: participant.tournamentId

@@ -381,11 +381,27 @@ export default function TournamentDetailPage() {
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Age Groups</h3>
                 <div className="flex flex-wrap gap-2">
-                  {tournament.ageGroups.map((ageGroup) => (
-                    <Badge key={ageGroup} variant="outline" className="text-sm px-4 py-2">
-                      {ageGroup}
-                    </Badge>
-                  ))}
+                  {tournament.ageGroups.map((ageGroup) => {
+                    const isString = typeof ageGroup === 'string';
+                    const name = isString ? ageGroup : ageGroup.name;
+                    const minAge = !isString && ageGroup.minAge;
+                    const maxAge = !isString && ageGroup.maxAge;
+                    
+                    let ageRange = '';
+                    if (minAge && maxAge) {
+                      ageRange = ` (${minAge}-${maxAge} years)`;
+                    } else if (minAge) {
+                      ageRange = ` (${minAge}+ years)`;
+                    } else if (maxAge) {
+                      ageRange = ` (up to ${maxAge} years)`;
+                    }
+                    
+                    return (
+                      <Badge key={name} variant="outline" className="text-sm px-4 py-2">
+                        {name}{ageRange}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -553,11 +569,27 @@ export default function TournamentDetailPage() {
                               <SelectValue placeholder="Select age group" />
                             </SelectTrigger>
                             <SelectContent>
-                              {tournament.ageGroups.map((ageGroup) => (
-                                <SelectItem key={ageGroup} value={ageGroup}>
-                                  {ageGroup}
-                                </SelectItem>
-                              ))}
+                              {tournament.ageGroups.map((ageGroup) => {
+                                const isString = typeof ageGroup === 'string';
+                                const name = isString ? ageGroup : ageGroup.name;
+                                const minAge = !isString && ageGroup.minAge;
+                                const maxAge = !isString && ageGroup.maxAge;
+                                
+                                let ageRange = '';
+                                if (minAge && maxAge) {
+                                  ageRange = ` (${minAge}-${maxAge} years)`;
+                                } else if (minAge) {
+                                  ageRange = ` (${minAge}+ years)`;
+                                } else if (maxAge) {
+                                  ageRange = ` (up to ${maxAge} years)`;
+                                }
+                                
+                                return (
+                                  <SelectItem key={name} value={name}>
+                                    {name}{ageRange}
+                                  </SelectItem>
+                                );
+                              })}
                             </SelectContent>
                           </Select>
                         </div>

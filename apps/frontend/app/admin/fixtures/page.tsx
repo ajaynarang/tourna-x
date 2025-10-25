@@ -809,12 +809,6 @@ function ActiveTournamentCard({ tournament }: { tournament: Tournament }) {
             View
           </Button>
         </Link>
-        <Link href={`/admin/scoring/${tournament._id}`} className="flex-1">
-          <Button className="w-full gap-2 bg-green-600 hover:bg-green-700">
-            <Edit className="h-4 w-4" />
-            Score
-          </Button>
-        </Link>
       </div>
     </motion.div>
   );

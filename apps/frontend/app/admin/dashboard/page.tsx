@@ -315,7 +315,7 @@ function TournamentCard({ tournament }: { tournament: Tournament }) {
 
   return (
     <button
-      onClick={() => router.push(`/admin/tournaments/${tournament._id}/participants`)}
+      onClick={() => router.push(`/admin/tournaments/${tournament._id}`)}
       className="glass-card group w-full p-6 text-left transition-all hover:scale-[1.01]"
     >
       <div className="flex items-start justify-between">

@@ -29,6 +29,33 @@ export async function POST(
       );
     }
 
+    // Check if participant exists and get tournament ID
+    const participant = await db.collection(COLLECTIONS.PARTICIPANTS).findOne({
+      _id: new ObjectId(id)
+    });
+
+    if (!participant) {
+      return NextResponse.json(
+        { success: false, error: 'Participant not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if fixtures have been generated for this tournament
+    const fixturesExist = await db.collection(COLLECTIONS.MATCHES).countDocuments({
+      tournamentId: participant.tournamentId
+    });
+
+    if (fixturesExist > 0) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Cannot reject participant - fixtures have already been generated for this tournament. Rejecting participants would disrupt the bracket structure.' 
+        },
+        { status: 400 }
+      );
+    }
+
     const { reason } = await request.json();
 
     // Update participant status to rejected
@@ -52,21 +79,15 @@ export async function POST(
     }
 
     // Create notification for participant
-    const participant = await db.collection(COLLECTIONS.PARTICIPANTS).findOne({
-      _id: new ObjectId(id)
+    await db.collection(COLLECTIONS.NOTIFICATIONS).insertOne({
+      userId: participant.userId,
+      type: 'registration_rejected',
+      title: 'Registration Rejected',
+      message: `Your registration for the tournament has been rejected. Reason: ${reason || 'Not specified'}`,
+      tournamentId: participant.tournamentId,
+      isRead: false,
+      createdAt: new Date(),
     });
-
-    if (participant) {
-      await db.collection(COLLECTIONS.NOTIFICATIONS).insertOne({
-        userId: participant.userId,
-        type: 'registration_rejected',
-        title: 'Registration Rejected',
-        message: `Your registration for the tournament has been rejected. Reason: ${reason || 'Not specified'}`,
-        tournamentId: participant.tournamentId,
-        isRead: false,
-        createdAt: new Date(),
-      });
-    }
 
     return NextResponse.json({
       success: true,

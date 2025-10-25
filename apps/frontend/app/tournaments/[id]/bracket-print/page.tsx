@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Badge } from '@repo/ui';
+import { Badge, Button } from '@repo/ui';
 import { Trophy, Calendar, MapPin, Users, CheckCircle } from 'lucide-react';
 
 interface Match {
@@ -181,7 +181,7 @@ export default function BracketPrintPage() {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="rounded-lg  px-3 py-2 text-sm  shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               <option value="all">All Categories</option>
               {categories.map(cat => (
@@ -197,7 +197,7 @@ export default function BracketPrintPage() {
             <select
               value={selectedAgeGroup}
               onChange={(e) => setSelectedAgeGroup(e.target.value)}
-              className="rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="rounded-lg px-3 py-2 text-sm text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               <option value="all">All Age Groups</option>
               {ageGroups.map(ag => (
@@ -208,22 +208,23 @@ export default function BracketPrintPage() {
             </select>
           )}
 
-          <button
+          <Button
+          variant="outline"
             onClick={() => fetchData(true)}
             disabled={isRefreshing}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg font-medium shadow-lg transition-colors flex items-center gap-2"
+            className="px-4 py-2  flex items-center gap-2"
             title="Refresh to see latest match results"
           >
             <span className={isRefreshing ? 'animate-spin' : ''}>🔄</span>
             <span className="hidden sm:inline">Refresh</span>
-          </button>
+          </Button>
           
-          <button
+          <Button
             onClick={() => window.print()}
-            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-lg transition-colors"
+            className="px-6 py-2 font-medium shadow-lg transition-colors"
           >
             🖨️ Print
-          </button>
+          </Button>
           
           <button
             onClick={() => window.close()}
@@ -231,13 +232,6 @@ export default function BracketPrintPage() {
           >
             ✕
           </button>
-        </div>
-        
-        {/* Auto-refresh indicator */}
-        <div className="mt-2 text-right">
-          <span className="text-xs text-slate-400 bg-slate-900/50 px-2 py-1 rounded">
-            Auto-refreshes every 30s
-          </span>
         </div>
       </div>
 

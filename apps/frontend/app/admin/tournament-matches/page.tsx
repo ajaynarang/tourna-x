@@ -20,6 +20,7 @@ import {
   XCircle,
   Edit,
   Zap,
+  Filter,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -93,45 +94,63 @@ interface PlayerStats {
   recentForm: string[];
 }
 
-export default function MatchHistoryPage({ params }: { params: Promise<{ id: string }> }) {
-  const { user } = useAuth();
-  const router = useRouter();
-  const [tournamentId, setTournamentId] = useState<string>('');
-  const [tournament, setTournament] = useState<Tournament | null>(null);
+export default function TournamentMatchesPage() {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string>('');
+  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [playerStats, setPlayerStats] = useState<PlayerStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'matches' | 'stats'>('matches');
 
   useEffect(() => {
-    params.then(p => {
-      setTournamentId(p.id);
-    });
-  }, [params]);
+    fetchTournaments();
+  }, []);
 
   useEffect(() => {
-    if (tournamentId) {
-      fetchData();
+    if (selectedTournamentId) {
+      fetchMatchData();
     }
-  }, [tournamentId]);
+  }, [selectedTournamentId]);
 
-  const fetchData = async () => {
+  const fetchTournaments = async () => {
     try {
       setIsLoading(true);
+      const response = await fetch('/api/tournaments');
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setTournaments(result.data);
+        // Auto-select first tournament if available
+        if (result.data.length > 0 && !selectedTournamentId) {
+          setSelectedTournamentId(result.data[0]._id);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching tournaments:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchMatchData = async () => {
+    try {
+      setIsLoadingMatches(true);
       
       // Fetch tournament details
-      const tournamentResponse = await fetch(`/api/tournaments/${tournamentId}`);
+      const tournamentResponse = await fetch(`/api/tournaments/${selectedTournamentId}`);
       const tournamentResult = await tournamentResponse.json();
       
       if (tournamentResult.success) {
-        setTournament(tournamentResult.data);
+        setSelectedTournament(tournamentResult.data);
       }
 
-      // Fetch matches using fixtures API
-      const matchesResponse = await fetch(`/api/tournaments/${tournamentId}/fixtures`);
+      // Fetch matches
+      const matchesResponse = await fetch(`/api/tournaments/${selectedTournamentId}/fixtures`);
       const matchesResult = await matchesResponse.json();
       
       if (matchesResult.success) {
@@ -146,16 +165,16 @@ export default function MatchHistoryPage({ params }: { params: Promise<{ id: str
       }
 
       // Fetch player stats
-      const statsResponse = await fetch(`/api/player-stats?tournamentId=${tournamentId}`);
+      const statsResponse = await fetch(`/api/player-stats?tournamentId=${selectedTournamentId}`);
       const statsResult = await statsResponse.json();
       
       if (statsResult.success) {
         setPlayerStats(statsResult.data);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching match data:', error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingMatches(false);
     }
   };
 
@@ -634,21 +653,21 @@ export default function MatchHistoryPage({ params }: { params: Promise<{ id: str
       <div className="relative z-10 min-h-screen p-4 lg:p-8 flex items-center justify-center">
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 text-center border border-white/10">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading match history...</p>
+          <p className="text-gray-400">Loading tournaments...</p>
         </div>
       </div>
     );
   }
 
-  if (!tournament) {
+  if (tournaments.length === 0) {
     return (
       <div className="relative z-10 min-h-screen p-4 lg:p-8 flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Tournament Not Found</h2>
-          <p className="text-gray-400 mb-6">The tournament you're looking for doesn't exist.</p>
+          <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">No Tournaments Found</h2>
+          <p className="text-gray-400 mb-6">Create a tournament to view match history.</p>
           <Button asChild>
-            <Link href="/admin/tournaments">Back to Tournaments</Link>
+            <Link href="/admin/tournaments">Go to Tournaments</Link>
           </Button>
         </div>
       </div>
@@ -660,51 +679,75 @@ export default function MatchHistoryPage({ params }: { params: Promise<{ id: str
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6 lg:mb-8">
-          <Button asChild variant="outline" size="sm" className="mb-4 bg-white/5 border-white/10 hover:bg-white/10">
-            <Link href="/admin/tournaments">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-          
           <div className="mb-6">
             <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
-              Match History
+              Tournament Matches
             </h1>
             <p className="text-sm lg:text-base text-gray-400">
-              {tournament.name} • {tournament.sport} • {tournament.format}
+              View match history and player statistics across all tournaments
             </p>
           </div>
 
-          {/* Tournament Info Card */}
+          {/* Tournament Selector */}
           <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 lg:p-6 mb-6 border border-white/10">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 lg:gap-6 text-xs lg:text-sm text-gray-400 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  <span>{tournament.participantCount} participants</span>
+            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Filter className="h-5 w-5 text-green-400" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    {new Date(tournament.startDate).toLocaleDateString()} - {new Date(tournament.endDate).toLocaleDateString()}
-                  </span>
+                <div>
+                  <label className="text-sm font-medium text-white block mb-1">Select Tournament</label>
+                  <p className="text-xs text-gray-400">Choose a tournament to view its matches</p>
                 </div>
               </div>
+              
+              <select
+                value={selectedTournamentId}
+                onChange={(e) => setSelectedTournamentId(e.target.value)}
+                className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 text-white text-sm lg:text-base"
+              >
+                {tournaments.map((tournament) => (
+                  <option key={tournament._id} value={tournament._id} className="bg-gray-900">
+                    {tournament.name} ({tournament.sport} • {tournament.format})
+                  </option>
+                ))}
+              </select>
+              
               <Button 
-                onClick={fetchData} 
+                onClick={fetchMatchData} 
                 variant="outline" 
                 size="sm" 
-                className="bg-white/5 border-white/10 hover:bg-white/10 w-full sm:w-auto"
+                className="bg-white/5 border-white/10 hover:bg-white/10 w-full lg:w-auto"
+                disabled={isLoadingMatches}
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingMatches ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
             </div>
           </div>
 
+          {/* Tournament Info Card */}
+          {selectedTournament && (
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 lg:p-6 mb-6 border border-white/10">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 lg:gap-6 text-xs lg:text-sm text-gray-400 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span>{selectedTournament.participantCount} participants</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      {new Date(selectedTournament.startDate).toLocaleDateString()} - {new Date(selectedTournament.endDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* View Mode Toggle */}
-          <div className="flex items-center gap-2 p-1 bg-white/5 border border-white/10 rounded-xl w-full sm:w-auto">
+          <div className="flex items-center gap-2 p-1 bg-white/5 border border-white/10 rounded-xl w-full sm:w-auto mb-6">
             <button
               onClick={() => setViewMode('matches')}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
@@ -728,56 +771,68 @@ export default function MatchHistoryPage({ params }: { params: Promise<{ id: str
               <span className="hidden sm:inline">Statistics</span>
             </button>
           </div>
-        </div>
 
-        {/* Filters */}
-        {viewMode === 'matches' && (
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 lg:p-6 mb-6 border border-white/10">
-            <div className="flex flex-col lg:flex-row gap-3 lg:gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 lg:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search players..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 lg:pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 text-white placeholder:text-gray-500 text-sm"
-                  />
+          {/* Filters */}
+          {viewMode === 'matches' && selectedTournamentId && (
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 lg:p-6 mb-6 border border-white/10">
+              <div className="flex flex-col lg:flex-row gap-3 lg:gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 lg:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search players..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 lg:pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 text-white placeholder:text-gray-500 text-sm"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="flex-1 lg:flex-none px-3 lg:px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 text-white text-sm"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                  
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="flex-1 lg:flex-none px-3 lg:px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 text-white text-sm"
+                  >
+                    <option value="all">All Categories</option>
+                    <option value="singles">Singles</option>
+                    <option value="doubles">Doubles</option>
+                    <option value="mixed">Mixed</option>
+                  </select>
                 </div>
               </div>
-              
-              <div className="flex gap-3">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="flex-1 lg:flex-none px-3 lg:px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 text-white text-sm"
-                >
-                  <option value="all">All Status</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-                
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="flex-1 lg:flex-none px-3 lg:px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 text-white text-sm"
-                >
-                  <option value="all">All Categories</option>
-                  <option value="singles">Singles</option>
-                  <option value="doubles">Doubles</option>
-                  <option value="mixed">Mixed</option>
-                </select>
-              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Content */}
-        {viewMode === 'matches' ? renderMatchesView() : renderStatsView()}
+        {isLoadingMatches ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+          </div>
+        ) : selectedTournamentId ? (
+          viewMode === 'matches' ? renderMatchesView() : renderStatsView()
+        ) : (
+          <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-12 border border-white/10 text-center">
+            <Trophy className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+            <p className="text-gray-400">Select a tournament to view matches</p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
