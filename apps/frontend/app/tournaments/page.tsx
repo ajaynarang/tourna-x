@@ -173,24 +173,10 @@ export default function TournamentsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
-                  Discover Tournaments
-                </h1>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-100 to-blue-100 rounded-full border border-green-200">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-xs font-semibold text-green-700">{tournaments.length} Active</span>
-                </div>
-              </div>
-              <p className="text-gray-600 text-lg">
-                Find and join tournaments that match your skills and interests
-              </p>
-            </div>
             {user && (
               <div className="flex gap-2">
                 <Button asChild size="lg" variant="outline">

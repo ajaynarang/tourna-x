@@ -263,8 +263,8 @@ function AdminParticipantsContent() {
   const totalCount = participants.length;
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="mx-auto max-w-7xl px-4">
+    <div className="min-h-screen py-8 px-4">
+      <div>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -280,10 +280,6 @@ function AdminParticipantsContent() {
           </Link>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-primary mb-2 text-3xl font-bold">Manage Participants</h1>
-              <p className="text-muted-foreground">Manage participants across all tournaments</p>
-            </div>
 
             <button
               onClick={() => setShowAddModal(true)}

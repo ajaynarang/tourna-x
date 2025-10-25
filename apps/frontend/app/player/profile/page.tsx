@@ -166,7 +166,6 @@ function PlayerProfileContent() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="mx-auto max-w-7xl"
       >
         {/* Header */}
         <motion.div variants={item} className="mb-8">
@@ -179,10 +178,6 @@ function PlayerProfileContent() {
                 <ArrowLeft className="h-4 w-4" />
                 Back to Dashboard
               </Link>
-            </div>
-            <div>
-              <h1 className="text-primary text-3xl font-bold">My Profile</h1>
-              <p className="text-muted-foreground mt-1">Manage your personal information and view your stats</p>
             </div>
             <div className="flex items-center gap-2">
               {isEditing ? (

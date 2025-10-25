@@ -140,16 +140,14 @@ function AdminFixturesContent() {
   const hasFixtures = tournaments.filter(t => t.hasFixtures);
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="mx-auto max-w-7xl px-4">
+    <div className="min-h-screen py-8 px-4">
+      <div>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-primary mb-2 text-3xl font-bold">Fixture Management</h1>
-          <p className="text-muted-foreground">Generate and manage tournament fixtures</p>
         </motion.div>
 
         {/* Ready for Fixtures */}
