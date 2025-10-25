@@ -563,12 +563,6 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
                 <Shuffle className="h-4 w-4" />
                 Re-sync Fixtures
               </Button>
-              <Link href={`/admin/scoring/${tournamentId}`}>
-                <Button className="gap-2 bg-green-600 hover:bg-green-700">
-                  <Zap className="h-4 w-4" />
-                  Live Scoring
-                </Button>
-            </Link>
             </div>
           </div>
         </motion.div>
@@ -612,19 +606,6 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
                   <ExternalLink className="h-3 w-3" />
                 </Button>
               )}
-
-              {/* Refresh Button */}
-              <Button
-                onClick={() => fetchData(tournamentId)}
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                disabled={isLoading}
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Refresh</span>
-              </Button>
-
              
             </div>
 

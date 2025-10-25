@@ -308,6 +308,28 @@ export default function BracketPrintPage() {
   );
 }
 
+// Helper function to get standardized round name
+function getRoundName(roundNumber: number, totalRounds: number, matchesInRound: number): string {
+  // Calculate from the end to determine finals, semis, quarters
+  const roundsFromEnd = totalRounds - roundNumber;
+  
+  if (roundsFromEnd === 0) {
+    return 'Final';
+  } else if (roundsFromEnd === 1) {
+    return 'Semi Final';
+  } else if (roundsFromEnd === 2) {
+    return 'Quarter Final';
+  } else if (matchesInRound === 32) {
+    return 'Round of 64';
+  } else if (matchesInRound === 16) {
+    return 'Round of 32';
+  } else if (matchesInRound === 8) {
+    return 'Round of 16';
+  } else {
+    return `Round ${roundNumber}`;
+  }
+}
+
 function BracketView({ matches, category }: { matches: Match[]; category: string }) {
   const isDoubles = category === 'doubles' || category === 'mixed';
 
@@ -322,6 +344,7 @@ function BracketView({ matches, category }: { matches: Match[]; category: string
   }, {} as Record<number, Match[]>);
 
   const rounds = Object.keys(matchesByRound).map(Number).sort((a, b) => a - b);
+  const totalRounds = rounds.length;
 
   return (
     <div className="overflow-x-auto print:overflow-visible">
@@ -335,12 +358,14 @@ function BracketView({ matches, category }: { matches: Match[]; category: string
           const baseSpacing = 20;
           const spacing = baseSpacing * spacingMultiplier;
 
+          const standardRoundName = getRoundName(round, totalRounds, matchesInRound);
+          
           return (
             <div key={round} className="flex flex-col justify-around min-w-[280px] print:min-w-[220px]">
               {/* Round Header */}
               <div className="text-center mb-4 print:mb-3">
                 <h3 className="text-lg font-bold text-gray-900 print:text-base">
-                  {roundMatches[0]?.roundName || `Round ${round}`}
+                  {standardRoundName}
                 </h3>
                 <p className="text-sm text-gray-600">
                   {matchesInRound} {matchesInRound === 1 ? 'Match' : 'Matches'}
@@ -420,8 +445,8 @@ function BracketMatch({ match, isDoubles }: { match: Match; isDoubles: boolean }
                   );
                 case 'manual':
                   return (
-                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded font-medium">
-                      Manual
+                    <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded font-medium">
+                      Won (Manual)
                     </span>
                   );
                 case 'normal':
@@ -429,7 +454,7 @@ function BracketMatch({ match, isDoubles }: { match: Match; isDoubles: boolean }
                   return (
                     <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded font-medium flex items-center gap-1">
                       <CheckCircle className="h-3 w-3" />
-                      Final
+                      Won (Scored)
                     </span>
                   );
               }
