@@ -151,7 +151,46 @@ export default function LiveScoring({
     // Check if match is complete
     if (updatedMatchScore.isMatchComplete && updatedMatchScore.winner) {
       const winner = updatedMatchScore.winner === 'player1' ? { ...playerA, id: initialPlayerA.id } : { ...playerB, id: initialPlayerB.id };
+      
+      // Save match result to backend
+      saveMatchResult(winner, updatedMatchScore);
+      
+      // Notify parent component
       onMatchComplete?.(winner, updatedMatchScore);
+    }
+  };
+  
+  const saveMatchResult = async (winner: Player, finalScore: MatchScore) => {
+    try {
+      console.log('[LIVE-SCORING] Saving match result to backend...', {
+        matchId,
+        winnerId: winner.id,
+        winnerName: winner.name,
+        player1GamesWon: finalScore.player1GamesWon,
+        player2GamesWon: finalScore.player2GamesWon
+      });
+      
+      const response = await fetch(`/api/matches/${matchId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          winnerId: winner.id,
+          winnerName: winner.name,
+          player1Score: finalScore.games.map(g => g.player1Score),
+          player2Score: finalScore.games.map(g => g.player2Score),
+          games: finalScore.games,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('[LIVE-SCORING] Match result saved successfully');
+      } else {
+        console.error('[LIVE-SCORING] Failed to save match result:', data.error);
+      }
+    } catch (error) {
+      console.error('[LIVE-SCORING] Error saving match result:', error);
     }
   };
 
