@@ -189,7 +189,6 @@ function PlayerDashboardContent() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="mx-auto max-w-7xl"
       >
         {/* Header */}
         <motion.div variants={item} className="mb-8">

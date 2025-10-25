@@ -29,8 +29,8 @@ function TournamentParticipantsRedirect({ params }: { params: Promise<{ id: stri
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-green-500 mx-auto mb-4" />
-        <p className="text-muted-foreground">Redirecting to participants management...</p>
+        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Redirecting to participants...</p>
       </div>
     </div>
   );

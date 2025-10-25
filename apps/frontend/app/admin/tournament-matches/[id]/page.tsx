@@ -268,16 +268,12 @@ export default function TournamentMatchDetailsPage({
         matchId={match._id}
         playerA={{ 
           name: players.team1,
-          score: match.games && match.games.length > 0 
-            ? match.games[match.games.length - 1].player1Score || 0 
-            : 0, 
+          score: match.games?.[match.games.length - 1]?.player1Score || 0, 
           id: match.player1Id || 'tbd1' 
         }}
         playerB={{ 
           name: players.team2,
-          score: match.games && match.games.length > 0 
-            ? match.games[match.games.length - 1].player2Score || 0 
-            : 0, 
+          score: match.games?.[match.games.length - 1]?.player2Score || 0, 
           id: match.player2Id || 'tbd2' 
         }}
         scoringFormat={{
@@ -433,7 +429,7 @@ export default function TournamentMatchDetailsPage({
                         ? 'text-green-600 dark:text-green-400'
                         : 'text-gray-500 dark:text-gray-400'
                     }`}>
-                      {match.player1Score.filter(s => s >= 21 || s > match.player2Score[match.player1Score.indexOf(s)]).length}
+                      {match.player1Score?.filter(s => s >= 21 || s > (match.player2Score?.[match.player1Score.indexOf(s)] ?? 0)).length ?? 0}
                     </div>
                   </div>
                   
@@ -446,7 +442,7 @@ export default function TournamentMatchDetailsPage({
                         ? 'text-green-600 dark:text-green-400'
                         : 'text-gray-500 dark:text-gray-400'
                     }`}>
-                      {match.player2Score.filter(s => s >= 21 || s > match.player1Score[match.player2Score.indexOf(s)]).length}
+                      {match.player2Score?.filter(s => s >= 21 || s > (match.player1Score?.[match.player2Score.indexOf(s)] ?? 0)).length ?? 0}
                     </div>
                   </div>
                 </div>

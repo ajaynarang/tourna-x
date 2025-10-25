@@ -162,7 +162,6 @@ function PlayerMatchesContent() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="mx-auto max-w-7xl"
       >
         {/* Header */}
         <motion.div variants={item} className="mb-8">
@@ -176,7 +175,6 @@ function PlayerMatchesContent() {
                 Back to Dashboard
               </Link>
             </div>
-            <div className="flex-1"></div>
             <button
               onClick={fetchMatches}
               className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"

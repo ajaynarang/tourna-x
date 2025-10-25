@@ -121,7 +121,6 @@ function AdminDashboardContent() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="mx-auto max-w-7xl"
       >
         {/* Quick Actions */}
         <motion.div variants={item} className="mb-8 flex flex-col lg:flex-row gap-4">

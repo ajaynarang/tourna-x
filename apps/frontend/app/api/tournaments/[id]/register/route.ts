@@ -89,7 +89,7 @@ export async function POST(
 
       // Validate age eligibility for each selected age group
       for (const selectedAgeGroupName of registrationData.ageGroups) {
-        const ageGroup = tournament.ageGroups.find(ag => ag.name === selectedAgeGroupName);
+        const ageGroup = tournament.ageGroups.find((ag: any) => ag.name === selectedAgeGroupName);
         if (ageGroup && !validateAgeGroupEligibility(participantAge, ageGroup)) {
           return NextResponse.json(
             { success: false, error: `You are not eligible for age group '${selectedAgeGroupName}'. Age requirement: ${ageGroup.minAge ? `${ageGroup.minAge}+` : ''}${ageGroup.maxAge ? ` and ${ageGroup.maxAge}-` : ''}` },

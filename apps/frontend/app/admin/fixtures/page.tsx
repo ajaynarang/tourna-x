@@ -287,20 +287,27 @@ function AdminFixturesContent() {
   const notReady = tournaments.filter(t => !t.hasFixtures && t.participantCount < 2);
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="mx-auto max-w-7xl px-4">
+    <div className="min-h-screen py-8 px-4">
+      <div>
         {/* Header */}
-        <Tabs defaultValue="ready" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="ready" className="gap-2">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+        </motion.div>
+
+        <Tabs defaultValue="ready" className="w-full">
+          <TabsList className="glass-card-intense mb-6">
+            <TabsTrigger value="ready" className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
               Ready ({readyForFixtures.length})
             </TabsTrigger>
-            <TabsTrigger value="active" className="gap-2">
-              <CheckCircle className="h-4 w-4" />
+            <TabsTrigger value="active" className="flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
               Active ({hasFixtures.length})
             </TabsTrigger>
-            <TabsTrigger value="pending" className="gap-2">
+            <TabsTrigger value="pending" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Pending ({notReady.length})
             </TabsTrigger>
@@ -368,9 +375,10 @@ function AdminFixturesContent() {
             )}
           </TabsContent>
         </Tabs>
+      </div>
 
-        {/* No Tournaments */}
-        {tournaments.length === 0 && (
+      {/* No Tournaments */}
+      {tournaments.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -389,7 +397,6 @@ function AdminFixturesContent() {
             </Link>
           </motion.div>
         )}
-      </div>
 
       {/* Configuration Modal */}
       <AlertDialog open={showConfigModal} onOpenChange={setShowConfigModal}>

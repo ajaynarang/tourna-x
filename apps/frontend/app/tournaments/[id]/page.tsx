@@ -381,7 +381,7 @@ export default function TournamentDetailPage() {
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Age Groups</h3>
                 <div className="flex flex-wrap gap-2">
-                  {tournament.ageGroups.map((ageGroup) => {
+                  {tournament.ageGroups.map((ageGroup: any) => {
                     const isString = typeof ageGroup === 'string';
                     const name = isString ? ageGroup : ageGroup.name;
                     const minAge = !isString && ageGroup.minAge;
@@ -569,7 +569,7 @@ export default function TournamentDetailPage() {
                               <SelectValue placeholder="Select age group" />
                             </SelectTrigger>
                             <SelectContent>
-                              {tournament.ageGroups.map((ageGroup) => {
+                              {tournament.ageGroups.map((ageGroup: any) => {
                                 const isString = typeof ageGroup === 'string';
                                 const name = isString ? ageGroup : ageGroup.name;
                                 const minAge = !isString && ageGroup.minAge;

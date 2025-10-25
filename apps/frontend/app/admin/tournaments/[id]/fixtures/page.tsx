@@ -489,9 +489,8 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
   }
 
   return (
-    <>
- <div className="min-h-screen py-8">
-      <div className="mx-auto max-w-7xl px-4">
+    <div className="min-h-screen py-8 px-4">
+      <div>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -698,10 +697,9 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
           </motion.div>
         )}
       </div>
-    </div>
 
-     {/* Schedule Modal */}
-     <AlertDialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>
+      {/* Schedule Modal */}
+      <AlertDialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>
         <AlertDialogContent 
           className="w-[500px] max-w-[90vw]" 
         >
@@ -1112,9 +1110,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
-   
-
+    </div>
   );
 }
 

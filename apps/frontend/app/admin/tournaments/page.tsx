@@ -198,9 +198,9 @@ function AdminTournamentsContent() {
 
   return (
     <div className="relative z-10 min-h-screen p-8">
-      <div className="mx-auto max-w-7xl">
-        {/* Action Button */}
-        <div className="mb-6 flex justify-end">
+      <div>
+        {/* Header */}
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <button
             onClick={() => router.push('/admin/tournaments/create')}
             className="bg-primary flex items-center gap-2 rounded-lg px-6 py-3 font-semibold text-white transition-transform hover:scale-105"
