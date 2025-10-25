@@ -47,17 +47,21 @@ interface Participant {
     name: string;
     phone: string;
     email?: string;
+    age?: number;
+    gender?: string;
   };
   tournamentId: string;
   tournamentName: string;
   category: string;
   gender: string;
+  ageGroups?: string[];
   isApproved: boolean;
   paymentStatus: 'pending' | 'paid' | 'na';
   registeredAt: string;
   partnerId?: string;
   partnerName?: string;
   partnerPhone?: string;
+  partnerAge?: number;
   partnerGender?: string;
   emergencyContact?: string;
 }
@@ -228,12 +232,18 @@ function AdminParticipantsContent() {
   };
 
   const fetchAvailablePartners = async (category: string, playerId: string) => {
-    if (!selectedTournament || selectedTournament === 'all') return;
+    if (!selectedTournament || selectedTournament === 'all') {
+      console.log('No tournament selected');
+      return;
+    }
 
     setIsLoadingPartners(true);
     try {
       const selectedPlayerData = players.find(p => p._id === playerId);
-      if (!selectedPlayerData) return;
+      if (!selectedPlayerData) {
+        console.log('Player not found:', playerId);
+        return;
+      }
 
       const params = new URLSearchParams({
         category: category,
@@ -241,12 +251,19 @@ function AdminParticipantsContent() {
         search: ''
       });
 
+      console.log('Fetching partners with params:', params.toString());
       const response = await fetch(`/api/tournaments/${selectedTournament}/available-players?${params}`);
       const data = await response.json();
       
+      console.log('Partners API response:', data);
+      
       if (data.success) {
         // Filter out the selected player from partners
-        setAvailablePartners(data.data.filter((p: Player) => p._id !== playerId));
+        const filteredPartners = data.data.filter((p: Player) => p._id !== playerId);
+        console.log('Filtered partners:', filteredPartners);
+        setAvailablePartners(filteredPartners);
+      } else {
+        console.error('API error:', data.error);
       }
     } catch (err) {
       console.error('Failed to fetch available partners:', err);
@@ -256,10 +273,11 @@ function AdminParticipantsContent() {
   };
 
   const handleAddParticipant = async () => {
-    if (!selectedTournament || selectedTournament === 'all' || !selectedPlayer || !selectedCategory) return;
+    if (!selectedTournament || selectedTournament === 'all' || !selectedPlayer || selectedCategory.length === 0) return;
 
-    // For doubles/mixed doubles, partner is required
-    if ((selectedCategory === 'doubles' || selectedCategory === 'mixed') && !selectedPartner) {
+    // Check if any doubles/mixed categories are selected and partner is required
+    const hasDoublesOrMixed = selectedCategory.some(cat => cat === 'doubles' || cat === 'mixed');
+    if (hasDoublesOrMixed && !selectedPartner) {
       alert('Partner selection is required for doubles and mixed doubles');
       return;
     }
@@ -275,32 +293,75 @@ function AdminParticipantsContent() {
 
     setIsAdding(true);
     try {
-      const response = await fetch(`/api/tournaments/${selectedTournament}/add-participant`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerId: selectedPlayer,
-          category: selectedCategory,
-          ageGroups: selectedAgeGroups.length > 0 ? selectedAgeGroups : undefined,
-          partnerId: selectedPartner || undefined,
-          isApproved: true, // Admin-added participants are auto-approved
-          paymentStatus: 'na', // Payment not required for admin-added participants
-        }),
+      console.log('Adding participant with:', {
+        tournament: selectedTournament,
+        player: selectedPlayer,
+        categories: selectedCategory,
+        ageGroups: selectedAgeGroups,
+        partner: selectedPartner
       });
 
-      const data = await response.json();
-      if (data.success) {
-        setShowAddModal(false);
-        setSelectedPlayer('');
-        setSelectedCategory('');
-        setSelectedAgeGroups([]);
-        setSelectedPartner('');
-        setAvailablePartners([]);
-        // Don't reset selectedTournament as it affects the main filter
-        fetchData();
-      } else {
-        alert(data.error || 'Failed to add participant');
+      const addedCategories: string[] = [];
+      const skippedCategories: string[] = [];
+
+      // Add participant for each selected category
+      for (const category of selectedCategory) {
+        const requestBody: any = {
+          playerId: selectedPlayer,
+          category: category,
+          ageGroups: selectedAgeGroups.length > 0 ? selectedAgeGroups : undefined,
+          isApproved: true, // Admin-added participants are auto-approved
+          paymentStatus: 'na', // Payment not required for admin-added participants
+        };
+
+        // Only add partnerId for doubles/mixed categories
+        if (category === 'doubles' || category === 'mixed') {
+          requestBody.partnerId = selectedPartner;
+        }
+
+        console.log(`Adding participant for ${category}:`, requestBody);
+
+        const response = await fetch(`/api/tournaments/${selectedTournament}/add-participant`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+
+        const data = await response.json();
+        console.log(`Response for ${category}:`, data);
+        
+        if (!data.success) {
+          // If player is already registered for this category, continue with other categories
+          if (data.error && data.error.includes('already registered for')) {
+            console.log(`Skipping ${category} - player already registered`);
+            skippedCategories.push(category);
+            continue; // Skip this category and continue with others
+          } else {
+            alert(data.error || `Failed to add participant for ${category}`);
+            setIsAdding(false);
+            return;
+          }
+        } else {
+          addedCategories.push(category);
+        }
       }
+
+      // Success - reset form and close modal
+      setShowAddModal(false);
+      setSelectedPlayer('');
+      setSelectedCategory([]);
+      setSelectedAgeGroups([]);
+      setSelectedPartner('');
+      setAvailablePartners([]);
+      // Don't reset selectedTournament as it affects the main filter
+      fetchData();
+      
+      // Show success message with details
+      let message = `Successfully added participant to ${addedCategories.length} category(ies): ${addedCategories.join(', ')}`;
+      if (skippedCategories.length > 0) {
+        message += `\nSkipped ${skippedCategories.length} category(ies) (already registered): ${skippedCategories.join(', ')}`;
+      }
+      alert(message);
     } catch (error) {
       console.error('Error adding participant:', error);
       alert('Failed to add participant');
@@ -310,16 +371,42 @@ function AdminParticipantsContent() {
   };
 
   const toggleCategory = (category: string) => {
-    setSelectedCategory(prev => 
-      prev.includes(category) 
-        ? prev.filter(cat => cat !== category)
-        : [...prev, category]
-    );
+    const newSelectedCategories = selectedCategory.includes(category) 
+      ? selectedCategory.filter(cat => cat !== category)
+      : [...selectedCategory, category];
+    
+    setSelectedCategory(newSelectedCategories);
     
     // Reset age groups and partner when category changes
     setSelectedAgeGroups([]);
     setSelectedPartner('');
     setAvailablePartners([]);
+    
+    // Check if any doubles/mixed categories are selected after toggle
+    const hasDoublesOrMixed = newSelectedCategories.some(cat => cat === 'doubles' || cat === 'mixed');
+    if (hasDoublesOrMixed) {
+      // Use the first doubles/mixed category found for partner fetching
+      const doublesOrMixedCategory = newSelectedCategories.find(cat => cat === 'doubles' || cat === 'mixed');
+      if (doublesOrMixedCategory) {
+        fetchAvailablePartners(doublesOrMixedCategory, selectedPlayer);
+      }
+    }
+  };
+
+  const toggleAgeGroup = (ageGroupName: string) => {
+    const tournament = tournaments.find(t => t._id === selectedTournament);
+    if (!tournament?.ageGroups) return;
+
+    const isSelected = selectedAgeGroups.includes(ageGroupName);
+    const canSelect = tournament.allowMultipleAgeGroups || selectedAgeGroups.length === 0 || isSelected;
+
+    if (!canSelect) return;
+
+    setSelectedAgeGroups(prev => 
+      isSelected 
+        ? prev.filter(group => group !== ageGroupName)
+        : [...prev, ageGroupName]
+    );
   };
 
   const getEligibleAgeGroups = () => {
@@ -511,11 +598,10 @@ function AdminParticipantsContent() {
               <table className="w-full">
                 <thead className="border-b border-white/10">
                   <tr>
-                    <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Participant</th>
+                    <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Players</th>
                     <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Contact</th>
                     <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Tournament</th>
-                    <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Category</th>
-                    <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Gender</th>
+                    <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Category & Age Groups</th>
                     <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Status</th>
                     <th className="text-muted-foreground px-6 py-4 text-left text-sm font-medium">Payment</th>
                     <th className="text-muted-foreground px-6 py-4 text-right text-sm font-medium">Actions</th>
@@ -525,31 +611,60 @@ function AdminParticipantsContent() {
                   {filteredParticipants.map((participant) => (
                     <tr key={participant._id} className="hover:bg-white/5 transition-colors">
                       <td className="px-6 py-4">
-                        <div>
-                          <p className="text-primary font-medium">{participant.userId.name}</p>
-                          <p className="text-tertiary text-sm">
-                            Registered {new Date(participant.registeredAt).toLocaleDateString()}
-                          </p>
+                        <div className="space-y-2">
+                          {/* Primary Player */}
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <div>
+                              <p className="text-primary font-medium">{participant.userId.name}</p>
+                              <p className="text-muted-foreground text-xs">
+                                Age: {participant.userId.age || 'N/A'} • {participant.userId.gender || 'N/A'}
+                                </p>
+                            </div>
+                          </div>
+                          
+                          {/* Partner Player (for doubles/mixed) */}
                           {(participant.category === 'doubles' || participant.category === 'mixed') && participant.partnerName && (
-                            <div className="mt-2 p-2 bg-blue-500/10 rounded-lg">
-                              <p className="text-blue-500 text-sm font-medium">Partner: {participant.partnerName}</p>
-                              {participant.partnerPhone && (
-                                <p className="text-blue-400 text-xs">{participant.partnerPhone}</p>
-                              )}
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <div>
+                                <p className="text-blue-500 font-medium">{participant.partnerName}</p>
+                                <p className="text-muted-foreground text-xs">
+                                  Age: {participant.partnerAge || 'N/A'} • {participant.partnerGender || 'N/A'}
+                                </p>
+                              </div>
                             </div>
                           )}
+                           <div className="flex items-center gap-2">
+                          <p className="ml-4 text-tertiary-foreground text-xs">
+                            Registered {new Date(participant.registeredAt).toLocaleDateString()}
+                          </p>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Phone className="h-4 w-4 text-gray-400" />
-                            <span className="text-muted-foreground">{participant.userId.phone}</span>
-                          </div>
-                          {participant.userId.email && (
+                        <div className="space-y-2">
+                          {/* Primary Player Contact */}
+                          <div className="space-y-1">
                             <div className="flex items-center gap-2 text-sm">
-                              <Mail className="h-4 w-4 text-gray-400" />
-                              <span className="text-muted-foreground">{participant.userId.email}</span>
+                              <Phone className="h-4 w-4 text-gray-400" />
+                              <span className="text-muted-foreground">{participant.userId.phone}</span>
+                            </div>
+                            {participant.userId.email && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <Mail className="h-4 w-4 text-gray-400" />
+                                <span className="text-muted-foreground">{participant.userId.email}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Partner Contact (for doubles/mixed) */}
+                          {(participant.category === 'doubles' || participant.category === 'mixed') && participant.partnerPhone && (
+                            <div className="space-y-1 pt-2 border-t border-white/10">
+                              <div className="flex items-center gap-2 text-sm">
+                                <Phone className="h-4 w-4 text-blue-400" />
+                                <span className="text-blue-400">{participant.partnerPhone}</span>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -561,10 +676,26 @@ function AdminParticipantsContent() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-muted-foreground text-sm">{participant.category}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-muted-foreground text-sm capitalize">{participant.gender}</span>
+                        <div className="space-y-2">
+                          {/* Category */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground text-sm capitalize">{participant.category}</span>
+                          </div>
+                          
+                          {/* Age Groups */}
+                          {participant.ageGroups && participant.ageGroups.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {participant.ageGroups.map((ageGroup: string) => (
+                                <span
+                                  key={ageGroup}
+                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20"
+                                >
+                                  {ageGroup}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">{getStatusBadge(participant)}</td>
                       <td className="px-6 py-4">
@@ -647,7 +778,7 @@ function AdminParticipantsContent() {
                   onChange={(e) => {
                     setSelectedTournament(e.target.value);
                     setSelectedPlayer('');
-                    setSelectedCategory('');
+                    setSelectedCategory([]);
                     setSelectedAgeGroups([]);
                     setSelectedPartner('');
                     setAvailablePartners([]);
@@ -673,7 +804,7 @@ function AdminParticipantsContent() {
                     value={selectedPlayer}
                     onChange={(e) => {
                       setSelectedPlayer(e.target.value);
-                      setSelectedCategory('');
+                      setSelectedCategory([]);
                       setSelectedAgeGroups([]);
                       setSelectedPartner('');
                       setAvailablePartners([]);
@@ -696,8 +827,11 @@ function AdminParticipantsContent() {
               {selectedPlayer && (
                 <div>
                   <label className="text-primary mb-2 block text-sm font-medium">
-                    Select Category <span className="text-red-500">*</span>
+                    Select Categories <span className="text-red-500">*</span>
                   </label>
+                  <p className="text-muted-foreground mb-3 text-xs">
+                    Select one or more categories for this participant
+                  </p>
                   <div className="grid gap-2 sm:grid-cols-3">
                     {tournaments
                       .find(t => t._id === selectedTournament)
@@ -705,16 +839,9 @@ function AdminParticipantsContent() {
                         <button
                           key={category}
                           type="button"
-                          onClick={() => {
-                            setSelectedCategory(category);
-                            setSelectedAgeGroups([]);
-                            setSelectedPartner('');
-                            if (category === 'doubles' || category === 'mixed') {
-                              fetchAvailablePartners(category, selectedPlayer);
-                            }
-                          }}
+                          onClick={() => toggleCategory(category)}
                           className={`rounded-lg border-2 p-3 text-sm font-medium transition-all ${
-                            selectedCategory === category
+                            selectedCategory.includes(category)
                               ? 'border-green-500 bg-green-500/10 text-green-500'
                               : 'border-gray-200 dark:border-white/10 text-muted-foreground hover:border-green-500/50'
                           }`}
@@ -727,7 +854,7 @@ function AdminParticipantsContent() {
               )}
 
               {/* Age Group Selection */}
-              {selectedPlayer && selectedCategory && (
+              {selectedPlayer && selectedCategory.length > 0 && (
                 <div>
                   <label className="text-primary mb-2 block text-sm font-medium">
                     Age Groups <span className="text-red-500">*</span>
@@ -786,21 +913,13 @@ function AdminParticipantsContent() {
                           </div>
                         );
                       })}
-                      
-                      {selectedAgeGroups.length > 0 && (
-                        <div className="rounded-lg bg-blue-500/10 p-3 text-blue-600">
-                          <p className="text-sm">
-                            Selected: {selectedAgeGroups.join(', ')}
-                          </p>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
               )}
 
               {/* Partner Selection for Doubles/Mixed */}
-              {selectedPlayer && selectedCategory && (selectedCategory === 'doubles' || selectedCategory === 'mixed') && (
+              {selectedPlayer && selectedCategory.length > 0 && (selectedCategory.includes('doubles') || selectedCategory.includes('mixed')) && (
                 <div>
                   <label className="text-primary mb-2 block text-sm font-medium">
                     Select Partner <span className="text-red-500">*</span>
@@ -837,7 +956,7 @@ function AdminParticipantsContent() {
                 onClick={() => {
                   setShowAddModal(false);
                   setSelectedPlayer('');
-                  setSelectedCategory('');
+                  setSelectedCategory([]);
                   setSelectedAgeGroups([]);
                   setSelectedPartner('');
                   setAvailablePartners([]);
@@ -850,7 +969,7 @@ function AdminParticipantsContent() {
               </button>
               <button
                 onClick={handleAddParticipant}
-                disabled={!selectedTournament || selectedTournament === 'all' || !selectedPlayer || !selectedCategory || isAdding || ((selectedCategory === 'doubles' || selectedCategory === 'mixed') && !selectedPartner) || (tournaments.find(t => t._id === selectedTournament)?.ageGroups && (tournaments.find(t => t._id === selectedTournament)?.ageGroups?.length ?? 0) > 0 && selectedAgeGroups.length === 0)}
+                disabled={!selectedTournament || selectedTournament === 'all' || !selectedPlayer || selectedCategory.length === 0 || isAdding || ((selectedCategory.includes('doubles') || selectedCategory.includes('mixed')) && !selectedPartner) || (tournaments.find(t => t._id === selectedTournament)?.ageGroups && (tournaments.find(t => t._id === selectedTournament)?.ageGroups?.length ?? 0) > 0 && selectedAgeGroups.length === 0)}
                 className="bg-primary flex-1 rounded-lg px-4 py-2 font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isAdding ? (

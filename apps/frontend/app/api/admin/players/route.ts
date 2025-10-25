@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         phone: 1,
         email: 1,
         gender: 1,
+        age: 1,
         society: 1,
       })
       .sort({ name: 1 })

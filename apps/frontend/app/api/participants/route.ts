@@ -94,17 +94,22 @@ export async function GET(request: NextRequest) {
               _id: '$userDetails._id',
               name: '$userDetails.name',
               phone: '$userDetails.phone',
-              email: '$userDetails.email'
+              email: '$userDetails.email',
+              age: '$userDetails.age',
+              gender: '$userDetails.gender'
             },
             tournamentId: '$tournamentDetails._id',
             tournamentName: '$tournamentDetails.name',
             category: 1,
             gender: 1,
+            ageGroups: 1,
             isApproved: 1,
             paymentStatus: 1,
             registeredAt: 1,
             partnerName: 1,
             partnerPhone: 1,
+            partnerAge: 1,
+            partnerGender: 1,
             emergencyContact: 1,
             emergencyContactName: 1,
             medicalInfo: 1

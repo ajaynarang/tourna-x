@@ -25,10 +25,29 @@ export async function POST(
 
     const { playerId, isApproved, paymentStatus, category, ageGroups, partnerId } = await request.json();
 
+    console.log('Add participant request:', {
+      tournamentId,
+      playerId,
+      category,
+      ageGroups,
+      partnerId,
+      isApproved,
+      paymentStatus
+    });
+
     // Validate input
     if (!playerId) {
+      console.log('Validation failed: Player ID is required');
       return NextResponse.json(
         { success: false, error: 'Player ID is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!category) {
+      console.log('Validation failed: Category is required');
+      return NextResponse.json(
+        { success: false, error: 'Category is required' },
         { status: 400 }
       );
     }
@@ -78,7 +97,7 @@ export async function POST(
 
       // Validate age eligibility for each selected age group
       for (const selectedAgeGroupName of ageGroups) {
-        const ageGroup = tournament.ageGroups.find(ag => ag.name === selectedAgeGroupName);
+        const ageGroup = tournament.ageGroups.find((ag: any) => ag.name === selectedAgeGroupName);
         if (ageGroup) {
           const minAge = ageGroup.minAge;
           const maxAge = ageGroup.maxAge;
@@ -100,15 +119,42 @@ export async function POST(
       }
     }
 
-    // Check if player is already registered
+    // Validate partner for doubles/mixed categories
+    if ((category === 'doubles' || category === 'mixed') && !partnerId) {
+      console.log('Validation failed: Partner is required for doubles/mixed categories');
+      return NextResponse.json(
+        { success: false, error: 'Partner is required for doubles and mixed doubles' },
+        { status: 400 }
+      );
+    }
+
+    // Check if partner exists and get partner details (if provided)
+    let partnerDetails = null;
+    if (partnerId) {
+      partnerDetails = await db.collection(COLLECTIONS.USERS).findOne({
+        _id: new ObjectId(partnerId)
+      });
+
+      if (!partnerDetails) {
+        console.log('Validation failed: Partner not found');
+        return NextResponse.json(
+          { success: false, error: 'Partner not found' },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Check if player is already registered for this specific category
     const existingParticipant = await db.collection(COLLECTIONS.PARTICIPANTS).findOne({
       tournamentId: new ObjectId(tournamentId),
-      userId: new ObjectId(playerId)
+      userId: new ObjectId(playerId),
+      category: category
     });
 
     if (existingParticipant) {
+      console.log(`Player already registered for ${category} category`);
       return NextResponse.json(
-        { success: false, error: 'Player is already registered for this tournament' },
+        { success: false, error: `Player is already registered for ${category} category in this tournament` },
         { status: 400 }
       );
     }
@@ -168,6 +214,10 @@ export async function POST(
       category: category || tournament.categories[0] || 'singles',
       ageGroups: ageGroups || [],
       partnerId: partnerId ? new ObjectId(partnerId) : undefined,
+      partnerName: partnerDetails ? partnerDetails.name : undefined,
+      partnerPhone: partnerDetails ? partnerDetails.phone : undefined,
+      partnerAge: partnerDetails ? partnerDetails.age : undefined,
+      partnerGender: partnerDetails ? partnerDetails.gender : undefined,
       isApproved: isApproved !== undefined ? isApproved : true,
       paymentStatus: paymentStatus || 'na',
       registeredAt: new Date(),
