@@ -95,52 +95,53 @@ export async function GET(request: NextRequest) {
 
     // Calculate match statistics
     for (const match of matches) {
-      if (match.status !== 'completed') continue;
+      try {
+        if (match.status !== 'completed') continue;
 
-      const player1Id = match.player1Id?.toString();
-      const player2Id = match.player2Id?.toString();
-      const winnerId = match.winnerId?.toString();
+        const player1Id = match.player1Id?.toString();
+        const player2Id = match.player2Id?.toString();
+        const winnerId = match.winnerId?.toString();
 
-      // Update player 1 stats
-      if (player1Id && playerStatsMap.has(player1Id)) {
-        const stats = playerStatsMap.get(player1Id);
-        stats.totalMatches++;
-        
-        if (winnerId === player1Id) {
-          stats.wins++;
-          stats.recentForm.unshift('W');
-        } else {
-          stats.losses++;
-          stats.recentForm.unshift('L');
+        // Update player 1 stats
+        if (player1Id && playerStatsMap.has(player1Id)) {
+          const stats = playerStatsMap.get(player1Id);
+          stats.totalMatches++;
+          
+          if (winnerId === player1Id) {
+            stats.wins++;
+            stats.recentForm.unshift('W');
+          } else {
+            stats.losses++;
+            stats.recentForm.unshift('L');
+          }
+          
+          if (match.duration) {
+            stats.totalPoints += match.duration;
+          }
         }
-        
-        if (match.duration) {
-          stats.totalPoints += match.duration;
-        }
-      }
 
-      // Update player 2 stats
-      if (player2Id && playerStatsMap.has(player2Id)) {
-        const stats = playerStatsMap.get(player2Id);
-        stats.totalMatches++;
-        
-        if (winnerId === player2Id) {
-          stats.wins++;
-          stats.recentForm.unshift('W');
-        } else {
-          stats.losses++;
-          stats.recentForm.unshift('L');
+        // Update player 2 stats
+        if (player2Id && playerStatsMap.has(player2Id)) {
+          const stats = playerStatsMap.get(player2Id);
+          stats.totalMatches++;
+          
+          if (winnerId === player2Id) {
+            stats.wins++;
+            stats.recentForm.unshift('W');
+          } else {
+            stats.losses++;
+            stats.recentForm.unshift('L');
+          }
+          
+          if (match.duration) {
+            stats.totalPoints += match.duration;
+          }
         }
-        
-        if (match.duration) {
-          stats.totalPoints += match.duration;
-        }
-      }
 
       // For doubles matches, update player 3 and player 4 stats
       if (match.player3Id) {
-        const player3Id = match.player3Id.toString();
-        if (playerStatsMap.has(player3Id)) {
+        const player3Id = match.player3Id?.toString();
+        if (player3Id && playerStatsMap.has(player3Id)) {
           const stats = playerStatsMap.get(player3Id);
           stats.totalMatches++;
           
@@ -159,8 +160,8 @@ export async function GET(request: NextRequest) {
       }
 
       if (match.player4Id) {
-        const player4Id = match.player4Id.toString();
-        if (playerStatsMap.has(player4Id)) {
+        const player4Id = match.player4Id?.toString();
+        if (player4Id && playerStatsMap.has(player4Id)) {
           const stats = playerStatsMap.get(player4Id);
           stats.totalMatches++;
           
@@ -176,6 +177,10 @@ export async function GET(request: NextRequest) {
             stats.totalPoints += match.duration;
           }
         }
+      }
+      } catch (matchError) {
+        console.error('Error processing match:', match._id, matchError);
+        // Continue processing other matches
       }
     }
 
@@ -226,8 +231,14 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching player stats:', error);
+    console.error('Error details:', error instanceof Error ? error.message : String(error));
+    console.error('Stack trace:', error instanceof Error ? error.stack : '');
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch player stats' },
+      { 
+        success: false, 
+        error: 'Failed to fetch player stats',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }

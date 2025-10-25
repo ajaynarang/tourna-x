@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
         flatNumber: user.flatNumber,
         age: user.age,
         gender: user.gender,
+        createdAt: user.createdAt,
       }
     });
 

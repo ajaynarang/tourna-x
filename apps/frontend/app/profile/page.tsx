@@ -86,8 +86,8 @@ export default function ProfilePage() {
       const profileResult = await profileResponse.json();
       
       if (profileResult.success) {
-        setProfile(profileResult.data);
-        setFormData(profileResult.data);
+        setProfile(profileResult.user);
+        setFormData(profileResult.user);
       }
 
       // Fetch user stats if player
@@ -612,7 +612,7 @@ export default function ProfilePage() {
               onClick={() => setActiveTab('profile')}
               variant={activeTab === 'profile' ? 'default' : 'ghost'}
               size="sm"
-              className="flex-1 rounded-r-none bg-transparent hover:bg-white/10"
+              className="flex-1 rounded-r-none  hover:bg-white/10"
             >
               <User className="h-4 w-4 mr-1" />
               Profile
@@ -622,7 +622,7 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab('stats')}
                 variant={activeTab === 'stats' ? 'default' : 'ghost'}
                 size="sm"
-                className="flex-1 bg-transparent hover:bg-white/10"
+                className="flex-1 hover:bg-white/10"
               >
                 <BarChart3 className="h-4 w-4 mr-1" />
                 Statistics
@@ -632,7 +632,7 @@ export default function ProfilePage() {
               onClick={() => setActiveTab('settings')}
               variant={activeTab === 'settings' ? 'default' : 'ghost'}
               size="sm"
-              className="flex-1 rounded-l-none bg-transparent hover:bg-white/10"
+              className="flex-1 rounded-l-none hover:bg-white/10"
             >
               <Settings className="h-4 w-4 mr-1" />
               Settings
