@@ -270,8 +270,8 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
   };
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="mx-auto max-w-7xl px-4">
+    <div className="min-h-screen py-8 px-4">
+      <div>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

@@ -253,7 +253,7 @@ export default function PracticeMatchDetailsPage({
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/admin/practice-matches">
               <Button variant="outline" size="sm" className="border-gray-300 dark:border-gray-700">
@@ -290,7 +290,7 @@ export default function PracticeMatchDetailsPage({
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="px-4 py-8 sm:px-6 lg:px-8">
         {/* Match Status Badge */}
         <div className="flex items-center gap-3 mb-6">
           <Badge className={getCategoryBadge(match.category)} style={{ fontSize: '14px', padding: '8px 16px' }}>

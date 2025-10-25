@@ -208,17 +208,8 @@ export default function PracticeMatchesPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header - Apple-style clean design */}
       <div className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600">
-                <Dumbbell className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-l font-semibold text-gray-900 dark:text-white">Practice Matches</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{matches.length} total matches</p>
-              </div>
-            </div>
             
             <div className="flex items-center gap-2">
               {/* Mobile Filter Toggle */}
@@ -254,7 +245,7 @@ export default function PracticeMatchesPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
         {/* Desktop Filters - Apple-style segmented control */}
         <div className={`mb-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
