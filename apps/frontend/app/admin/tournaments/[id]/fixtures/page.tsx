@@ -761,7 +761,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
       {/* Scoring Format Configuration Modal */}
       <Dialog open={showScoringFormatModal} onOpenChange={setShowScoringFormatModal}>
         <DialogContent 
-          className="glass-card w-[600px] max-w-[90vw] " 
+          className="w-[600px] max-w-[90vw] bg-background/95 backdrop-blur-xl border-white/10" 
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
@@ -916,7 +916,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
       {/* Declare Winner Modal */}
       <Dialog open={showDeclareWinnerModal} onOpenChange={setShowDeclareWinnerModal}>
         <DialogContent 
-          className="glass-card w-[600px] max-w-[90vw] max-h-[90vh] overflow-y-auto !transform-none !animate-none" 
+          className="w-[600px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-xl border-white/10" 
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
