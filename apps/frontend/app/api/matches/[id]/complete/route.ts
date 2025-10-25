@@ -67,8 +67,11 @@ export async function POST(
       { $set: updateData }
     );
 
-    // AUTO-PROGRESS TO NEXT ROUND
-    await progressWinnerToNextRound(db, match, winnerId, winnerName);
+    // AUTO-PROGRESS TO NEXT ROUND (only if this is a new completion)
+    const wasAlreadyCompleted = match.status === 'completed';
+    if (!wasAlreadyCompleted) {
+      await progressWinnerToNextRound(db, match, winnerId, winnerName);
+    }
 
     return NextResponse.json({
       success: true,

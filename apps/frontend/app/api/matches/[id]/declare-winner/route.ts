@@ -56,12 +56,7 @@ export async function POST(
       );
     }
 
-    if (match.status === 'completed') {
-      return NextResponse.json(
-        { success: false, error: 'Match is already completed' },
-        { status: 400 }
-      );
-    }
+    // Allow editing completed matches (no longer block updates)
 
     // Determine winner and loser
     const isPlayer1Winner = winnerId === match.player1Id?.toString();
@@ -79,8 +74,9 @@ export async function POST(
       updatedAt: new Date(),
     };
 
-    // If scores provided, use them; otherwise use default walkover scores
+    // Handle scores based on reason and whether scores were provided
     if (hasScores) {
+      // User provided scores - use them
       updateData.player1Score = player1Score;
       updateData.player2Score = player2Score;
       if (games && games.length > 0) {
@@ -93,8 +89,11 @@ export async function POST(
         updateData.isWalkover = true;
         updateData.walkoverReason = reason;
       }
+    } else if (reason === 'manual') {
+      // Manual reason but no scores - don't add any scores
+      updateData.isManualEntry = true;
     } else {
-      // No scores provided - use default walkover scores
+      // Walkover/forfeit/disqualification without scores - use default walkover scores
       updateData.player1Score = isPlayer1Winner ? [21, 0, 0] : [0, 0, 0];
       updateData.player2Score = isPlayer1Winner ? [0, 0, 0] : [21, 0, 0];
       updateData.isWalkover = true;
@@ -106,21 +105,27 @@ export async function POST(
       { $set: updateData }
     );
 
-    // AUTO-PROGRESS TO NEXT ROUND
-    await progressWinnerToNextRound(db, match, winnerId, winnerName);
+    // AUTO-PROGRESS TO NEXT ROUND (only if this is a new completion, not an edit)
+    const wasAlreadyCompleted = match.status === 'completed';
+    if (!wasAlreadyCompleted) {
+      await progressWinnerToNextRound(db, match, winnerId, winnerName);
+    }
 
     return NextResponse.json({
       success: true,
-      message: hasScores 
-        ? `Match completed: ${winnerName} wins with scores recorded`
-        : `Winner declared: ${winnerName} (${reason})`,
+      message: wasAlreadyCompleted
+        ? `Match result updated: ${winnerName} wins`
+        : hasScores 
+          ? `Match completed: ${winnerName} wins with scores recorded`
+          : `Winner declared: ${winnerName} (${reason})`,
       data: { 
         winnerId, 
         winnerName, 
         reason,
         hasScores,
         player1Score: updateData.player1Score,
-        player2Score: updateData.player2Score
+        player2Score: updateData.player2Score,
+        wasEdit: wasAlreadyCompleted
       }
     });
 
