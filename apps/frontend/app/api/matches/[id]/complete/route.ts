@@ -50,7 +50,7 @@ export async function POST(
       );
     }
 
-    // Update match as completed
+    // Update match as completed via live scoring
     const updateData: any = {
       status: 'completed',
       winnerId: new ObjectId(winnerId),
@@ -58,6 +58,7 @@ export async function POST(
       player1Score: player1Score || [],
       player2Score: player2Score || [],
       games: games || [],
+      completionType: 'normal', // Completed via live scoring
       completedAt: new Date(),
       updatedAt: new Date(),
     };
@@ -70,7 +71,11 @@ export async function POST(
     // AUTO-PROGRESS TO NEXT ROUND (only if this is a new completion)
     const wasAlreadyCompleted = match.status === 'completed';
     if (!wasAlreadyCompleted) {
+      console.log(`[AUTO-PROGRESS] Starting progression for match ${id}, winner: ${winnerName}`);
       await progressWinnerToNextRound(db, match, winnerId, winnerName);
+      console.log(`[AUTO-PROGRESS] Completed progression for winner: ${winnerName}`);
+    } else {
+      console.log(`[AUTO-PROGRESS] Skipping progression - match was already completed`);
     }
 
     return NextResponse.json({

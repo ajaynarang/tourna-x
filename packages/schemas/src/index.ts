@@ -191,8 +191,19 @@ export const matchSchema = z.object({
     completedAt: z.date().optional(),
   }).optional(),
   
+  // Match completion tracking
+  completionType: z.enum([
+    "normal",          // Completed via live scoring
+    "walkover",        // One player didn't show up (W/O)
+    "forfeit",         // Player gave up during match
+    "disqualification", // Player disqualified
+    "manual",          // Manual score entry
+    "retired",         // Player retired due to injury
+  ]).optional(),
+  completionReason: z.string().optional(), // Additional details about completion
+  
   // Match status and scheduling
-  status: z.enum(["scheduled", "in_progress", "completed", "walkover", "cancelled"]).default("scheduled"),
+  status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).default("scheduled"),
   court: z.string().optional(),
   venue: z.string().optional(),
   scheduledDate: z.date().optional(),
@@ -209,7 +220,11 @@ export const matchSchema = z.object({
   
   // Additional info
   notes: z.string().optional(),
-  walkoverReason: z.string().optional(),
+  
+  // Legacy fields (deprecated, use completionType/completionReason instead)
+  isWalkover: z.boolean().optional(), // Deprecated: use completionType
+  walkoverReason: z.string().optional(), // Deprecated: use completionReason
+  isManualEntry: z.boolean().optional(), // Deprecated: use completionType = "manual"
   
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),

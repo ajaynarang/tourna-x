@@ -32,6 +32,7 @@ import {
   Zap,
   Printer,
   ExternalLink,
+  Shuffle,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -219,11 +220,18 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
     
     // If match is already completed, pre-fill the data for editing
     if (match.status === 'completed') {
+      const completionType = (match as any).completionType || ((match as any).isWalkover ? 'walkover' : 'manual');
+      
+      // Only pre-fill scores if they were manually entered or from live scoring (normal)
+      // Don't pre-fill default walkover scores [21,0,0] or [0,0,0]
+      const hasRealScores = completionType === 'normal' || completionType === 'manual';
+      const shouldShowScores = hasRealScores && match.player1Score && match.player1Score.length > 0;
+      
       setDeclareWinnerData({
         winnerId: match.winnerId?.toString() || '',
-        reason: (match as any).isWalkover ? 'walkover' : 'manual',
-        player1Score: match.player1Score && match.player1Score.length > 0 ? match.player1Score.join(',') : '',
-        player2Score: match.player2Score && match.player2Score.length > 0 ? match.player2Score.join(',') : '',
+        reason: completionType,
+        player1Score: shouldShowScores ? match.player1Score.join(',') : '',
+        player2Score: shouldShowScores && match.player2Score && match.player2Score.length > 0 ? match.player2Score.join(',') : '',
       });
     } else {
       // New declaration
@@ -317,7 +325,7 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
     handleScoreUpdate(updatedMatch);
   };
 
-  const handleMatchComplete = (winner: Player, finalScore: MatchScore) => {
+  const handleMatchComplete = async (winner: Player, finalScore: MatchScore) => {
     if (!selectedMatch) return;
     
     const updatedMatch: Match = {
@@ -334,8 +342,11 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
     
     toast({
       title: "Match Completed!",
-      description: `${winner.name} wins the match`,
+      description: `${winner.name} wins the match. Winner has been progressed to next round.`,
     });
+    
+    // Refresh fixture data to show updated next round matches
+    await fetchData(tournamentId);
   };
 
   const handleSaveSchedule = async () => {
@@ -371,6 +382,42 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
         description: "Failed to schedule match",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleSyncFixtures = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/tournaments/${tournamentId}/fixtures/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: "Fixtures Re-synced",
+          description: data.message || `Successfully updated ${data.data?.updated || 0} matches`,
+        });
+        // Refresh fixture data
+        await fetchData(tournamentId);
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || 'Failed to sync fixtures',
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing fixtures:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sync fixtures",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -506,6 +553,15 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
               >
                 <RefreshCw className="h-4 w-4" />
                 Refresh
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSyncFixtures}
+                className="gap-2 border-blue-600/50 text-blue-600 hover:bg-blue-600/10"
+                title="Re-sync all fixtures - progress winners to next rounds"
+              >
+                <Shuffle className="h-4 w-4" />
+                Re-sync Fixtures
               </Button>
               <Link href={`/admin/scoring/${tournamentId}`}>
                 <Button className="gap-2 bg-green-600 hover:bg-green-700">
@@ -996,11 +1052,19 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
                   onChange={(e) => setDeclareWinnerData(prev => ({ ...prev, reason: e.target.value }))}
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-primary focus:border-green-500/50 focus:outline-none focus:ring-2 focus:ring-green-500/20"
                 >
-                  <option value="walkover">Walkover</option>
+                  <option value="walkover">Walkover (W/O)</option>
                   <option value="forfeit">Forfeit</option>
+                  <option value="retired">Retired (Injury)</option>
                   <option value="disqualification">Disqualification</option>
                   <option value="manual">Manual Entry (with scores)</option>
                 </select>
+                <p className="text-xs text-muted-foreground">
+                  {declareWinnerData.reason === 'walkover' && 'Player did not show up'}
+                  {declareWinnerData.reason === 'forfeit' && 'Player gave up during match'}
+                  {declareWinnerData.reason === 'retired' && 'Player retired due to injury'}
+                  {declareWinnerData.reason === 'disqualification' && 'Player was disqualified'}
+                  {declareWinnerData.reason === 'manual' && 'Record the actual scores manually'}
+                </p>
               </div>
 
               {/* Optional Scores */}
@@ -1093,6 +1157,58 @@ function getPlayerDisplay(match: Match | null, side: 'player1' | 'player2'): str
       return `${p2} & ${p4}`;
     }
   }
+}
+
+// Match Completion Type Badge Component
+function CompletionTypeBadge({ match }: { match: Match }) {
+  const completionType = (match as any).completionType;
+  
+  if (!completionType || match.status !== 'completed') return null;
+
+  const badges = {
+    normal: {
+      label: 'Won',
+      className: 'gap-1 bg-green-500/10 text-green-500 border-green-500/30',
+      icon: Trophy,
+    },
+    walkover: {
+      label: 'W/O',
+      className: 'gap-1 bg-orange-500/10 text-orange-500 border-orange-500/30',
+      icon: XCircle,
+    },
+    forfeit: {
+      label: 'Forfeit',
+      className: 'gap-1 bg-red-500/10 text-red-500 border-red-500/30',
+      icon: XCircle,
+    },
+    disqualification: {
+      label: 'DQ',
+      className: 'gap-1 bg-red-600/10 text-red-600 border-red-600/30',
+      icon: XCircle,
+    },
+    retired: {
+      label: 'Retired',
+      className: 'gap-1 bg-yellow-600/10 text-yellow-600 border-yellow-600/30',
+      icon: XCircle,
+    },
+    manual: {
+      label: 'Manual',
+      className: 'gap-1 bg-blue-500/10 text-blue-500 border-blue-500/30',
+      icon: Edit,
+    },
+  };
+
+  const badgeConfig = badges[completionType as keyof typeof badges];
+  if (!badgeConfig) return null;
+
+  const Icon = badgeConfig.icon;
+
+  return (
+    <Badge variant="outline" className={badgeConfig.className}>
+      <Icon className="h-3 w-3" />
+      {badgeConfig.label}
+    </Badge>
+  );
 }
 
 // Match Status Badge Component
@@ -1217,7 +1333,10 @@ function MatchCard({
                       )}
                     </div>
         </div>
-        <MatchStatusBadge match={match} />
+        <div className="flex flex-col gap-2 items-end">
+          <MatchStatusBadge match={match} />
+          <CompletionTypeBadge match={match} />
+        </div>
                   </div>
 
                   {/* Players */}
@@ -1555,7 +1674,7 @@ function ScheduleView({
 
                 {/* Match Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <Badge variant="outline" className="text-xs">
                       Match {match.matchNumber}
                     </Badge>
@@ -1566,6 +1685,7 @@ function ScheduleView({
                       {match.category}
                     </Badge>
                     <MatchStatusBadge match={match} />
+                    <CompletionTypeBadge match={match} />
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm">
@@ -1587,7 +1707,7 @@ function ScheduleView({
     </div>
 
                 {/* Score */}
-                {match.status === 'completed' && (
+                {match.status === 'completed' && match.player1Score.length > 0 && match.player2Score.length > 0 && (
                   <div className="flex items-center gap-2 text-sm font-bold">
                     <span className={match.winnerId === match.player1Id ? 'text-green-400' : 'text-primary'}>
                       {match.player1Score.join(', ')}

@@ -51,14 +51,16 @@ export default function BracketPrintPage() {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<string>('all');
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const resolvedParams = await params;
-        const tournamentId = resolvedParams.id as string;
+  const fetchData = async (showLoading = true) => {
+    try {
+      if (showLoading) setIsRefreshing(true);
+      const resolvedParams = await params;
+      const tournamentId = resolvedParams.id as string;
         
         console.log('Fetching data for tournament:', tournamentId);
         
@@ -78,17 +80,32 @@ export default function BracketPrintPage() {
           setTournament(tournamentData.data);
         }
         
-        if (matchesData.success) {
-          setMatches(matchesData.data || []);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setIsLoading(false);
+      if (matchesData.success) {
+        setMatches(matchesData.data || []);
       }
-    };
+      
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
-    fetchData();
+  useEffect(() => {
+    fetchData(true);
+  }, [params]);
+  
+  // Auto-refresh every 30 seconds while page is visible
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchData(false); // Silent refresh
+      }
+    }, 30000); // 30 seconds
+    
+    return () => clearInterval(interval);
   }, [params]);
 
   // Don't auto-print - let user control when to print
@@ -152,52 +169,76 @@ export default function BracketPrintPage() {
   return (
     <>
       {/* No-print controls - floating toolbar */}
-      <div className="no-print fixed top-4 right-4 z-50 flex gap-2 print:hidden">
-        {/* Category Filter */}
-        {categories.length > 1 && (
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            <option value="all">All Categories</option>
-            {categories.map(cat => (
-              <option key={cat} value={cat}>
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-              </option>
-            ))}
-          </select>
-        )}
+      <div className="no-print fixed top-4 right-4 z-50 print:hidden">
+        <div className="flex gap-2 items-center">
+          {/* Last Updated Indicator */}
+          <div className="rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-xs text-slate-300 shadow-lg">
+            Updated: {lastUpdated.toLocaleTimeString()}
+          </div>
+          
+          {/* Category Filter */}
+          {categories.length > 1 && (
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="all">All Categories</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </option>
+              ))}
+            </select>
+          )}
 
-        {/* Age Group Filter */}
-        {ageGroups.length > 0 && (
-          <select
-            value={selectedAgeGroup}
-            onChange={(e) => setSelectedAgeGroup(e.target.value)}
-            className="rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            <option value="all">All Age Groups</option>
-            {ageGroups.map(ag => (
-              <option key={ag} value={ag}>
-                {ag}
-              </option>
-            ))}
-          </select>
-        )}
+          {/* Age Group Filter */}
+          {ageGroups.length > 0 && (
+            <select
+              value={selectedAgeGroup}
+              onChange={(e) => setSelectedAgeGroup(e.target.value)}
+              className="rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="all">All Age Groups</option>
+              {ageGroups.map(ag => (
+                <option key={ag} value={ag}>
+                  {ag}
+                </option>
+              ))}
+            </select>
+          )}
 
-        <button
-          onClick={() => window.print()}
-          className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-lg transition-colors"
-        >
-          🖨️ Print
-        </button>
+          <button
+            onClick={() => fetchData(true)}
+            disabled={isRefreshing}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg font-medium shadow-lg transition-colors flex items-center gap-2"
+            title="Refresh to see latest match results"
+          >
+            <span className={isRefreshing ? 'animate-spin' : ''}>🔄</span>
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+          
+          <button
+            onClick={() => window.print()}
+            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-lg transition-colors"
+          >
+            🖨️ Print
+          </button>
+          
+          <button
+            onClick={() => window.close()}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium shadow-lg transition-colors"
+          >
+            ✕
+          </button>
+        </div>
         
-        <button
-          onClick={() => window.close()}
-          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium shadow-lg transition-colors"
-        >
-          ✕
-        </button>
+        {/* Auto-refresh indicator */}
+        <div className="mt-2 text-right">
+          <span className="text-xs text-slate-400 bg-slate-900/50 px-2 py-1 rounded">
+            Auto-refreshes every 30s
+          </span>
+        </div>
       </div>
 
       {/* Printable Content - Standalone */}
@@ -341,20 +382,58 @@ function BracketMatch({ match, isDoubles }: { match: Match; isDoubles: boolean }
         </span>
         {match.status === 'completed' && (
           <>
-            {(match as any).isBye ? (
-              <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded font-medium">
-                Bye
-              </span>
-            ) : (match as any).isWalkover ? (
-              <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded font-medium">
-                W/O
-              </span>
-            ) : (
-              <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded font-medium flex items-center gap-1">
-                <CheckCircle className="h-3 w-3" />
-                Final
-              </span>
-            )}
+            {(() => {
+              const completionType = (match as any).completionType;
+              
+              if (completionType === 'walkover' && (match as any).walkoverReason === 'bye') {
+                return (
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded font-medium">
+                    Bye
+                  </span>
+                );
+              }
+              
+              switch (completionType) {
+                case 'walkover':
+                  return (
+                    <span className="text-xs px-2 py-1 bg-orange-100 text-orange-800 rounded font-medium">
+                      W/O
+                    </span>
+                  );
+                case 'forfeit':
+                  return (
+                    <span className="text-xs px-2 py-1 bg-red-100 text-red-800 rounded font-medium">
+                      Forfeit
+                    </span>
+                  );
+                case 'disqualification':
+                  return (
+                    <span className="text-xs px-2 py-1 bg-red-200 text-red-900 rounded font-medium">
+                      DQ
+                    </span>
+                  );
+                case 'retired':
+                  return (
+                    <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded font-medium">
+                      Retired
+                    </span>
+                  );
+                case 'manual':
+                  return (
+                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded font-medium">
+                      Manual
+                    </span>
+                  );
+                case 'normal':
+                default:
+                  return (
+                    <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded font-medium flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Final
+                    </span>
+                  );
+              }
+            })()}
           </>
         )}
       </div>
