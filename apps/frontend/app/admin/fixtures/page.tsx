@@ -18,6 +18,18 @@ import {
   Edit,
 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+} from '@repo/ui';
+import { useToast } from '@/hooks/use-toast';
 
 interface Tournament {
   _id: string;
@@ -41,9 +53,12 @@ export default function AdminFixturesPage() {
 
 function AdminFixturesContent() {
   const router = useRouter();
+  const { toast } = useToast();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
 
   useEffect(() => {
     fetchTournaments();
@@ -97,31 +112,48 @@ function AdminFixturesContent() {
     }
   };
 
-  const handleGenerateFixtures = async (tournamentId: string) => {
-    if (!confirm('Generate fixtures for this tournament? This will create all matches based on registered participants.')) {
-      return;
-    }
+  const handleGenerateFixtures = (tournament: Tournament) => {
+    setSelectedTournament(tournament);
+    setConfirmDialogOpen(true);
+  };
 
-    setGeneratingFor(tournamentId);
+  const confirmGenerateFixtures = async () => {
+    if (!selectedTournament) return;
+
+    setGeneratingFor(selectedTournament._id);
+    setConfirmDialogOpen(false);
+    
     try {
-      const response = await fetch(`/api/tournaments/${tournamentId}/fixtures/generate`, {
+      const response = await fetch(`/api/tournaments/${selectedTournament._id}/fixtures/generate`, {
         method: 'POST',
       });
 
       const data = await response.json();
 
       if (data.success) {
-        alert(`Fixtures generated successfully! ${data.matchesCreated} matches created.`);
+        toast({
+          title: "Fixtures Generated Successfully!",
+          description: `${data.matchesCreated} matches created for ${selectedTournament.name}.`,
+        });
         fetchTournaments();
-        router.push(`/admin/tournaments/${tournamentId}/fixtures`);
+        router.push(`/admin/tournaments/${selectedTournament._id}/fixtures`);
       } else {
-        alert(data.error || 'Failed to generate fixtures');
+        toast({
+          title: "Failed to Generate Fixtures",
+          description: data.error || 'An error occurred while generating fixtures.',
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error generating fixtures:', error);
-      alert('Failed to generate fixtures');
+      toast({
+        title: "Failed to Generate Fixtures",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setGeneratingFor(null);
+      setSelectedTournament(null);
     }
   };
 
@@ -209,10 +241,11 @@ function AdminFixturesContent() {
                     </div>
                   )}
 
-                  <button
-                    onClick={() => handleGenerateFixtures(tournament._id)}
+                  <Button
+                    variant="default"
+                    onClick={() => handleGenerateFixtures(tournament)}
                     disabled={generatingFor === tournament._id || tournament.participantCount < 2}
-                    className="bg-primary w-full rounded-lg px-4 py-2 font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full rounded-lg px-4 py-2 font-medium  transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {generatingFor === tournament._id ? (
                       <span className="flex items-center justify-center gap-2">
@@ -225,7 +258,7 @@ function AdminFixturesContent() {
                         Generate Fixtures
                       </span>
                     )}
-                  </button>
+                  </Button>
                 </motion.div>
               ))}
             </div>
@@ -319,6 +352,30 @@ function AdminFixturesContent() {
             </Link>
           </motion.div>
         )}
+
+        {/* Confirmation Dialog */}
+        <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Generate Fixtures</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to generate fixtures for <strong>{selectedTournament?.name}</strong>?
+                <br />
+                <br />
+                This will create all matches based on the {selectedTournament?.participantCount} registered participants using the {selectedTournament?.format} format.
+                <br />
+                <br />
+                <span className="text-yellow-600 font-medium">This action cannot be undone.</span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmGenerateFixtures}>
+                Generate Fixtures
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
