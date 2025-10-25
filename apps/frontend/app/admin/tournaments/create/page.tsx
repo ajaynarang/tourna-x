@@ -12,8 +12,15 @@ import {
   DollarSign,
   CheckCircle,
   AlertCircle,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
+
+interface AgeGroup {
+  name: string;
+  minAge?: number;
+  maxAge?: number;
+}
 
 interface TournamentFormData {
   name: string;
@@ -23,6 +30,8 @@ interface TournamentFormData {
   startDate: string;
   endDate: string;
   categories: string[];
+  ageGroups: AgeGroup[];
+  allowMultipleAgeGroups: boolean;
   gender: string[];
   format: 'knockout' | 'round_robin';
   entryFee: number;
@@ -61,6 +70,8 @@ const initialFormData: TournamentFormData = {
   startDate: '',
   endDate: '',
   categories: [],
+  ageGroups: [],
+  allowMultipleAgeGroups: false,
   gender: [],
   format: 'knockout',
   entryFee: 0,
@@ -123,6 +134,54 @@ export default function CreateTournamentPage() {
         ? prev[field].filter(item => item !== value)
         : [...prev[field], value],
     }));
+  };
+
+  const addAgeGroup = () => {
+    setFormData(prev => ({
+      ...prev,
+      ageGroups: [...prev.ageGroups, { name: '', minAge: undefined, maxAge: undefined }]
+    }));
+  };
+
+  const updateAgeGroup = (index: number, field: keyof AgeGroup, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      ageGroups: prev.ageGroups.map((group, i) => 
+        i === index ? { ...group, [field]: value } : group
+      )
+    }));
+  };
+
+  const removeAgeGroup = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      ageGroups: prev.ageGroups.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addPresetAgeGroup = (preset: string) => {
+    const presetMap: Record<string, AgeGroup> = {
+      'U-12': { name: 'U-12', minAge: 1, maxAge: 12 },
+      'U-15': { name: 'U-15', minAge: 1, maxAge: 15 },
+      'U-18': { name: 'U-18', minAge: 1, maxAge: 18 },
+      'U-21': { name: 'U-21', minAge: 1, maxAge: 21 },
+      'U-25': { name: 'U-25', minAge: 1, maxAge: 25 },
+      'U-30': { name: 'U-30', minAge: 1, maxAge: 30 },
+      'U-35': { name: 'U-35', minAge: 1, maxAge: 35 },
+      'U-40': { name: 'U-40', minAge: 1, maxAge: 40 },
+      'U-45': { name: 'U-45', minAge: 1, maxAge: 45 },
+      'U-50': { name: 'U-50', minAge: 1, maxAge: 50 },
+      'Senior': { name: 'Senior', minAge: 50, maxAge: 100 },
+      'Open': { name: 'Open', minAge: 1, maxAge: 100 }
+    };
+
+    const presetGroup = presetMap[preset];
+    if (presetGroup && !formData.ageGroups.some(group => group.name === presetGroup.name)) {
+      setFormData(prev => ({
+        ...prev,
+        ageGroups: [...prev.ageGroups, presetGroup]
+      }));
+    }
   };
 
   return (
@@ -333,6 +392,167 @@ export default function CreateTournamentPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Age Groups */}
+          <div className="glass-card-intense p-6">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500">
+                <Calendar className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-primary text-xl font-semibold">Age Groups</h2>
+            </div>
+
+            <div className="space-y-6">
+              {/* Preset Age Groups */}
+              <div>
+                <label className="text-primary mb-3 block text-sm font-medium">
+                  Quick Add Presets
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['U-12', 'U-15', 'U-18', 'U-21', 'U-25', 'U-30', 'U-35', 'U-40', 'U-45', 'U-50', 'Senior', 'Open'].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => addPresetAgeGroup(preset)}
+                      disabled={formData.ageGroups.some(group => group.name === preset)}
+                      className={`rounded-lg px-3 py-1 text-xs font-medium transition-all ${
+                        formData.ageGroups.some(group => group.name === preset)
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'glass-card text-muted-foreground hover:text-primary hover:bg-white/10'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tournament-level Multiple Age Groups Setting */}
+              <div>
+                <label className="text-primary mb-3 block text-sm font-medium">
+                  Multiple Age Group Registration
+                </label>
+                <div className="glass-card p-4 rounded-lg">
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowMultipleAgeGroups ?? false}
+                      onChange={(e) => updateField('allowMultipleAgeGroups', e.target.checked)}
+                      className="rounded border-gray-300 text-green-500 focus:ring-2 focus:ring-green-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-primary">
+                        Allow participants to register in multiple age groups
+                      </span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        When enabled, participants can register for multiple age groups within this tournament.
+                        When disabled, participants can only register for one age group.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Custom Age Groups */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-primary text-sm font-medium">
+                    Age Groups Configuration
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addAgeGroup}
+                    className="text-green-500 hover:text-green-400 text-sm font-medium"
+                  >
+                    + Add Custom Age Group
+                  </button>
+                </div>
+
+                {formData.ageGroups.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No age groups configured</p>
+                    <p className="text-sm">Add preset age groups or create custom ones</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {formData.ageGroups.map((ageGroup, index) => (
+                      <div key={index} className="glass-card p-4 rounded-lg">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                          <div>
+                            <label className="text-primary text-xs font-medium mb-1 block">
+                              Name *
+                            </label>
+                            <input
+                              type="text"
+                              value={ageGroup.name}
+                              onChange={(e) => updateAgeGroup(index, 'name', e.target.value)}
+                              placeholder="e.g., U-18, Open"
+                              className="glass-card w-full rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white outline-none transition-all focus:ring-2 focus:ring-green-500/50"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="text-primary text-xs font-medium mb-1 block">
+                              Min Age
+                            </label>
+                            <input
+                              type="number"
+                              value={ageGroup.minAge || ''}
+                              onChange={(e) => updateAgeGroup(index, 'minAge', e.target.value ? parseInt(e.target.value) : undefined)}
+                              placeholder="1"
+                              min="1"
+                              max="100"
+                              className="glass-card w-full rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white outline-none transition-all focus:ring-2 focus:ring-green-500/50"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="text-primary text-xs font-medium mb-1 block">
+                              Max Age
+                            </label>
+                            <input
+                              type="number"
+                              value={ageGroup.maxAge || ''}
+                              onChange={(e) => updateAgeGroup(index, 'maxAge', e.target.value ? parseInt(e.target.value) : undefined)}
+                              placeholder="18"
+                              min="1"
+                              max="100"
+                              className="glass-card w-full rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white outline-none transition-all focus:ring-2 focus:ring-green-500/50"
+                            />
+                          </div>
+                          
+                          <div className="flex items-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => removeAgeGroup(index)}
+                              className="text-red-500 hover:text-red-400 p-1"
+                              title="Remove age group"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {ageGroup.name && (
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            {ageGroup.minAge && ageGroup.maxAge 
+                              ? `Ages ${ageGroup.minAge}-${ageGroup.maxAge}`
+                              : ageGroup.minAge 
+                                ? `Ages ${ageGroup.minAge}+`
+                                : ageGroup.maxAge 
+                                  ? `Ages up to ${ageGroup.maxAge}`
+                                  : 'All ages'
+                            }
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

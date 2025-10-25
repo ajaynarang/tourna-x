@@ -27,7 +27,12 @@ export const tournamentSchema = z.object({
   name: z.string().min(1).max(200),
   sport: z.enum(["badminton", "tennis"]),
   categories: z.array(z.enum(["singles", "doubles", "mixed"])), // Multiple categories allowed
-  ageGroups: z.array(z.string()).optional(), // e.g., ["U-18", "U-25", "Open"]
+  ageGroups: z.array(z.object({
+    name: z.string(), // e.g., "U-18", "U-25", "Open"
+    minAge: z.number().min(1).max(100).optional(), // Minimum age for this group
+    maxAge: z.number().min(1).max(100).optional(), // Maximum age for this group
+  })).optional(), // Age groups with validation rules
+  allowMultipleAgeGroups: z.boolean().default(false), // Tournament-level setting: allow participants to register in multiple age groups
   gender: z.array(z.enum(["men", "women", "mixed"])).optional(), // Per category
   format: z.enum(["knockout", "round_robin"]),
   startDate: z.date(),
@@ -87,7 +92,7 @@ export const participantSchema = z.object({
   block: z.string().max(50).optional(),
   flatNumber: z.string().max(20).optional(),
   category: z.enum(["singles", "doubles", "mixed"]),
-  ageGroup: z.string().optional(), // "Open", "U-18", etc.
+  ageGroups: z.array(z.string()).optional(), // Multiple age groups participant can register for
   partnerId: objectIdSchema.optional(), // For doubles/mixed
   partnerName: z.string().max(100).optional(),
   partnerPhone: z.string().max(15).optional(),
@@ -528,3 +533,6 @@ export const INDEXES = {
 
 // Export UI types
 export * from './ui';
+
+// Export age group utilities
+export * from './age-group-utils';

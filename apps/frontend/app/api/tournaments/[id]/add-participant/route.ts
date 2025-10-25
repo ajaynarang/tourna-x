@@ -23,7 +23,7 @@ export async function POST(
       );
     }
 
-    const { playerId, isApproved, paymentStatus } = await request.json();
+    const { playerId, isApproved, paymentStatus, category, ageGroups, partnerId } = await request.json();
 
     // Validate input
     if (!playerId) {
@@ -57,6 +57,49 @@ export async function POST(
       );
     }
 
+    // Validate age groups if provided
+    if (ageGroups && tournament.ageGroups) {
+      const playerAge = player.age;
+      
+      if (!playerAge) {
+        return NextResponse.json(
+          { success: false, error: 'Player age is required for age group validation' },
+          { status: 400 }
+        );
+      }
+
+      // Validate multiple age group registration
+      if (!tournament.allowMultipleAgeGroups && ageGroups.length > 1) {
+        return NextResponse.json(
+          { success: false, error: 'This tournament does not allow registration in multiple age groups' },
+          { status: 400 }
+        );
+      }
+
+      // Validate age eligibility for each selected age group
+      for (const selectedAgeGroupName of ageGroups) {
+        const ageGroup = tournament.ageGroups.find(ag => ag.name === selectedAgeGroupName);
+        if (ageGroup) {
+          const minAge = ageGroup.minAge;
+          const maxAge = ageGroup.maxAge;
+          
+          if (minAge && playerAge < minAge) {
+            return NextResponse.json(
+              { success: false, error: `Player is not eligible for age group '${selectedAgeGroupName}'. Age requirement: ${minAge}+` },
+              { status: 400 }
+            );
+          }
+          
+          if (maxAge && playerAge > maxAge) {
+            return NextResponse.json(
+              { success: false, error: `Player is not eligible for age group '${selectedAgeGroupName}'. Age requirement: up to ${maxAge}` },
+              { status: 400 }
+            );
+          }
+        }
+      }
+    }
+
     // Check if player is already registered
     const existingParticipant = await db.collection(COLLECTIONS.PARTICIPANTS).findOne({
       tournamentId: new ObjectId(tournamentId),
@@ -68,6 +111,33 @@ export async function POST(
         { success: false, error: 'Player is already registered for this tournament' },
         { status: 400 }
       );
+    }
+
+    // For doubles/mixed doubles, validate partner if provided
+    if (partnerId && (category === 'doubles' || category === 'mixed')) {
+      const partner = await db.collection(COLLECTIONS.USERS).findOne({
+        _id: new ObjectId(partnerId)
+      });
+
+      if (!partner) {
+        return NextResponse.json(
+          { success: false, error: 'Partner not found' },
+          { status: 400 }
+        );
+      }
+
+      // Check if partner is already registered
+      const partnerRegistration = await db.collection(COLLECTIONS.PARTICIPANTS).findOne({
+        tournamentId: new ObjectId(tournamentId),
+        userId: new ObjectId(partnerId)
+      });
+
+      if (partnerRegistration) {
+        return NextResponse.json(
+          { success: false, error: 'Partner is already registered for this tournament' },
+          { status: 400 }
+        );
+      }
     }
 
     // Check if tournament is full
@@ -87,8 +157,17 @@ export async function POST(
     const participant = {
       tournamentId: new ObjectId(tournamentId),
       userId: new ObjectId(playerId),
-      category: tournament.categories[0] || 'Open', // Default to first category
-      gender: player.gender || 'male', // Use player's gender
+      name: player.name,
+      phone: player.phone,
+      email: player.email,
+      age: player.age,
+      gender: player.gender,
+      society: player.society,
+      block: player.block,
+      flatNumber: player.flatNumber,
+      category: category || tournament.categories[0] || 'singles',
+      ageGroups: ageGroups || [],
+      partnerId: partnerId ? new ObjectId(partnerId) : undefined,
       isApproved: isApproved !== undefined ? isApproved : true,
       paymentStatus: paymentStatus || 'na',
       registeredAt: new Date(),
