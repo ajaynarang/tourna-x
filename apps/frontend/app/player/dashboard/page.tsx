@@ -193,11 +193,7 @@ function PlayerDashboardContent() {
       >
         {/* Header */}
         <motion.div variants={item} className="mb-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-primary text-3xl font-bold">Welcome back, {user?.name || 'Player'}!</h1>
-              <p className="text-muted-foreground mt-1">Your personalized tournament experience and performance insights</p>
-            </div>
+          <div className="flex justify-end">
             <button
               onClick={fetchDashboardData}
               className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"

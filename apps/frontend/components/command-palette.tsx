@@ -280,21 +280,21 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 <div className="glass-card-intense p-2">
                   {/* Drag Handle */}
                   <div className="mb-2 flex cursor-move items-center justify-center py-1">
-                    <GripVertical className="text-muted h-4 w-4" />
+                    <GripVertical className="text-muted-foreground h-4 w-4" />
                   </div>
 
                   {/* Search Input */}
                   <div className="relative">
-                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-green-400" />
+                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
                     <input
                       type="text"
                       value={search}
                       onChange={e => setSearch(e.target.value)}
                       placeholder="Type a command or search..."
                       autoFocus
-                      className="text-primary placeholder:text-muted w-full border-0 bg-transparent px-12 py-4 text-lg outline-none"
+                      className="text-primary placeholder:text-muted-foreground w-full border-0 bg-transparent px-12 py-4 text-lg outline-none"
                     />
-                    <Command className="text-muted absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2" />
+                    <Command className="text-muted-foreground  absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2" />
                   </div>
 
                   {/* Divider */}
@@ -306,7 +306,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     className="max-h-[400px] overflow-y-auto"
                   >
                     {filteredCommands.length === 0 ? (
-                      <div className="text-muted py-12 text-center">
+                      <div className="text-muted-foreground py-12 text-center">
                         No results found
                       </div>
                     ) : (
@@ -363,13 +363,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                   {cmd.title}
                                 </div>
                                 {cmd.subtitle && (
-                                  <div className="text-muted text-sm">
+                                  <div className="text-muted-foreground text-sm">
                                     {cmd.subtitle}
                                   </div>
                                 )}
                               </div>
 
-                              <div className="text-muted text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                              <div className="text-muted-foreground text-xs opacity-0 transition-opacity group-hover:opacity-100">
                                 {cmd.category}
                               </div>
                             </motion.button>
@@ -380,8 +380,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   </div>
 
                   {/* Footer */}
-                  <div className="my-2 h-px bg-gradient-to-r from-transparent via-green-500/30 to-transparent" />
-                  <div className="text-muted flex items-center justify-between px-4 py-2 text-xs">
+                  <div className="my-2 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                  <div className="text-muted-foreground flex items-center justify-between px-4 py-2 text-xs">
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-1">
                         <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5">

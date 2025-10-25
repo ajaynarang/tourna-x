@@ -21,6 +21,7 @@ import {
   Edit,
   Zap,
   Filter,
+  ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -393,151 +394,157 @@ export default function TournamentMatchesPage() {
               const isPlayer2Winner = match.winnerId && (match.winnerId === match.player2Id || match.winnerId === match.player4Id);
               
               return (
-                <motion.div
+                <Link
                   key={match._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.02 }}
-                  className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden hover:border-white/20 transition-all"
+                  href={`/admin/tournament-matches/${match._id}`}
+                  className="block group"
                 >
-                  {/* Match Header */}
-                  <div className="px-4 lg:px-6 py-3 lg:py-4 border-b border-white/10 bg-white/[0.02]">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 lg:gap-4">
-                      <div className="flex items-center gap-2 lg:gap-3 flex-wrap">
-                        <span className="text-xs lg:text-sm font-semibold text-gray-400">
-                          Match #{match.matchNumber}
-                        </span>
-                        <span className="text-xs lg:text-sm font-medium text-white">
-                          {getRoundName(match.roundNumber, totalRounds)}
-                        </span>
-                        <span className="text-xs lg:text-sm text-gray-400 capitalize">
-                          {match.category} {match.ageGroup && `• ${match.ageGroup}`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {getStatusBadge(match.status)}
-                        {getCompletionTypeBadge(match)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Match Content */}
-                  <div className="p-4 lg:p-6">
-                    {/* Players */}
-                    <div className="space-y-3 mb-4">
-                      {/* Player 1 */}
-                      <div className={`flex items-center justify-between p-3 lg:p-4 rounded-xl border ${
-                        isPlayer1Winner 
-                          ? 'bg-green-500/10 border-green-500/30' 
-                          : 'bg-white/5 border-white/10'
-                      }`}>
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          {isPlayer1Winner && <Trophy className="h-4 w-4 lg:h-5 lg:w-5 text-green-400 flex-shrink-0" />}
-                          <span className={`text-sm lg:text-base font-medium truncate ${
-                            player1Display === 'TBD' 
-                              ? 'text-gray-500 italic' 
-                              : isPlayer1Winner 
-                                ? 'text-green-400 font-semibold' 
-                                : 'text-white'
-                          }`}>
-                            {player1Display}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                    className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden hover:border-white/20 hover:bg-white/[0.07] transition-all cursor-pointer"
+                  >
+                    {/* Match Header */}
+                    <div className="px-4 lg:px-6 py-3 lg:py-4 border-b border-white/10 bg-white/[0.02]">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 lg:gap-4">
+                        <div className="flex items-center gap-2 lg:gap-3 flex-wrap">
+                          <span className="text-xs lg:text-sm font-semibold text-gray-400">
+                            Match #{match.matchNumber}
+                          </span>
+                          <span className="text-xs lg:text-sm font-medium text-white">
+                            {getRoundName(match.roundNumber, totalRounds)}
+                          </span>
+                          <span className="text-xs lg:text-sm text-gray-400 capitalize">
+                            {match.category} {match.ageGroup && `• ${match.ageGroup}`}
                           </span>
                         </div>
-                        {match.status === 'completed' && match.player1Score.length > 0 && (
-                          <div className="flex gap-2 ml-3">
-                            {match.player1Score.filter(s => s > 0).map((score, i) => (
-                              <span 
-                                key={i} 
-                                className={`text-sm lg:text-base font-bold px-2 py-1 rounded ${
-                                  isPlayer1Winner ? 'text-green-400' : 'text-gray-400'
-                                }`}
-                              >
-                                {score}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-center">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">VS</span>
-                      </div>
-
-                      {/* Player 2 */}
-                      <div className={`flex items-center justify-between p-3 lg:p-4 rounded-xl border ${
-                        isPlayer2Winner 
-                          ? 'bg-green-500/10 border-green-500/30' 
-                          : 'bg-white/5 border-white/10'
-                      }`}>
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          {isPlayer2Winner && <Trophy className="h-4 w-4 lg:h-5 lg:w-5 text-green-400 flex-shrink-0" />}
-                          <span className={`text-sm lg:text-base font-medium truncate ${
-                            player2Display === 'TBD' 
-                              ? 'text-gray-500 italic' 
-                              : isPlayer2Winner 
-                                ? 'text-green-400 font-semibold' 
-                                : 'text-white'
-                          }`}>
-                            {player2Display}
-                          </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {getStatusBadge(match.status)}
+                          {getCompletionTypeBadge(match)}
+                          <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-400 transition-colors ml-2" />
                         </div>
-                        {match.status === 'completed' && match.player2Score.length > 0 && (
-                          <div className="flex gap-2 ml-3">
-                            {match.player2Score.filter(s => s > 0).map((score, i) => (
-                              <span 
-                                key={i} 
-                                className={`text-sm lg:text-base font-bold px-2 py-1 rounded ${
-                                  isPlayer2Winner ? 'text-green-400' : 'text-gray-400'
-                                }`}
-                              >
-                                {score}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     </div>
 
-                    {/* Match Details */}
-                    {(match.scheduledDate || match.scheduledTime || match.venue || match.court || match.duration) && (
-                      <div className="flex flex-wrap gap-3 lg:gap-4 text-xs lg:text-sm text-gray-400 pt-3 border-t border-white/10">
-                        {match.scheduledDate && (
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                            <span>{new Date(match.scheduledDate).toLocaleDateString()}</span>
+                    {/* Match Content */}
+                    <div className="p-4 lg:p-6">
+                      {/* Players */}
+                      <div className="space-y-3 mb-4">
+                        {/* Player 1 */}
+                        <div className={`flex items-center justify-between p-3 lg:p-4 rounded-xl border ${
+                          isPlayer1Winner 
+                            ? 'bg-green-500/10 border-green-500/30' 
+                            : 'bg-white/5 border-white/10'
+                        }`}>
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {isPlayer1Winner && <Trophy className="h-4 w-4 lg:h-5 lg:w-5 text-green-400 flex-shrink-0" />}
+                            <span className={`text-sm lg:text-base font-medium truncate ${
+                              player1Display === 'TBD' 
+                                ? 'text-gray-500 italic' 
+                                : isPlayer1Winner 
+                                  ? 'text-green-400 font-semibold' 
+                                  : 'text-white'
+                            }`}>
+                              {player1Display}
+                            </span>
                           </div>
-                        )}
-                        {match.scheduledTime && (
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                            <span>{match.scheduledTime}</span>
-                          </div>
-                        )}
-                        {(match.venue || match.court) && (
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                            <span>{match.venue || 'Venue'}{match.court && ` • Court ${match.court}`}</span>
-                          </div>
-                        )}
-                        {match.duration && match.status === 'completed' && (
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                            <span>{match.duration} minutes</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          {match.status === 'completed' && match.player1Score.length > 0 && (
+                            <div className="flex gap-2 ml-3">
+                              {match.player1Score.filter(s => s > 0).map((score, i) => (
+                                <span 
+                                  key={i} 
+                                  className={`text-sm lg:text-base font-bold px-2 py-1 rounded ${
+                                    isPlayer1Winner ? 'text-green-400' : 'text-gray-400'
+                                  }`}
+                                >
+                                  {score}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
 
-                    {/* Completion Reason */}
-                    {match.completionReason && (
-                      <div className="mt-3 pt-3 border-t border-white/10">
-                        <p className="text-xs text-gray-400">
-                          <span className="font-medium">Note:</span> {match.completionReason}
-                        </p>
+                        <div className="flex items-center justify-center">
+                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">VS</span>
+                        </div>
+
+                        {/* Player 2 */}
+                        <div className={`flex items-center justify-between p-3 lg:p-4 rounded-xl border ${
+                          isPlayer2Winner 
+                            ? 'bg-green-500/10 border-green-500/30' 
+                            : 'bg-white/5 border-white/10'
+                        }`}>
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {isPlayer2Winner && <Trophy className="h-4 w-4 lg:h-5 lg:w-5 text-green-400 flex-shrink-0" />}
+                            <span className={`text-sm lg:text-base font-medium truncate ${
+                              player2Display === 'TBD' 
+                                ? 'text-gray-500 italic' 
+                                : isPlayer2Winner 
+                                  ? 'text-green-400 font-semibold' 
+                                  : 'text-white'
+                            }`}>
+                              {player2Display}
+                            </span>
+                          </div>
+                          {match.status === 'completed' && match.player2Score.length > 0 && (
+                            <div className="flex gap-2 ml-3">
+                              {match.player2Score.filter(s => s > 0).map((score, i) => (
+                                <span 
+                                  key={i} 
+                                  className={`text-sm lg:text-base font-bold px-2 py-1 rounded ${
+                                    isPlayer2Winner ? 'text-green-400' : 'text-gray-400'
+                                  }`}
+                                >
+                                  {score}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </motion.div>
+
+                      {/* Match Details */}
+                      {(match.scheduledDate || match.scheduledTime || match.venue || match.court || match.duration) && (
+                        <div className="flex flex-wrap gap-3 lg:gap-4 text-xs lg:text-sm text-gray-400 pt-3 border-t border-white/10">
+                          {match.scheduledDate && (
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
+                              <span>{new Date(match.scheduledDate).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                          {match.scheduledTime && (
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
+                              <span>{match.scheduledTime}</span>
+                            </div>
+                          )}
+                          {(match.venue || match.court) && (
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
+                              <span>{match.venue || 'Venue'}{match.court && ` • Court ${match.court}`}</span>
+                            </div>
+                          )}
+                          {match.duration && match.status === 'completed' && (
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
+                              <span>{match.duration} minutes</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Completion Reason */}
+                      {match.completionReason && (
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                          <p className="text-xs text-gray-400">
+                            <span className="font-medium">Note:</span> {match.completionReason}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                </Link>
               );
             })
           )}
@@ -677,17 +684,7 @@ export default function TournamentMatchesPage() {
   return (
     <div className="relative z-10 min-h-screen p-4 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-6 lg:mb-8">
-          <div className="mb-6">
-            <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
-              Tournament Matches
-            </h1>
-            <p className="text-sm lg:text-base text-gray-400">
-              View match history and player statistics across all tournaments
-            </p>
-          </div>
-
           {/* Tournament Selector */}
           <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 lg:p-6 mb-6 border border-white/10">
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">

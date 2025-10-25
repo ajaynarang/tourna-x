@@ -603,14 +603,6 @@ export default function ProfilePage() {
               Back to Dashboard
             </Link>
           </Button>
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold gradient-title">
-              Profile Management
-            </h1>
-            <p className="text-tertiary">
-              Manage your account settings and view your statistics
-            </p>
-          </div>
         </div>
 
         {/* Tab Navigation */}

@@ -176,10 +176,7 @@ function PlayerMatchesContent() {
                 Back to Dashboard
               </Link>
             </div>
-            <div>
-              <h1 className="text-primary text-3xl font-bold">My Matches</h1>
-              <p className="text-muted-foreground mt-1">Track your tournament matches and performance</p>
-            </div>
+            <div className="flex-1"></div>
             <button
               onClick={fetchMatches}
               className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"

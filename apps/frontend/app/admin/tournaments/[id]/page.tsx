@@ -222,10 +222,7 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
             <ArrowLeft className="h-4 w-4" />
             Back to Tournaments
           </Link>
-          <div className="flex-1">
-            <h1 className="text-primary text-3xl font-bold">{tournament.name}</h1>
-            <p className="text-muted-foreground mt-1">{tournament.sport.charAt(0).toUpperCase() + tournament.sport.slice(1)} Tournament</p>
-          </div>
+          <div className="flex-1"></div>
           <div className="flex items-center gap-2">
             <span className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${statusConfig.color} ${statusConfig.bg}`}>
               <StatusIcon className="h-4 w-4" />
@@ -448,11 +445,11 @@ function AdminTournamentDetailsContent({ params }: { params: Promise<{ id: strin
                 <div>
                   <div className="text-muted-foreground text-sm mb-2">Age Groups</div>
                   <div className="flex flex-wrap gap-2">
-                    {tournament.ageGroups.map((ageGroup) => {
+                    {tournament.ageGroups.map((ageGroup: any) => {
                       const isString = typeof ageGroup === 'string';
-                      const name = isString ? ageGroup : ageGroup.name;
-                      const minAge = !isString && ageGroup.minAge;
-                      const maxAge = !isString && ageGroup.maxAge;
+                      const name = isString ? ageGroup : (ageGroup.name || '');
+                      const minAge = !isString ? ageGroup.minAge : null;
+                      const maxAge = !isString ? ageGroup.maxAge : null;
                       
                       let ageRange = '';
                       if (minAge && maxAge) {

@@ -508,19 +508,14 @@ function AdminParticipantsContent() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <Link
-            href="/admin/tournaments"
-            className="text-muted-foreground hover:text-primary mb-4 inline-flex items-center gap-2 text-sm transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Tournaments
-          </Link>
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-primary mb-2 text-3xl font-bold">Manage Participants</h1>
-              <p className="text-muted-foreground">Manage participants across all tournaments</p>
-            </div>
+          <div className="flex items-center justify-between">
+            <Link
+              href="/admin/tournaments"
+              className="text-muted-foreground hover:text-primary inline-flex items-center gap-2 text-sm transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Tournaments
+            </Link>
 
             <button
               onClick={() => setShowAddModal(true)}

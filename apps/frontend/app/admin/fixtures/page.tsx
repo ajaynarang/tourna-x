@@ -290,15 +290,6 @@ function AdminFixturesContent() {
     <div className="min-h-screen py-8">
       <div className="mx-auto max-w-7xl px-4">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-primary mb-2 text-3xl font-bold">Fixture Management</h1>
-          <p className="text-muted-foreground">Configure and generate tournament fixtures with intelligent seeding</p>
-        </motion.div>
-
         <Tabs defaultValue="ready" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
             <TabsTrigger value="ready" className="gap-2">

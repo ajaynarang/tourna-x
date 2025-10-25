@@ -94,8 +94,6 @@ interface PlayerStats {
 }
 
 export default function MatchHistoryPage({ params }: { params: Promise<{ id: string }> }) {
-  const { user } = useAuth();
-  const router = useRouter();
   const [tournamentId, setTournamentId] = useState<string>('');
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -660,24 +658,16 @@ export default function MatchHistoryPage({ params }: { params: Promise<{ id: str
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6 lg:mb-8">
-          <Button asChild variant="outline" size="sm" className="mb-4 bg-white/5 border-white/10 hover:bg-white/10">
-            <Link href="/admin/tournaments">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-          
-          <div className="mb-6">
-            <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
-              Match History
-            </h1>
-            <p className="text-sm lg:text-base text-gray-400">
-              {tournament.name} • {tournament.sport} • {tournament.format}
-            </p>
-          </div>
-
           {/* Tournament Info Card */}
           <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 lg:p-6 mb-6 border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <Button asChild variant="outline" size="sm" className="bg-white/5 border-white/10 hover:bg-white/10">
+                <Link href="/admin/tournaments">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Link>
+              </Button>
+            </div>
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 lg:gap-6 text-xs lg:text-sm text-gray-400 flex-wrap">
                 <div className="flex items-center gap-2">
