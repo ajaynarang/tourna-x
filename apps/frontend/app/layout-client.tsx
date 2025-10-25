@@ -16,8 +16,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const { title, subtitle } = usePageTitle();
   const { isScoring } = useScoring();
 
-  // Check if we're on landing page or auth pages (no header)
-  const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/register';
+  // Check if we're on landing page, auth pages, or print pages (no header)
+  const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/register' || pathname?.includes('/bracket-print');
 
   // Register service worker for PWA (only in production)
   useEffect(() => {

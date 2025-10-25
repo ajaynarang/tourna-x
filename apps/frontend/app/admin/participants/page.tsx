@@ -636,7 +636,7 @@ function AdminParticipantsContent() {
                             </div>
                           )}
                            <div className="flex items-center gap-2">
-                          <p className="ml-4 text-tertiary-foreground text-xs">
+                          <p className="ml-4 text-muted-foreground text-xs">
                             Registered {new Date(participant.registeredAt).toLocaleDateString()}
                           </p>
                           </div>
