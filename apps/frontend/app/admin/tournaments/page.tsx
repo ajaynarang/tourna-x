@@ -23,6 +23,7 @@ import {
   Play,
   Pause,
   RotateCcw,
+  History,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -469,6 +470,17 @@ function TournamentCard({
                 >
                   <Trophy className="h-4 w-4" />
                   Generate Fixtures
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    router.push(`/admin/tournaments/${tournament._id}/history`);
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                >
+                  <History className="h-4 w-4" />
+                  Match History
                 </button>
 
                 {['draft', 'published'].includes(tournament.status) && (

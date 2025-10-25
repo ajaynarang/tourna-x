@@ -33,7 +33,7 @@ export default function MobileBottomNavigation() {
     { name: 'Dashboard', href: '/player/dashboard', icon: BarChart3 },
     { name: 'Matches', href: '/player/matches', icon: Calendar },
     { name: 'Tournaments', href: '/tournaments', icon: Trophy },
-    { name: 'Profile', href: '/player/profile', icon: User },
+    { name: 'Profile', href: '/profile', icon: User },
   ];
 
   const navItems = currentRole === 'admin' ? adminNavItems : playerNavItems;

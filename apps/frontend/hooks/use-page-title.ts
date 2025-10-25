@@ -54,9 +54,6 @@ export function usePageTitle(): { title: string; subtitle?: string } {
   if (pathname === '/player/matches') {
     return { title: 'My Matches', subtitle: 'Your upcoming and past matches' };
   }
-  if (pathname === '/player/profile') {
-    return { title: 'My Profile', subtitle: 'Manage your player profile' };
-  }
 
   // Common routes
   if (pathname === '/tournaments') {
@@ -66,7 +63,7 @@ export function usePageTitle(): { title: string; subtitle?: string } {
     return { title: 'Register', subtitle: 'Join this tournament' };
   }
   if (pathname === '/profile') {
-    return { title: 'Profile', subtitle: 'Your account settings' };
+    return { title: 'Profile', subtitle: 'Manage your profile and settings' };
   }
   if (pathname === '/notifications') {
     return { title: 'Notifications', subtitle: 'Your recent notifications' };

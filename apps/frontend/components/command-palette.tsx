@@ -129,15 +129,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       category: 'Navigate',
     },
     {
-      id: 'player-profile',
-      title: 'My Profile',
-      subtitle: 'Edit your profile',
-      icon: User,
-      action: () => router.push('/player/profile'),
-      keywords: ['profile', 'account', 'settings'],
-      category: 'Navigate',
-    },
-    {
       id: 'tournaments',
       title: 'Tournaments',
       subtitle: 'Browse tournaments',

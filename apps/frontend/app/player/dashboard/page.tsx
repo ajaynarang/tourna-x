@@ -268,7 +268,7 @@ function PlayerDashboardContent() {
               description="Manage profile"
               icon={Users}
               color="from-purple-500 to-pink-500"
-              href="/player/profile"
+              href="/profile"
             />
           </div>
         </motion.div>
