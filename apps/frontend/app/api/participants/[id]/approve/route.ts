@@ -36,7 +36,7 @@ export async function POST(
         $set: { 
           isApproved: true,
           approvedAt: new Date(),
-          approvedBy: user.userId,
+          approvedBy: user._id,
           rejectionReason: null
         } 
       }

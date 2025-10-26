@@ -95,10 +95,11 @@ export default function TournamentDetailsPage() {
   const [registrationError, setRegistrationError] = useState('');
 
   // Registration form state
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedAgeGroups, setSelectedAgeGroups] = useState<string[]>([]);
-  const [partnerName, setPartnerName] = useState('');
-  const [partnerPhone, setPartnerPhone] = useState('');
+  const [selectedPartner, setSelectedPartner] = useState('');
+  const [availablePartners, setAvailablePartners] = useState<any[]>([]);
+  const [isLoadingPartners, setIsLoadingPartners] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [transactionId, setTransactionId] = useState('');
 
@@ -142,62 +143,190 @@ export default function TournamentDetailsPage() {
     }
   };
 
+  const fetchAvailablePartners = async (category: string) => {
+    if (!id || !user) return;
+
+    setIsLoadingPartners(true);
+    try {
+      const params = new URLSearchParams({
+        category: category,
+        gender: (user as any).gender || 'male',
+        search: ''
+      });
+
+      const response = await fetch(`/api/tournaments/${id}/available-players?${params}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        // Filter out the current user from partners
+        const filteredPartners = data.data.filter((p: any) => p._id !== (user as any)?.userId);
+        setAvailablePartners(filteredPartners);
+      }
+    } catch (err) {
+      console.error('Failed to fetch available partners:', err);
+    } finally {
+      setIsLoadingPartners(false);
+    }
+  };
+
+  const toggleCategory = (category: string) => {
+    const newSelectedCategories = selectedCategories.includes(category) 
+      ? selectedCategories.filter(cat => cat !== category)
+      : [...selectedCategories, category];
+    
+    setSelectedCategories(newSelectedCategories);
+    
+    // Reset age groups and partner when category changes
+    setSelectedAgeGroups([]);
+    setSelectedPartner('');
+    setAvailablePartners([]);
+    
+    // Check if any doubles/mixed categories are selected after toggle
+    const hasDoublesOrMixed = newSelectedCategories.some(cat => cat === 'doubles' || cat === 'mixed');
+    if (hasDoublesOrMixed) {
+      // Use the first doubles/mixed category found for partner fetching
+      const doublesOrMixedCategory = newSelectedCategories.find(cat => cat === 'doubles' || cat === 'mixed');
+      if (doublesOrMixedCategory) {
+        fetchAvailablePartners(doublesOrMixedCategory);
+      }
+    }
+  };
+
+  const toggleAgeGroup = (ageGroupName: string) => {
+    if (!tournament?.ageGroups) return;
+
+    const isSelected = selectedAgeGroups.includes(ageGroupName);
+    const allowMultiple = (tournament as any).allowMultipleAgeGroups;
+    const canSelect = allowMultiple || selectedAgeGroups.length === 0 || isSelected;
+
+    if (!canSelect) return;
+
+    setSelectedAgeGroups(prev => 
+      isSelected 
+        ? prev.filter(group => group !== ageGroupName)
+        : [...prev, ageGroupName]
+    );
+  };
+
+  const getEligibleAgeGroups = () => {
+    if (!tournament?.ageGroups || !(user as any)?.age) return [];
+    
+    return tournament.ageGroups.filter(ageGroup => {
+      const userAge = (user as any).age;
+      if (!userAge) return false;
+      
+      const minAge = ageGroup.minAge;
+      const maxAge = ageGroup.maxAge;
+      
+      if (minAge && userAge < minAge) return false;
+      if (maxAge && userAge > maxAge) return false;
+      
+      return true;
+    });
+  };
+
   const handleRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    if (selectedCategories.length === 0) {
+      setRegistrationError('Please select at least one category');
+      return;
+    }
+
+    // Check if any doubles/mixed categories are selected and partner is required
+    const hasDoublesOrMixed = selectedCategories.some(cat => cat === 'doubles' || cat === 'mixed');
+    if (hasDoublesOrMixed && !selectedPartner) {
+      setRegistrationError('Partner selection is required for doubles and mixed doubles');
+      return;
+    }
+
+    // Check if tournament has age groups and if age groups are selected
+    if (tournament?.ageGroups && tournament.ageGroups.length > 0) {
+      if (selectedAgeGroups.length === 0) {
+        setRegistrationError('Please select at least one age group');
+        return;
+      }
+    }
+
     setRegistrationLoading(true);
     setRegistrationError('');
     setSuccess('');
 
     try {
-      const registrationData: any = {
-        category: selectedCategory,
-        paymentMethod,
-        transactionId: transactionId || undefined,
-      };
+      const addedCategories: string[] = [];
+      const skippedCategories: string[] = [];
 
-      // Add age groups if applicable
-      if (tournament?.ageGroups && tournament.ageGroups.length > 0) {
-        registrationData.ageGroups = selectedAgeGroups;
-      }
+      // Register for each selected category
+      for (const category of selectedCategories) {
+        const registrationData: any = {
+          category: category,
+          ageGroups: selectedAgeGroups.length > 0 ? selectedAgeGroups : undefined,
+        };
 
-      // Add partner details for doubles/mixed
-      if (selectedCategory === 'doubles' || selectedCategory === 'mixed') {
-        if (!partnerName || !partnerPhone) {
-          setRegistrationError('Partner details are required for doubles/mixed categories');
-          setRegistrationLoading(false);
-          return;
+        // Only add payment details if tournament has entry fee
+        if (tournament && tournament.entryFee > 0) {
+          registrationData.paymentMethod = paymentMethod;
+          registrationData.transactionId = transactionId || undefined;
         }
-        registrationData.partnerName = partnerName;
-        registrationData.partnerPhone = partnerPhone;
-      }
 
-      const response = await fetch(`/api/tournaments/${id}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registrationData),
-      });
+        // Only add partnerId for doubles/mixed categories
+        if (category === 'doubles' || category === 'mixed') {
+          registrationData.partnerId = selectedPartner;
+        }
 
-      const result = await response.json();
+        const response = await fetch(`/api/tournaments/${id}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(registrationData),
+        });
 
-      if (result.success) {
-        setSuccess(result.message || 'Registration successful! Waiting for admin approval.');
-        setShowRegistrationForm(false);
-        setAlreadyRegistered(true);
-
-        // Refresh tournament data
-        setTimeout(() => {
-          fetchTournament();
-        }, 1500);
-
-        // Show success message and redirect to dashboard after delay
-        setTimeout(() => {
-          if (confirm('Registration successful! Would you like to view your tournaments on the dashboard?')) {
-            router.push('/player/dashboard#my-tournaments');
+        const result = await response.json();
+        
+        if (!result.success) {
+          // If player is already registered for this category, continue with other categories
+          if (result.error && result.error.includes('already registered for')) {
+            skippedCategories.push(category);
+            continue; // Skip this category and continue with others
+          } else {
+            setRegistrationError(result.error || `Failed to register for ${category}`);
+            setRegistrationLoading(false);
+            return;
           }
-        }, 3000);
-      } else {
-        setRegistrationError(result.error || 'Registration failed');
+        } else {
+          addedCategories.push(category);
+        }
       }
+
+      // Success - reset form and close modal
+      setShowRegistrationForm(false);
+      setSelectedCategories([]);
+      setSelectedAgeGroups([]);
+      setSelectedPartner('');
+      setAvailablePartners([]);
+      setPaymentMethod('');
+      setTransactionId('');
+      setAlreadyRegistered(true);
+
+      // Show success message with details
+      let message = `Successfully registered for ${addedCategories.length} category(ies): ${addedCategories.join(', ')}`;
+      if (skippedCategories.length > 0) {
+        message += `\nSkipped ${skippedCategories.length} category(ies) (already registered): ${skippedCategories.join(', ')}`;
+      }
+      message += '\n\nWaiting for admin approval.';
+      setSuccess(message);
+
+      // Refresh tournament data
+      setTimeout(() => {
+        fetchTournament();
+      }, 1500);
+
+      // Show success message and redirect to dashboard after delay
+      setTimeout(() => {
+        if (confirm('Registration successful! Would you like to view your tournaments on the dashboard?')) {
+          router.push('/player/dashboard#my-tournaments');
+        }
+      }, 3000);
     } catch (error) {
       console.error('Error registering:', error);
       setRegistrationError('Failed to register. Please try again.');
@@ -389,169 +518,238 @@ export default function TournamentDetailsPage() {
           </motion.div>
         )}
 
-        {/* Registration Form */}
+        {/* Registration Form Modal */}
         {showRegistrationForm && canRegister() && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
-          >
-            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Sparkles className="h-5 w-5 mr-2 text-blue-600" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card-intense w-full h-full sm:h-auto sm:max-w-2xl sm:rounded-2xl p-4 sm:p-6 overflow-y-auto"
+            >
+              <div className="sticky top-0  pb-4 mb-2 border-b border-white/10 sm:static sm:border-0 sm:pb-0 sm:mb-4">
+                <h3 className="text-primary text-lg sm:text-xl font-bold flex items-center">
+                  <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-blue-600" />
                   Complete Your Registration
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {registrationError && (
-                  <Alert className="mb-4 border-red-200 bg-red-50">
-                    <XCircle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-800">{registrationError}</AlertDescription>
-                  </Alert>
-                )}
+                </h3>
+                <p className="text-muted-foreground mt-2 text-xs sm:text-sm">
+                  Select categories, age groups, and payment method to register for this tournament.
+                </p>
+              </div>
 
-                <form onSubmit={handleRegistration} className="space-y-4">
-                  {/* Category Selection */}
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category *</Label>
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory} required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tournament.categories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              {registrationError && (
+                <Alert className="mb-4 border-red-200 bg-red-50">
+                  <XCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">{registrationError}</AlertDescription>
+                </Alert>
+              )}
+
+              <form onSubmit={handleRegistration} className="space-y-4 sm:space-y-6">
+                {/* Category Selection */}
+                <div>
+                  <label className="text-primary mb-2 block text-sm font-medium">
+                    Select Categories <span className="text-red-500">*</span>
+                  </label>
+                  <p className="text-muted-foreground mb-3 text-xs">
+                    Select one or more categories for this registration
+                  </p>
+                  <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+                    {tournament.categories.map((category: string) => (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => toggleCategory(category)}
+                        className={`rounded-lg border-2 p-2.5 sm:p-3 text-xs sm:text-sm font-medium transition-all active:scale-95 ${
+                          selectedCategories.includes(category)
+                            ? 'border-green-500 bg-green-500/10 text-green-500'
+                            : 'border-gray-200 dark:border-white/10 text-muted-foreground hover:border-green-500/50'
+                        }`}
+                      >
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                      </button>
+                    ))}
                   </div>
+                </div>
 
-                  {/* Age Group Selection */}
-                  {tournament.ageGroups && tournament.ageGroups.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Age Groups *</Label>
+                {/* Age Group Selection */}
+                {selectedCategories.length > 0 && tournament.ageGroups && tournament.ageGroups.length > 0 && (
+                  <div>
+                    <label className="text-primary mb-2 block text-sm font-medium">
+                      Age Groups <span className="text-red-500">*</span>
+                    </label>
+                    <p className="text-muted-foreground mb-3 text-xs">
+                      Your age: <span className="font-semibold">{(user as any)?.age || 'Not specified'}</span>
+                    </p>
+                    
+                    {getEligibleAgeGroups().length === 0 ? (
+                      <div className="rounded-lg bg-yellow-500/10 p-3 text-yellow-600">
+                        <p className="text-xs sm:text-sm">
+                          No age groups available for your age ({(user as any)?.age || 'Not specified'}).
+                          Please contact the tournament organizer.
+                        </p>
+                      </div>
+                    ) : (
                       <div className="space-y-2">
-                        {tournament.ageGroups.map((ageGroup) => {
-                          let ageRange = '';
-                          if (ageGroup.minAge && ageGroup.maxAge) {
-                            ageRange = ` (${ageGroup.minAge}-${ageGroup.maxAge} years)`;
-                          } else if (ageGroup.minAge) {
-                            ageRange = ` (${ageGroup.minAge}+ years)`;
-                          } else if (ageGroup.maxAge) {
-                            ageRange = ` (up to ${ageGroup.maxAge} years)`;
-                          }
-
+                        {getEligibleAgeGroups().map((ageGroup) => {
+                          const isSelected = selectedAgeGroups.includes(ageGroup.name);
+                          const allowMultiple = (tournament as any).allowMultipleAgeGroups;
+                          const canSelect = allowMultiple || selectedAgeGroups.length === 0 || isSelected;
+                          
                           return (
-                            <label key={ageGroup.name} className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={selectedAgeGroups.includes(ageGroup.name)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedAgeGroups([...selectedAgeGroups, ageGroup.name]);
-                                  } else {
-                                    setSelectedAgeGroups(selectedAgeGroups.filter(ag => ag !== ageGroup.name));
-                                  }
-                                }}
-                                className="rounded border-gray-300"
-                              />
-                              <span className="text-sm">{ageGroup.name}{ageRange}</span>
-                            </label>
+                            <button
+                              key={ageGroup.name}
+                              type="button"
+                              onClick={() => toggleAgeGroup(ageGroup.name)}
+                              disabled={!canSelect}
+                              className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 rounded-lg px-3 py-2.5 sm:py-2 text-xs sm:text-sm font-medium transition-all w-full active:scale-95 ${
+                                isSelected
+                                  ? 'bg-green-500 text-white'
+                                  : canSelect
+                                  ? 'glass-card text-muted-foreground hover:text-primary border border-white/10'
+                                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              }`}
+                            >
+                              <span className="font-semibold">{ageGroup.name}</span>
+                              {ageGroup.minAge && ageGroup.maxAge && (
+                                <span className="text-[10px] sm:text-xs opacity-75">
+                                  ({ageGroup.minAge}-{ageGroup.maxAge} years)
+                                </span>
+                              )}
+                             
+                            </button>
                           );
                         })}
                       </div>
-                    </div>
-                  )}
-
-                  {/* Partner Details for Doubles/Mixed */}
-                  {(selectedCategory === 'doubles' || selectedCategory === 'mixed') && (
-                    <div className="space-y-4 p-4 bg-blue-100 rounded-lg">
-                      <h4 className="font-semibold text-blue-900">Partner Details</h4>
-                      <div className="space-y-2">
-                        <Label htmlFor="partnerName">Partner Name *</Label>
-                        <Input
-                          id="partnerName"
-                          value={partnerName}
-                          onChange={(e) => setPartnerName(e.target.value)}
-                          placeholder="Enter partner's name"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="partnerPhone">Partner Phone *</Label>
-                        <Input
-                          id="partnerPhone"
-                          value={partnerPhone}
-                          onChange={(e) => setPartnerPhone(e.target.value)}
-                          placeholder="Enter partner's phone number"
-                          required
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Payment Method */}
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentMethod">Payment Method *</Label>
-                    <Select value={paymentMethod} onValueChange={setPaymentMethod} required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="upi">UPI</SelectItem>
-                        <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    )}
                   </div>
+                )}
 
-                  {/* Transaction ID */}
-                  {paymentMethod && paymentMethod !== 'cash' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="transactionId">Transaction ID</Label>
-                      <Input
-                        id="transactionId"
-                        value={transactionId}
-                        onChange={(e) => setTransactionId(e.target.value)}
-                        placeholder="Enter transaction ID (if available)"
-                      />
+                {/* Partner Selection for Doubles/Mixed */}
+                {selectedCategories.length > 0 && (selectedCategories.includes('doubles') || selectedCategories.includes('mixed')) && (
+                  <div>
+                    <label className="text-primary mb-2 block text-sm font-medium">
+                      Select Partner <span className="text-red-500">*</span>
+                    </label>
+                    {isLoadingPartners ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-green-500" />
+                      </div>
+                    ) : (
+                      <select
+                        value={selectedPartner}
+                        onChange={(e) => setSelectedPartner(e.target.value)}
+                        className="glass-card w-full rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 text-sm text-gray-900 dark:text-white outline-none transition-all focus:ring-2 focus:ring-green-500/50"
+                      >
+                        <option value="">Choose a partner...</option>
+                        {availablePartners.map((partner) => (
+                          <option key={partner._id} value={partner._id}>
+                            {partner.name} - {partner.phone} {partner.gender && `(${partner.gender})`}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    {availablePartners.length === 0 && !isLoadingPartners && (
+                      <p className="text-muted-foreground text-xs sm:text-sm mt-2">
+                        No available partners found for this category.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Payment Method - Only show if tournament has entry fee */}
+                {tournament.entryFee > 0 && (
+                  <>
+                    <div>
+                      <label className="text-primary mb-2 block text-sm font-medium">
+                        Payment Method <span className="text-red-500">*</span>
+                      </label>
+                      <p className="text-muted-foreground mb-3 text-xs">
+                        Entry Fee: <span className="font-semibold text-primary">₹{tournament.entryFee}</span>
+                      </p>
+                      <Select value={paymentMethod} onValueChange={setPaymentMethod} required>
+                        <SelectTrigger className="h-10 sm:h-11 text-sm">
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="upi">UPI</SelectItem>
+                          <SelectItem value="cash">Cash</SelectItem>
+                          <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
 
-                  <div className="flex gap-3 pt-4">
-                    <Button
+                    {/* Transaction ID */}
+                    {paymentMethod && paymentMethod !== 'cash' && (
+                      <div>
+                        <label className="text-primary mb-2 block text-sm font-medium">
+                          Transaction ID
+                        </label>
+                        <Input
+                          value={transactionId}
+                          onChange={(e) => setTransactionId(e.target.value)}
+                          placeholder="Enter transaction ID (if available)"
+                          className="glass-card h-10 sm:h-11 text-sm"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Free Tournament Notice */}
+                {tournament.entryFee === 0 && (
+                  <div className="rounded-lg bg-green-500/10 p-3 border border-green-500/20">
+                    <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="font-semibold">Free Entry</span> - No payment required for this tournament
+                    </p>
+                  </div>
+                )}
+
+                {/* Sticky Footer Buttons on Mobile */}
+                <div className="sticky bottom-0 left-0 right-0 bg-inherit pt-4 pb-2 sm:pb-0 border-t border-white/10 sm:border-0 -mx-4 px-4 sm:mx-0 sm:px-0 sm:static">
+                  <div className="flex gap-2 sm:gap-3">
+                    <button
                       type="button"
-                      variant="outline"
-                      onClick={() => setShowRegistrationForm(false)}
-                      className="flex-1"
+                      onClick={() => {
+                        setShowRegistrationForm(false);
+                        setSelectedCategories([]);
+                        setSelectedAgeGroups([]);
+                        setSelectedPartner('');
+                        setAvailablePartners([]);
+                        setPaymentMethod('');
+                        setTransactionId('');
+                        setRegistrationError('');
+                      }}
+                      className="glass-card flex-1 rounded-lg px-4 py-2.5 sm:py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-white/10 active:scale-95"
+                      disabled={registrationLoading}
                     >
                       Cancel
-                    </Button>
-                    <Button
+                    </button>
+                    <button
                       type="submit"
-                      disabled={registrationLoading}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                      disabled={
+                        registrationLoading || 
+                        selectedCategories.length === 0 || 
+                        (tournament.entryFee > 0 && !paymentMethod) ||
+                        ((selectedCategories.includes('doubles') || selectedCategories.includes('mixed')) && !selectedPartner) || 
+                        (tournament.ageGroups && tournament.ageGroups.length > 0 && selectedAgeGroups.length === 0)
+                      }
+                      className="bg-primary flex-1 rounded-lg px-4 py-2.5 sm:py-2 text-sm font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95"
                     >
                       {registrationLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Registering...
-                        </>
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="hidden sm:inline">Registering...</span>
+                          <span className="sm:hidden">Wait...</span>
+                        </span>
                       ) : (
-                        <>
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Submit Registration
-                        </>
+                        'Register'
                       )}
-                    </Button>
+                    </button>
                   </div>
-                </form>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </div>
+              </form>
+            </motion.div>
+          </div>
         )}
 
         {/* Tournament Overview */}

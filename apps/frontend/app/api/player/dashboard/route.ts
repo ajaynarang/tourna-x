@@ -18,9 +18,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const userId = user._id;
+
     // Get player's participations
     const participations = await db.collection(COLLECTIONS.PARTICIPANTS)
-      .find({ userId: user.userId })
+      .find({ userId: userId })
       .sort({ registeredAt: -1 })
       .toArray();
 
@@ -28,8 +30,8 @@ export async function GET(request: NextRequest) {
     const playerMatches = await db.collection(COLLECTIONS.MATCHES)
       .find({
         $or: [
-          { player1Id: user.userId },
-          { player2Id: user.userId }
+          { player1Id: userId },
+          { player2Id: userId }
         ]
       })
       .sort({ createdAt: -1 })
@@ -43,8 +45,8 @@ export async function GET(request: NextRequest) {
     const upcomingMatches = await db.collection(COLLECTIONS.MATCHES)
       .find({
         $or: [
-          { player1Id: user.userId },
-          { player2Id: user.userId }
+          { player1Id: userId },
+          { player2Id: userId }
         ],
         status: { $in: ['scheduled', 'in_progress'] },
         scheduledDate: { $gte: new Date() }
@@ -91,19 +93,19 @@ export async function GET(request: NextRequest) {
     // Calculate player stats - separate tournament and practice
     const totalTournamentMatches = tournamentMatches.length;
     const tournamentWins = tournamentMatches.filter(match => 
-      match.status === 'completed' && match.winnerId === user.userId
+      match.status === 'completed' && match.winnerId?.toString() === userId.toString()
     ).length;
     const tournamentLosses = tournamentMatches.filter(match => 
-      match.status === 'completed' && match.winnerId && match.winnerId !== user.userId
+      match.status === 'completed' && match.winnerId && match.winnerId.toString() !== userId.toString()
     ).length;
     const tournamentWinRate = totalTournamentMatches > 0 ? (tournamentWins / totalTournamentMatches) * 100 : 0;
 
     const totalPracticeMatches = practiceMatches.length;
     const practiceWins = practiceMatches.filter(match => 
-      match.status === 'completed' && match.winnerId === user.userId
+      match.status === 'completed' && match.winnerId?.toString() === userId.toString()
     ).length;
     const practiceLosses = practiceMatches.filter(match => 
-      match.status === 'completed' && match.winnerId && match.winnerId !== user.userId
+      match.status === 'completed' && match.winnerId && match.winnerId.toString() !== userId.toString()
     ).length;
     const practiceWinRate = totalPracticeMatches > 0 ? (practiceWins / totalPracticeMatches) * 100 : 0;
 
@@ -114,14 +116,14 @@ export async function GET(request: NextRequest) {
 
     // Get player's notifications
     const notifications = await db.collection(COLLECTIONS.NOTIFICATIONS)
-      .find({ userId: user.userId })
+      .find({ userId: userId })
       .sort({ createdAt: -1 })
       .limit(10)
       .toArray();
 
     const dashboardData = {
       player: {
-        _id: user.userId,
+        _id: userId,
         name: user.name,
         phone: user.phone,
         email: user.email,

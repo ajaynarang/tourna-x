@@ -31,11 +31,5 @@ export async function getAuthUser(request: NextRequest) {
     return null;
   }
 
-  return {
-    userId: user._id.toString(),
-    roles: user.roles || [],
-    name: user.name,
-    email: user.email,
-    phone: user.phone
-  };
+  return user;
 }

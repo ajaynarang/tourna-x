@@ -102,7 +102,7 @@ export async function POST(
     // Check if user already registered for this tournament
     const existingRegistration = await db.collection(COLLECTIONS.PARTICIPANTS).findOne({
       tournamentId: new ObjectId(id),
-      userId: user.userId
+      userId: new ObjectId(user._id)
     });
 
     if (existingRegistration) {
@@ -203,10 +203,13 @@ export async function POST(
       isEligible = (user as any).society === tournament.allowedSociety;
     }
 
+    // Determine payment status based on entry fee
+    const paymentStatus = tournament.entryFee === 0 ? 'na' : 'pending';
+
     // Validate registration data
     const validatedData = insertParticipantSchema.parse({
-      tournamentId: new ObjectId(id),
-      userId: user.userId,
+      tournamentId: id,
+      userId: user._id.toString(),
       name: registrationData.name || user.name,
       phone: registrationData.phone || user.phone,
       email: registrationData.email || user.email,
@@ -217,12 +220,12 @@ export async function POST(
       flatNumber: registrationData.flatNumber || (user as any).flatNumber,
       category: registrationData.category,
       ageGroups: registrationData.ageGroups || [],
-      partnerId: registrationData.partnerId ? new ObjectId(registrationData.partnerId) : undefined,
+      partnerId: registrationData.partnerId || undefined,
       partnerName: registrationData.partnerName,
       partnerPhone: registrationData.partnerPhone,
       partnerAge: registrationData.partnerAge,
       partnerGender: registrationData.partnerGender,
-      paymentStatus: 'pending',
+      paymentStatus: paymentStatus,
       paymentMethod: registrationData.paymentMethod,
       transactionId: registrationData.transactionId,
       isApproved: false,
@@ -230,7 +233,15 @@ export async function POST(
       registeredAt: new Date(),
     });
 
-    const result = await db.collection(COLLECTIONS.PARTICIPANTS).insertOne(validatedData);
+    // Convert string IDs to ObjectId for MongoDB insertion
+    const participantData = {
+      ...validatedData,
+      tournamentId: new ObjectId(validatedData.tournamentId),
+      userId: new ObjectId(validatedData.userId),
+      partnerId: validatedData.partnerId ? new ObjectId(validatedData.partnerId) : undefined,
+    };
+
+    const result = await db.collection(COLLECTIONS.PARTICIPANTS).insertOne(participantData);
 
     // Update tournament participant count
     await db.collection(COLLECTIONS.TOURNAMENTS).updateOne(

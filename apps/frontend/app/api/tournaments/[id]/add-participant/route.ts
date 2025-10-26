@@ -222,7 +222,7 @@ export async function POST(
       paymentStatus: paymentStatus || 'na',
       registeredAt: new Date(),
       addedBy: 'admin',
-      addedByUserId: user.userId,
+      addedByUserId: user._id,
     };
 
     const result = await db.collection(COLLECTIONS.PARTICIPANTS).insertOne(participant);
