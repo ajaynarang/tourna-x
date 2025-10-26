@@ -413,7 +413,7 @@ export default function RegisterPage() {
               {/* Passcode Setup (Optional) */}
               <div className="space-y-4 border-t pt-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Set Passcode (Optional)</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Set Passcode</h3>
                   <p className="text-sm text-gray-500 mt-1">
                     Set a 6-digit passcode for quick login. You can also use OTP to login anytime.
                   </p>
