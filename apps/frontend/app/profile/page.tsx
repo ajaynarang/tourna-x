@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
 import { Button } from '@repo/ui';
 import { Badge } from '@repo/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@repo/ui';
 import { 
   ArrowLeft,
   User,
@@ -319,18 +320,61 @@ export default function ProfilePage() {
                 <h4 className="font-semibold text-primary">Skill Level</h4>
               </div>
               {isEditing ? (
-                <select
-                  value={formData.skillLevel || ''}
-                  onChange={(e) => updateFormData('skillLevel', e.target.value)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-primary"
-                >
-                  <option value="">Select skill level</option>
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                  <option value="expert">Expert</option>
-                  <option value="elite">Elite</option>
-                </select>
+                <div className="space-y-2">
+                  <Select 
+                    value={formData.skillLevel || ''} 
+                    onValueChange={(value) => updateFormData('skillLevel', value)}
+                  >
+                    <SelectTrigger className="w-full bg-white/5 border-white/10 text-primary">
+                      <SelectValue placeholder="Select your skill level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="beginner">
+                        <div className="flex flex-col py-1">
+                          <span className="font-semibold">Beginner</span>
+                          <span className="text-xs text-muted-foreground">
+                            {SKILL_LEVEL_DESCRIPTIONS.beginner}
+                          </span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="intermediate">
+                        <div className="flex flex-col py-1">
+                          <span className="font-semibold">Intermediate</span>
+                          <span className="text-xs text-muted-foreground">
+                            {SKILL_LEVEL_DESCRIPTIONS.intermediate}
+                          </span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="advanced">
+                        <div className="flex flex-col py-1">
+                          <span className="font-semibold">Advanced</span>
+                          <span className="text-xs text-muted-foreground">
+                            {SKILL_LEVEL_DESCRIPTIONS.advanced}
+                          </span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="expert">
+                        <div className="flex flex-col py-1">
+                          <span className="font-semibold">Expert</span>
+                          <span className="text-xs text-muted-foreground">
+                            {SKILL_LEVEL_DESCRIPTIONS.expert}
+                          </span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="elite">
+                        <div className="flex flex-col py-1">
+                          <span className="font-semibold">Elite</span>
+                          <span className="text-xs text-muted-foreground">
+                            {SKILL_LEVEL_DESCRIPTIONS.elite}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-tertiary">
+                    Select the level that best describes your current playing ability
+                  </p>
+                </div>
               ) : (
                 <div>
                   <p className="text-primary font-semibold capitalize mb-1">{profile?.skillLevel || 'Not set'}</p>

@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@repo/ui';
 import { CountryCodeSelector } from '@repo/ui';
 import { Trophy, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { SKILL_LEVEL_DESCRIPTIONS } from '@repo/schemas';
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -283,33 +284,43 @@ export default function RegisterPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="beginner">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col py-1">
                           <span className="font-semibold">Beginner</span>
-                          <span className="text-xs text-gray-500">Learning basic strokes, rallies under 5 shots</span>
+                          <span className="text-xs text-muted-foreground">
+                            {SKILL_LEVEL_DESCRIPTIONS.beginner}
+                          </span>
                         </div>
                       </SelectItem>
                       <SelectItem value="intermediate">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col py-1">
                           <span className="font-semibold">Intermediate</span>
-                          <span className="text-xs text-gray-500">Consistent rallies, basic strategy, club-level play</span>
+                          <span className="text-xs text-muted-foreground">
+                            {SKILL_LEVEL_DESCRIPTIONS.intermediate}
+                          </span>
                         </div>
                       </SelectItem>
                       <SelectItem value="advanced">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col py-1">
                           <span className="font-semibold">Advanced</span>
-                          <span className="text-xs text-gray-500">Strong fundamentals, competitive club/league player</span>
+                          <span className="text-xs text-muted-foreground">
+                            {SKILL_LEVEL_DESCRIPTIONS.advanced}
+                          </span>
                         </div>
                       </SelectItem>
                       <SelectItem value="expert">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col py-1">
                           <span className="font-semibold">Expert</span>
-                          <span className="text-xs text-gray-500">Tournament experience, district/state level</span>
+                          <span className="text-xs text-muted-foreground">
+                            {SKILL_LEVEL_DESCRIPTIONS.expert}
+                          </span>
                         </div>
                       </SelectItem>
                       <SelectItem value="elite">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col py-1">
                           <span className="font-semibold">Elite</span>
-                          <span className="text-xs text-gray-500">National/international competitive level</span>
+                          <span className="text-xs text-muted-foreground">
+                            {SKILL_LEVEL_DESCRIPTIONS.elite}
+                          </span>
                         </div>
                       </SelectItem>
                     </SelectContent>
