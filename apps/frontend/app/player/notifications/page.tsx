@@ -251,7 +251,7 @@ function PlayerNotificationsContent() {
   };
 
   return (
-    <div className="relative z-10 min-h-screen p-8">
+    <div className="relative z-10 min-h-screen p-4 md:p-8">
       <motion.div
         variants={container}
         initial="hidden"
@@ -259,67 +259,69 @@ function PlayerNotificationsContent() {
         className="mx-auto max-w-5xl"
       >
         {/* Header */}
-        <motion.div variants={item} className="mb-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
+        <motion.div variants={item} className="mb-6 md:mb-8">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex items-center justify-between">
               <Link
                 href="/player/dashboard"
-                className="text-muted-foreground hover:text-primary flex items-center gap-2 text-sm transition-colors"
+                className="text-muted-foreground hover:text-primary flex items-center gap-2 text-xs sm:text-sm transition-colors"
               >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
+                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Back to Dashboard</span>
+                <span className="sm:hidden">Back</span>
               </Link>
+              <button
+                onClick={fetchNotifications}
+                className="glass-card flex items-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium text-primary transition-all hover:bg-white/10"
+              >
+                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
             </div>
             <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-primary text-3xl font-bold">Notifications</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mb-1">
+                <h1 className="text-primary text-xl sm:text-2xl md:text-3xl font-bold">Notifications</h1>
                 {unreadCount > 0 && (
-                  <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-medium text-white">
+                  <span className="rounded-full bg-red-500 px-2 sm:px-3 py-0.5 sm:py-1 text-xs font-medium text-white">
                     {unreadCount} New
                   </span>
                 )}
               </div>
-              <p className="text-muted-foreground">Stay updated with your tournament activities</p>
+              <p className="text-muted-foreground text-xs sm:text-sm">Stay updated with your tournament activities</p>
             </div>
-            <button
-              onClick={fetchNotifications}
-              className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </button>
           </div>
         </motion.div>
 
         {/* Tab Navigation */}
-        <motion.div variants={item} className="mb-6">
+        <motion.div variants={item} className="mb-4 md:mb-6">
           <div className="glass-card-intense p-2">
             <div className="flex gap-2">
               <button
                 onClick={() => setActiveTab('notifications')}
-                className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-3 font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all ${
                   activeTab === 'notifications'
                     ? 'bg-primary text-white shadow-md'
                     : 'text-tertiary hover:text-primary hover:bg-white/10'
                 }`}
               >
-                <Bell className="h-4 w-4" />
-                Notifications
+                <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Notifications</span>
+                <span className="xs:hidden">Alerts</span>
                 {unreadCount > 0 && (
-                  <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
+                  <span className="rounded-full bg-red-500 px-1.5 sm:px-2 py-0.5 text-xs text-white">
                     {unreadCount}
                   </span>
                 )}
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
-                className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-3 font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all ${
                   activeTab === 'settings'
                     ? 'bg-primary text-white shadow-md'
                     : 'text-tertiary hover:text-primary hover:bg-white/10'
                 }`}
               >
-                <Settings className="h-4 w-4" />
+                <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                 Settings
               </button>
             </div>
@@ -328,18 +330,18 @@ function PlayerNotificationsContent() {
 
         {/* Notifications Tab */}
         {activeTab === 'notifications' && (
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {/* Controls */}
             <motion.div variants={item}>
-              <div className="glass-card-intense p-6">
-                <div className="flex flex-col lg:flex-row gap-4">
+              <div className="glass-card-intense p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                   <div className="flex-1">
                     <input
                       type="text"
                       placeholder="Search notifications..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="glass-card w-full rounded-lg px-4 py-3 text-primary outline-none transition-all focus:ring-2 focus:ring-blue-500/50"
+                      className="glass-card w-full rounded-lg px-3 md:px-4 py-2 md:py-3 text-sm text-primary outline-none transition-all focus:ring-2 focus:ring-blue-500/50"
                     />
                   </div>
                   
@@ -347,7 +349,7 @@ function PlayerNotificationsContent() {
                     <select
                       value={filter}
                       onChange={(e) => setFilter(e.target.value)}
-                      className="glass-card rounded-lg px-4 py-3 text-primary outline-none transition-all focus:ring-2 focus:ring-blue-500/50"
+                      className="glass-card flex-1 sm:flex-initial rounded-lg px-3 md:px-4 py-2 md:py-3 text-sm text-primary outline-none transition-all focus:ring-2 focus:ring-blue-500/50"
                     >
                       <option value="all">All ({notifications.length})</option>
                       <option value="unread">Unread ({unreadCount})</option>
@@ -357,10 +359,11 @@ function PlayerNotificationsContent() {
                     {unreadCount > 0 && (
                       <button
                         onClick={markAllAsRead}
-                        className="glass-card flex items-center gap-2 rounded-lg px-4 py-3 font-medium text-primary transition-all hover:bg-white/10"
+                        className="glass-card flex items-center gap-1.5 md:gap-2 rounded-lg px-3 md:px-4 py-2 md:py-3 text-xs sm:text-sm font-medium text-primary transition-all hover:bg-white/10 whitespace-nowrap"
                       >
-                        <Check className="h-4 w-4" />
-                        Mark All Read
+                        <Check className="h-3 w-3 md:h-4 md:w-4" />
+                        <span className="hidden sm:inline">Mark All Read</span>
+                        <span className="sm:hidden">Mark All</span>
                       </button>
                     )}
                   </div>

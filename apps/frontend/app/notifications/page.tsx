@@ -223,14 +223,14 @@ export default function NotificationsPage() {
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="glass-card-intense p-6">
-          <div className="flex items-center justify-between">
+        <div className="glass-card-intense p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold text-primary">Notifications</h3>
-              <p className="text-tertiary text-sm">
-                {unreadCount} unread notifications
+              <h3 className="text-base sm:text-lg font-semibold text-primary">Notifications</h3>
+              <p className="text-tertiary text-xs sm:text-sm">
+                {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -239,10 +239,11 @@ export default function NotificationsPage() {
                   onClick={markAllAsRead}
                   size="sm"
                   variant="outline"
-                  className="bg-white/5 border-white/10 hover:bg-white/10"
+                  className="bg-white/5 border-white/10 hover:bg-white/10 text-xs sm:text-sm"
                 >
-                  <Check className="h-4 w-4 mr-1" />
-                  Mark All Read
+                  <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  <span className="hidden sm:inline">Mark All Read</span>
+                  <span className="sm:hidden">Mark All</span>
                 </Button>
               )}
               <Button
@@ -251,25 +252,25 @@ export default function NotificationsPage() {
                 variant="outline"
                 className="bg-white/5 border-white/10 hover:bg-white/10"
               >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                Refresh
+                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="sr-only">Refresh</span>
               </Button>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="glass-card-intense p-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <div className="glass-card-intense p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-tertiary" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-tertiary" />
                 <input
                   type="text"
                   placeholder="Search notifications..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-primary placeholder:text-tertiary"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-primary placeholder:text-tertiary text-sm"
                 />
               </div>
             </div>
@@ -278,7 +279,7 @@ export default function NotificationsPage() {
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="px-3 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-primary"
+                className="flex-1 sm:flex-initial px-3 py-2 sm:py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-primary text-sm"
               >
                 <option value="all">All Notifications</option>
                 <option value="unread">Unread Only</option>
@@ -289,12 +290,12 @@ export default function NotificationsPage() {
         </div>
 
         {/* Notifications List */}
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {filteredNotifications.length === 0 ? (
-            <div className="glass-card-intense p-12 text-center">
-              <Bell className="h-16 w-16 text-tertiary mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-primary mb-2">No Notifications</h3>
-              <p className="text-tertiary">
+            <div className="glass-card-intense p-8 md:p-12 text-center">
+              <Bell className="h-12 w-12 md:h-16 md:w-16 text-tertiary mx-auto mb-4" />
+              <h3 className="text-base md:text-lg font-semibold text-primary mb-2">No Notifications</h3>
+              <p className="text-tertiary text-sm">
                 {searchTerm || filter !== 'all' 
                   ? 'No notifications match your current filters.'
                   : 'You have no notifications at the moment.'
@@ -312,44 +313,45 @@ export default function NotificationsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`glass-card-intense p-6 hover:shadow-lg transition-all duration-300 group ${
+                  className={`glass-card-intense p-4 md:p-6 hover:shadow-lg transition-all duration-300 group ${
                     !notification.isRead ? 'border-l-4 border-l-blue-500' : ''
                   }`}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className={`p-2 rounded-lg bg-white/5 ${colorClass}`}>
-                      <Icon className="h-5 w-5" />
+                  <div className="flex items-start gap-3 md:gap-4">
+                    <div className={`p-1.5 md:p-2 rounded-lg bg-white/5 ${colorClass} flex-shrink-0`}>
+                      <Icon className="h-4 w-4 md:h-5 md:w-5" />
                     </div>
                     
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className={`font-semibold ${!notification.isRead ? 'text-primary' : 'text-tertiary'}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2 gap-2">
+                        <h4 className={`font-semibold text-sm md:text-base ${!notification.isRead ? 'text-primary' : 'text-tertiary'}`}>
                           {notification.title}
                         </h4>
                         {!notification.isRead && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
                         )}
                       </div>
                       
-                      <p className="text-sm text-tertiary mb-3">
+                      <p className="text-xs md:text-sm text-tertiary mb-3">
                         {notification.message}
                       </p>
                       
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <span className="text-xs text-tertiary">
                           {new Date(notification.createdAt).toLocaleString()}
                         </span>
                         
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
                           {!notification.isRead && (
                             <Button
                               onClick={() => markAsRead(notification._id)}
                               size="sm"
                               variant="outline"
-                              className="bg-white/5 border-white/10 hover:bg-white/10"
+                              className="bg-white/5 border-white/10 hover:bg-white/10 text-xs h-8"
                             >
-                              <Check className="h-4 w-4 mr-1" />
-                              Mark Read
+                              <Check className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                              <span className="hidden sm:inline">Mark Read</span>
+                              <span className="sm:hidden">Read</span>
                             </Button>
                           )}
                           
@@ -358,11 +360,11 @@ export default function NotificationsPage() {
                               asChild
                               size="sm"
                               variant="outline"
-                              className="bg-white/5 border-white/10 hover:bg-white/10"
+                              className="bg-white/5 border-white/10 hover:bg-white/10 text-xs h-8"
                             >
                               <Link href={`/tournaments/${notification.tournamentId}`}>
-                                <Eye className="h-4 w-4 mr-1" />
-                                View
+                                <Eye className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                                <span className="hidden md:inline">View</span>
                               </Link>
                             </Button>
                           )}
@@ -371,9 +373,10 @@ export default function NotificationsPage() {
                             onClick={() => deleteNotification(notification._id)}
                             size="sm"
                             variant="outline"
-                            className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
+                            className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 h-8"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                            <span className="sr-only">Delete</span>
                           </Button>
                         </div>
                       </div>
@@ -389,17 +392,17 @@ export default function NotificationsPage() {
   };
 
   const renderSettingsTab = () => (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Notification Channels */}
-      <div className="glass-card-intense p-6">
-        <h3 className="text-lg font-semibold text-primary mb-4">Notification Channels</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Mail className="h-5 w-5 text-blue-400" />
-              <div>
-                <h4 className="font-medium text-primary">Email Notifications</h4>
-                <p className="text-sm text-tertiary">Receive notifications via email</p>
+      <div className="glass-card-intense p-4 md:p-6">
+        <h3 className="text-base md:text-lg font-semibold text-primary mb-4">Notification Channels</h3>
+        <div className="space-y-3 md:space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+              <Mail className="h-4 w-4 md:h-5 md:w-5 text-blue-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <h4 className="font-medium text-primary text-sm md:text-base">Email Notifications</h4>
+                <p className="text-xs md:text-sm text-tertiary truncate">Receive notifications via email</p>
               </div>
             </div>
             <Button
@@ -407,17 +410,18 @@ export default function NotificationsPage() {
               variant={settings.emailNotifications ? 'default' : 'outline'}
               size="sm"
               disabled={isSaving}
+              className="flex-shrink-0 h-8 w-8 p-0"
             >
-              {settings.emailNotifications ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+              {settings.emailNotifications ? <Bell className="h-3 w-3 md:h-4 md:w-4" /> : <BellOff className="h-3 w-3 md:h-4 md:w-4" />}
             </Button>
           </div>
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Phone className="h-5 w-5 text-green-400" />
-              <div>
-                <h4 className="font-medium text-primary">SMS Notifications</h4>
-                <p className="text-sm text-tertiary">Receive notifications via SMS</p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+              <Phone className="h-4 w-4 md:h-5 md:w-5 text-green-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <h4 className="font-medium text-primary text-sm md:text-base">SMS Notifications</h4>
+                <p className="text-xs md:text-sm text-tertiary truncate">Receive notifications via SMS</p>
               </div>
             </div>
             <Button
@@ -425,17 +429,18 @@ export default function NotificationsPage() {
               variant={settings.smsNotifications ? 'default' : 'outline'}
               size="sm"
               disabled={isSaving}
+              className="flex-shrink-0 h-8 w-8 p-0"
             >
-              {settings.smsNotifications ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+              {settings.smsNotifications ? <Bell className="h-3 w-3 md:h-4 md:w-4" /> : <BellOff className="h-3 w-3 md:h-4 md:w-4" />}
             </Button>
           </div>
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <MessageSquare className="h-5 w-5 text-purple-400" />
-              <div>
-                <h4 className="font-medium text-primary">Push Notifications</h4>
-                <p className="text-sm text-tertiary">Receive push notifications in browser</p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+              <MessageSquare className="h-4 w-4 md:h-5 md:w-5 text-purple-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <h4 className="font-medium text-primary text-sm md:text-base">Push Notifications</h4>
+                <p className="text-xs md:text-sm text-tertiary truncate">Receive push notifications in browser</p>
               </div>
             </div>
             <Button
@@ -443,23 +448,24 @@ export default function NotificationsPage() {
               variant={settings.pushNotifications ? 'default' : 'outline'}
               size="sm"
               disabled={isSaving}
+              className="flex-shrink-0 h-8 w-8 p-0"
             >
-              {settings.pushNotifications ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+              {settings.pushNotifications ? <Bell className="h-3 w-3 md:h-4 md:w-4" /> : <BellOff className="h-3 w-3 md:h-4 md:w-4" />}
             </Button>
           </div>
         </div>
       </div>
 
       {/* Notification Types */}
-      <div className="glass-card-intense p-6">
-        <h3 className="text-lg font-semibold text-primary mb-4">Notification Types</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Trophy className="h-5 w-5 text-yellow-400" />
-              <div>
-                <h4 className="font-medium text-primary">Tournament Updates</h4>
-                <p className="text-sm text-tertiary">Updates about tournaments you're registered for</p>
+      <div className="glass-card-intense p-4 md:p-6">
+        <h3 className="text-base md:text-lg font-semibold text-primary mb-4">Notification Types</h3>
+        <div className="space-y-3 md:space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+              <Trophy className="h-4 w-4 md:h-5 md:w-5 text-yellow-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <h4 className="font-medium text-primary text-sm md:text-base">Tournament Updates</h4>
+                <p className="text-xs md:text-sm text-tertiary truncate">Updates about tournaments you're registered for</p>
               </div>
             </div>
             <Button
@@ -467,17 +473,18 @@ export default function NotificationsPage() {
               variant={settings.tournamentUpdates ? 'default' : 'outline'}
               size="sm"
               disabled={isSaving}
+              className="flex-shrink-0 h-8 w-8 p-0"
             >
-              {settings.tournamentUpdates ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+              {settings.tournamentUpdates ? <Bell className="h-3 w-3 md:h-4 md:w-4" /> : <BellOff className="h-3 w-3 md:h-4 md:w-4" />}
             </Button>
           </div>
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-blue-400" />
-              <div>
-                <h4 className="font-medium text-primary">Match Reminders</h4>
-                <p className="text-sm text-tertiary">Reminders before your matches start</p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+              <Calendar className="h-4 w-4 md:h-5 md:w-5 text-blue-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <h4 className="font-medium text-primary text-sm md:text-base">Match Reminders</h4>
+                <p className="text-xs md:text-sm text-tertiary truncate">Reminders before your matches start</p>
               </div>
             </div>
             <Button
@@ -485,17 +492,18 @@ export default function NotificationsPage() {
               variant={settings.matchReminders ? 'default' : 'outline'}
               size="sm"
               disabled={isSaving}
+              className="flex-shrink-0 h-8 w-8 p-0"
             >
-              {settings.matchReminders ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+              {settings.matchReminders ? <Bell className="h-3 w-3 md:h-4 md:w-4" /> : <BellOff className="h-3 w-3 md:h-4 md:w-4" />}
             </Button>
           </div>
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-green-400" />
-              <div>
-                <h4 className="font-medium text-primary">Registration Updates</h4>
-                <p className="text-sm text-tertiary">Updates about your registration status</p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+              <Users className="h-4 w-4 md:h-5 md:w-5 text-green-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <h4 className="font-medium text-primary text-sm md:text-base">Registration Updates</h4>
+                <p className="text-xs md:text-sm text-tertiary truncate">Updates about your registration status</p>
               </div>
             </div>
             <Button
@@ -503,17 +511,18 @@ export default function NotificationsPage() {
               variant={settings.registrationUpdates ? 'default' : 'outline'}
               size="sm"
               disabled={isSaving}
+              className="flex-shrink-0 h-8 w-8 p-0"
             >
-              {settings.registrationUpdates ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+              {settings.registrationUpdates ? <Bell className="h-3 w-3 md:h-4 md:w-4" /> : <BellOff className="h-3 w-3 md:h-4 md:w-4" />}
             </Button>
           </div>
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Trophy className="h-5 w-5 text-purple-400" />
-              <div>
-                <h4 className="font-medium text-primary">Result Notifications</h4>
-                <p className="text-sm text-tertiary">Notifications when match results are available</p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+              <Trophy className="h-4 w-4 md:h-5 md:w-5 text-purple-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <h4 className="font-medium text-primary text-sm md:text-base">Result Notifications</h4>
+                <p className="text-xs md:text-sm text-tertiary truncate">Notifications when match results are available</p>
               </div>
             </div>
             <Button
@@ -521,8 +530,9 @@ export default function NotificationsPage() {
               variant={settings.resultNotifications ? 'default' : 'outline'}
               size="sm"
               disabled={isSaving}
+              className="flex-shrink-0 h-8 w-8 p-0"
             >
-              {settings.resultNotifications ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+              {settings.resultNotifications ? <Bell className="h-3 w-3 md:h-4 md:w-4" /> : <BellOff className="h-3 w-3 md:h-4 md:w-4" />}
             </Button>
           </div>
         </div>
@@ -542,45 +552,47 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="relative z-10 min-h-screen p-8">
+    <div className="relative z-10 min-h-screen p-4 md:p-8">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
-          <Button asChild variant="outline" size="sm">
+      <div className="mb-6 md:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
+          <Button asChild variant="outline" size="sm" className="w-fit">
             <Link href={user?.roles?.includes('admin') ? '/admin/dashboard' : '/player/dashboard'}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </Link>
           </Button>
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold gradient-title">
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-title">
               Notifications
             </h1>
-            <p className="text-tertiary">
+            <p className="text-tertiary text-sm sm:text-base">
               Manage your notifications and preferences
             </p>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="glass-card-intense p-6">
+        <div className="glass-card-intense p-3 md:p-6">
           <div className="flex bg-white/5 border border-white/10 rounded-lg overflow-hidden">
             <Button
               onClick={() => setActiveTab('notifications')}
               variant={activeTab === 'notifications' ? 'default' : 'ghost'}
               size="sm"
-              className="flex-1 rounded-r-none bg-transparent hover:bg-white/10"
+              className="flex-1 rounded-r-none bg-transparent hover:bg-white/10 text-xs sm:text-sm"
             >
-              <Bell className="h-4 w-4 mr-1" />
-              Notifications
+              <Bell className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden xs:inline">Notifications</span>
+              <span className="xs:hidden">Alerts</span>
             </Button>
             <Button
               onClick={() => setActiveTab('settings')}
               variant={activeTab === 'settings' ? 'default' : 'ghost'}
               size="sm"
-              className="flex-1 rounded-l-none bg-transparent hover:bg-white/10"
+              className="flex-1 rounded-l-none bg-transparent hover:bg-white/10 text-xs sm:text-sm"
             >
-              <Settings className="h-4 w-4 mr-1" />
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
               Settings
             </Button>
           </div>

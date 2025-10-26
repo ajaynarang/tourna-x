@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@repo/ui';
 import { Label } from '@repo/ui';
 import { Alert, AlertDescription } from '@repo/ui';
+import { Switch } from '@repo/ui';
 import { 
   ArrowLeft,
   User,
@@ -67,6 +68,16 @@ interface PlayerStats {
   activeTournaments: number;
 }
 
+interface NotificationSettings {
+  emailNotifications: boolean;
+  smsNotifications: boolean;
+  pushNotifications: boolean;
+  tournamentUpdates: boolean;
+  matchReminders: boolean;
+  registrationUpdates: boolean;
+  resultNotifications: boolean;
+}
+
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -81,10 +92,21 @@ export default function ProfilePage() {
   const [passcodeForm, setPasscodeForm] = useState({ passcode: '', confirmPasscode: '' });
   const [passcodeError, setPasscodeError] = useState('');
   const [passcodeSuccess, setPasscodeSuccess] = useState(false);
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
+    emailNotifications: true,
+    smsNotifications: true,
+    pushNotifications: true,
+    tournamentUpdates: true,
+    matchReminders: true,
+    registrationUpdates: true,
+    resultNotifications: true,
+  });
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchProfileData();
+      fetchNotificationSettings();
     }
   }, [user]);
 
@@ -114,6 +136,40 @@ export default function ProfilePage() {
       console.error('Error fetching profile data:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchNotificationSettings = async () => {
+    try {
+      const response = await fetch('/api/notifications/settings');
+      const result = await response.json();
+      
+      if (result.success) {
+        setNotificationSettings(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching notification settings:', error);
+    }
+  };
+
+  const toggleNotificationSetting = async (setting: keyof NotificationSettings) => {
+    try {
+      setIsLoadingSettings(true);
+      const newValue = !notificationSettings[setting];
+      
+      const response = await fetch('/api/notifications/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [setting]: newValue }),
+      });
+      
+      if (response.ok) {
+        setNotificationSettings(prev => ({ ...prev, [setting]: newValue }));
+      }
+    } catch (error) {
+      console.error('Error updating notification setting:', error);
+    } finally {
+      setIsLoadingSettings(false);
     }
   };
 
@@ -635,61 +691,105 @@ export default function ProfilePage() {
           <h3 className="text-lg font-semibold text-primary">Notification Settings</h3>
         </div>
         
-        <div className="space-y-4">
+        <div className="space-y-3">
+          {/* Email Notifications */}
+          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-primary text-sm md:text-base">Email Notifications</h4>
+              <p className="text-xs md:text-sm text-tertiary">Receive notifications via email</p>
+            </div>
+            <Switch
+              checked={notificationSettings.emailNotifications}
+              onCheckedChange={() => toggleNotificationSetting('emailNotifications')}
+              disabled={isLoadingSettings}
+              className="ml-2"
+            />
+          </div>
+
+          {/* SMS Notifications */}
+          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-primary text-sm md:text-base">SMS Notifications</h4>
+              <p className="text-xs md:text-sm text-tertiary">Receive notifications via SMS</p>
+            </div>
+            <Switch
+              checked={notificationSettings.smsNotifications}
+              onCheckedChange={() => toggleNotificationSetting('smsNotifications')}
+              disabled={isLoadingSettings}
+              className="ml-2"
+            />
+          </div>
+
+          {/* Push Notifications */}
+          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-primary text-sm md:text-base">Push Notifications</h4>
+              <p className="text-xs md:text-sm text-tertiary">Receive browser push notifications</p>
+            </div>
+            <Switch
+              checked={notificationSettings.pushNotifications}
+              onCheckedChange={() => toggleNotificationSetting('pushNotifications')}
+              disabled={isLoadingSettings}
+              className="ml-2"
+            />
+          </div>
+
+          <div className="border-t border-white/10 my-4"></div>
+
+          {/* Tournament Updates */}
           <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
             <div className="flex-1 min-w-0">
               <h4 className="font-medium text-primary text-sm md:text-base">Tournament Updates</h4>
               <p className="text-xs md:text-sm text-tertiary">Get notified about tournament changes</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white/5 border-white/10 hover:bg-white/10 ml-2"
-            >
-              <Bell className="h-4 w-4" />
-            </Button>
+            <Switch
+              checked={notificationSettings.tournamentUpdates}
+              onCheckedChange={() => toggleNotificationSetting('tournamentUpdates')}
+              disabled={isLoadingSettings}
+              className="ml-2"
+            />
           </div>
           
+          {/* Match Reminders */}
           <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
             <div className="flex-1 min-w-0">
               <h4 className="font-medium text-primary text-sm md:text-base">Match Reminders</h4>
               <p className="text-xs md:text-sm text-tertiary">Reminders before your matches</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white/5 border-white/10 hover:bg-white/10 ml-2"
-            >
-              <Bell className="h-4 w-4" />
-            </Button>
+            <Switch
+              checked={notificationSettings.matchReminders}
+              onCheckedChange={() => toggleNotificationSetting('matchReminders')}
+              disabled={isLoadingSettings}
+              className="ml-2"
+            />
           </div>
           
+          {/* Registration Updates */}
           <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
             <div className="flex-1 min-w-0">
               <h4 className="font-medium text-primary text-sm md:text-base">Registration Updates</h4>
               <p className="text-xs md:text-sm text-tertiary">Updates about your registrations</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white/5 border-white/10 hover:bg-white/10 ml-2"
-            >
-              <Bell className="h-4 w-4" />
-            </Button>
+            <Switch
+              checked={notificationSettings.registrationUpdates}
+              onCheckedChange={() => toggleNotificationSetting('registrationUpdates')}
+              disabled={isLoadingSettings}
+              className="ml-2"
+            />
           </div>
 
+          {/* Match Results */}
           <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
             <div className="flex-1 min-w-0">
               <h4 className="font-medium text-primary text-sm md:text-base">Match Results</h4>
               <p className="text-xs md:text-sm text-tertiary">Get notified when results are posted</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white/5 border-white/10 hover:bg-white/10 ml-2"
-            >
-              <Bell className="h-4 w-4" />
-            </Button>
+            <Switch
+              checked={notificationSettings.resultNotifications}
+              onCheckedChange={() => toggleNotificationSetting('resultNotifications')}
+              disabled={isLoadingSettings}
+              className="ml-2"
+            />
           </div>
 
           <div className="pt-2">
@@ -700,8 +800,8 @@ export default function ProfilePage() {
               className="w-full bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20"
             >
               <Link href="/notifications">
-                <Settings className="h-4 w-4 mr-2" />
-                Manage All Notification Settings
+                <Bell className="h-4 w-4 mr-2" />
+                View All Notifications
               </Link>
             </Button>
           </div>
