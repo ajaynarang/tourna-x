@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/auth-guard';
+import { Button } from '@repo/ui';
+import { Badge } from '@repo/ui';
+import { Card, CardContent } from '@repo/ui';
 import { 
   Calendar, 
   Clock, 
@@ -18,7 +21,8 @@ import {
   AlertCircle,
   TrendingUp,
   Award,
-  Filter
+  Filter,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -64,6 +68,7 @@ function PlayerMatchesContent() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'tournament' | 'practice'>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'singles' | 'doubles' | 'mixed'>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchMatches();
@@ -94,15 +99,15 @@ function PlayerMatchesContent() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
       case 'in_progress':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20';
       case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20';
       case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20';
     }
   };
 
@@ -174,456 +179,411 @@ function PlayerMatchesContent() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="spinner"></div>
-      </div>
-    );
-  }
-
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
-  };
-
   return (
-    <div className="relative z-10 min-h-screen p-8">
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-      >
-        {/* Header */}
-        <motion.div variants={item} className="mb-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/player/dashboard"
-                className="text-muted-foreground hover:text-primary flex items-center gap-2 text-sm transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </Link>
-            </div>
-            <button
-              onClick={fetchMatches}
-              className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* Header - Apple-style clean design */}
+      <div className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Back Button - Desktop */}
+            <Link
+              href="/player/dashboard"
+              className="hidden sm:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </button>
-          </div>
-        </motion.div>
-
-        {/* Stats Summary */}
-        <motion.div
-          variants={item}
-          className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-3"
-        >
-          <StatCard
-            title="Total Matches"
-            value={matches.length}
-            icon={Trophy}
-            color="from-blue-500 to-cyan-500"
-          />
-          <StatCard
-            title="Upcoming"
-            value={matches.filter(m => m.status === 'scheduled').length}
-            icon={Clock}
-            color="from-yellow-500 to-amber-500"
-          />
-          <StatCard
-            title="Completed"
-            value={matches.filter(m => m.status === 'completed').length}
-            icon={CheckCircle}
-            color="from-green-500 to-emerald-500"
-          />
-        </motion.div>
-
-        {/* Filter Tabs */}
-        <motion.div variants={item} className="mb-6">
-          <div className="glass-card-intense p-4 space-y-4">
-            {/* Status Filter */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Filter className="h-4 w-4 text-tertiary" />
-                <span className="text-sm font-medium text-primary">Status</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setStatusFilter('all')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    statusFilter === 'all'
-                      ? 'bg-primary text-white shadow-md'
-                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
-                  }`}
-                >
-                  All ({matches.length})
-                </button>
-                <button
-                  onClick={() => setStatusFilter('upcoming')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    statusFilter === 'upcoming'
-                      ? 'bg-primary text-white shadow-md'
-                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
-                  }`}
-                >
-                  Upcoming ({matches.filter(m => m.status === 'scheduled' || m.status === 'in_progress').length})
-                </button>
-                <button
-                  onClick={() => setStatusFilter('completed')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    statusFilter === 'completed'
-                      ? 'bg-primary text-white shadow-md'
-                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
-                  }`}
-                >
-                  Completed ({matches.filter(m => m.status === 'completed').length})
-                </button>
-              </div>
-            </div>
-
-            {/* Type Filter */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Trophy className="h-4 w-4 text-tertiary" />
-                <span className="text-sm font-medium text-primary">Match Type</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setTypeFilter('all')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    typeFilter === 'all'
-                      ? 'bg-primary text-white shadow-md'
-                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
-                  }`}
-                >
-                  All Matches
-                </button>
-                <button
-                  onClick={() => setTypeFilter('tournament')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    typeFilter === 'tournament'
-                      ? 'bg-primary text-white shadow-md'
-                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
-                  }`}
-                >
-                  🏆 Tournament ({matches.filter(m => m.matchType === 'tournament').length})
-                </button>
-                <button
-                  onClick={() => setTypeFilter('practice')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    typeFilter === 'practice'
-                      ? 'bg-primary text-white shadow-md'
-                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
-                  }`}
-                >
-                  ⚡ Practice ({matches.filter(m => m.matchType === 'practice').length})
-                </button>
-              </div>
-            </div>
-
-            {/* Category Filter */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="h-4 w-4 text-tertiary" />
-                <span className="text-sm font-medium text-primary">Category</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setCategoryFilter('all')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    categoryFilter === 'all'
-                      ? 'bg-primary text-white shadow-md'
-                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
-                  }`}
-                >
-                  All Categories
-                </button>
-                <button
-                  onClick={() => setCategoryFilter('singles')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    categoryFilter === 'singles'
-                      ? 'bg-primary text-white shadow-md'
-                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
-                  }`}
-                >
-                  Singles ({matches.filter(m => m.category === 'singles').length})
-                </button>
-                <button
-                  onClick={() => setCategoryFilter('doubles')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    categoryFilter === 'doubles'
-                      ? 'bg-primary text-white shadow-md'
-                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
-                  }`}
-                >
-                  Doubles ({matches.filter(m => m.category === 'doubles').length})
-                </button>
-                <button
-                  onClick={() => setCategoryFilter('mixed')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    categoryFilter === 'mixed'
-                      ? 'bg-primary text-white shadow-md'
-                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
-                  }`}
-                >
-                  Mixed ({matches.filter(m => m.category === 'mixed').length})
-                </button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Matches List */}
-        <motion.div variants={item} className="space-y-4">
-          {filteredMatches.length === 0 ? (
-            <div className="glass-card-intense p-12 text-center">
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-green-500/20 to-blue-500/20">
-                <Calendar className="h-10 w-10 text-green-400" />
-              </div>
-              <h3 className="text-primary mb-2 text-xl font-semibold">No Matches Found</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                {statusFilter === 'upcoming' 
-                  ? "You don't have any upcoming matches scheduled. Register for tournaments to start playing!"
-                  : statusFilter === 'completed'
-                  ? "You haven't completed any matches yet. Play your first match to see results here."
-                  : "You don't have any matches yet. Browse and register for tournaments to get started!"
-                }
-              </p>
-              <button
-                onClick={() => router.push('/tournaments')}
-                className="bg-primary inline-flex items-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-transform hover:scale-105"
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Link>
+            
+            <div className="flex items-center gap-2 ml-auto">
+              {/* Mobile Filter Toggle */}
+              <Button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowFilters(!showFilters);
+                }}
+                variant="outline"
+                className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-xl"
               >
-                <Trophy className="h-5 w-5" />
-                Browse Tournaments
-              </button>
+                <Filter className="h-4 w-4" />
+                <span className="text-sm font-medium">Filters</span>
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  fetchMatches();
+                }}
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
             </div>
-          ) : (
-            filteredMatches.map((match, index) => {
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        {/* Stats Summary */}
+        {!isLoading && (
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">Total Matches</div>
+                  <div className="text-gray-900 dark:text-white text-3xl font-bold">{matches.length}</div>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
+                  <Trophy className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">Upcoming</div>
+                  <div className="text-gray-900 dark:text-white text-3xl font-bold">{matches.filter(m => m.status === 'scheduled').length}</div>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-500 to-amber-500">
+                  <Clock className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">Completed</div>
+                  <div className="text-gray-900 dark:text-white text-3xl font-bold">{matches.filter(m => m.status === 'completed').length}</div>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
+                  <CheckCircle className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Desktop Filters - Apple-style segmented control */}
+        <div className={`mb-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Status
+                </label>
+                <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 w-full">
+                  {['all', 'upcoming', 'completed'].map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setStatusFilter(status as any);
+                      }}
+                      className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        statusFilter === status
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {status === 'all' ? 'All' : 
+                       status === 'upcoming' ? 'Upcoming' : 'Completed'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Type Filter */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Match Type
+                </label>
+                <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 w-full">
+                  {['all', 'tournament', 'practice'].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setTypeFilter(type as any);
+                      }}
+                      className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        typeFilter === type
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {type === 'all' ? 'All' : 
+                       type === 'tournament' ? 'Tournament' : 'Practice'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category Filter */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Category
+                </label>
+                <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 w-full">
+                  {['all', 'singles', 'doubles', 'mixed'].map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCategoryFilter(category as any);
+                      }}
+                      className={`flex-1 px-3 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                        categoryFilter === category
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {category === 'all' ? 'All' : 
+                       category === 'singles' ? 'Singles' :
+                       category === 'doubles' ? 'Doubles' : 'Mixed'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Showing {filteredMatches.length} match{filteredMatches.length !== 1 ? 'es' : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Matches List - Apple-style cards */}
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading matches...</p>
+            </div>
+          </div>
+        ) : filteredMatches.length === 0 ? (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-12 text-center">
+            <div className="mx-auto h-20 w-20 rounded-full bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center mb-6">
+              <Calendar className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Matches Found</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-sm mx-auto">
+              {statusFilter === 'upcoming' 
+                ? "You don't have any upcoming matches scheduled. Register for tournaments to start playing!"
+                : statusFilter === 'completed'
+                ? "You haven't completed any matches yet. Play your first match to see results here."
+                : "You don't have any matches yet. Browse and register for tournaments to get started!"
+              }
+            </p>
+            <Button
+              type="button"
+              variant="default"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                router.push('/tournaments');
+              }}
+            >
+              <Trophy className="mr-2 h-4 w-4" />
+              Browse Tournaments
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {filteredMatches.map((match) => {
               const StatusIcon = getStatusIcon(match.status);
-              const isUpcoming = match.status === 'scheduled' || match.status === 'in_progress';
               const isCompleted = match.status === 'completed';
               const matchResult = getMatchResult(match);
               
               return (
-                <motion.div
+                <Card 
                   key={match._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="glass-card p-6 transition-all hover:scale-[1.01]"
+                  className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all hover:shadow-lg hover:shadow-blue-500/10"
                 >
-                  <div className="space-y-4">
-                    {/* Match Header */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        {match.matchType === 'practice' ? (
-                          <h3 className="text-lg font-semibold text-primary mb-2">
-                            Practice Match
-                          </h3>
-                        ) : (
-                          <div className="mb-2">
-                            <h3 className="text-lg font-semibold text-primary">
-                              {match.tournamentName}
+                  <CardContent className="p-5">
+                    <div className="space-y-4">
+                      {/* Match Header */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          {match.matchType === 'practice' ? (
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
+                              Practice Match
                             </h3>
-                            {match.round && (
-                              <p className="text-sm text-muted-foreground">
-                                {match.round}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                        
-                        {/* Badges Row */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {/* Match Type Badge */}
-                          <span className={`rounded-full px-3 py-1 text-xs font-medium ${
-                            match.matchType === 'practice'
-                              ? 'bg-green-500/10 text-green-400 border border-green-500/30'
-                              : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
-                          }`}>
-                            {match.matchType === 'practice' ? '⚡ Practice' : '🏆 Tournament'}
-                          </span>
-                          
-                          {/* Status Badge */}
-                          <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(match.status)}`}>
-                            <StatusIcon className="h-3 w-3 mr-1 inline" />
-                            {match.status.replace('_', ' ').toUpperCase()}
-                          </span>
-                          
-                          {/* Category Badge */}
-                          <span className="rounded-full px-3 py-1 text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/30 capitalize">
-                            {getCategoryIcon(match.category)} {match.category}
-                          </span>
-                          
-                          {/* Age Group Badge (for tournaments) */}
-                          {match.ageGroup && (
-                            <span className="rounded-full px-3 py-1 text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/30">
-                              {match.ageGroup}
-                            </span>
-                          )}
-                          
-                          {/* Win/Loss Badge */}
-                          {isCompleted && matchResult && (
-                            <span className={`rounded-full px-3 py-1 text-xs font-medium ${
-                              matchResult === 'Won' 
-                                ? 'bg-green-500/20 text-green-400 border border-green-500/50' 
-                                : matchResult === 'Lost'
-                                ? 'bg-red-500/20 text-red-400 border border-red-500/50'
-                                : 'bg-gray-500/20 text-gray-400 border border-gray-500/50'
-                            }`}>
-                              {matchResult === 'Won' ? '✓ Won' : matchResult === 'Lost' ? '✗ Lost' : 'Draw'}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Match Details */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-primary text-sm mb-3">Match Details</h4>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Users className="h-4 w-4 text-tertiary" />
-                          <span><strong>Opponent:</strong> {match.opponentName}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4 text-tertiary" />
-                          <span><strong>Date:</strong> {new Date(match.scheduledDate).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric'
-                          })}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4 text-tertiary" />
-                          <span><strong>Time:</strong> {new Date(match.scheduledDate).toLocaleTimeString('en-IN', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}</span>
-                        </div>
-                        {match.court && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4 text-tertiary" />
-                            <span><strong>Court:</strong> {match.court}</span>
-                          </div>
-                        )}
-                        {match.matchType === 'tournament' && match.tournamentVenue && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4 text-tertiary" />
-                            <span><strong>Venue:</strong> {match.tournamentVenue}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Score Section */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-primary text-sm mb-3">
-                          {isCompleted ? 'Final Score' : 'Match Status'}
-                        </h4>
-                        {isCompleted ? (
-                          <div className="glass-card rounded-lg p-4">
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-primary mb-2">
-                                {formatScore(match)}
-                              </div>
-                              {match.winnerId && (
-                                <div className={`text-sm font-medium ${
-                                  isWinner(match) ? 'text-green-400' : 'text-red-400'
-                                }`}>
-                                  {isWinner(match) ? (
-                                    <div className="flex items-center justify-center gap-2">
-                                      <Award className="h-4 w-4" />
-                                      Victory!
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center justify-center gap-2">
-                                      <TrendingUp className="h-4 w-4" />
-                                      Keep improving!
-                                    </div>
-                                  )}
-                                </div>
+                          ) : (
+                            <div className="mb-2">
+                              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                                {match.tournamentName}
+                              </h3>
+                              {match.round && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {match.round}
+                                </p>
                               )}
                             </div>
+                          )}
+                          
+                          {/* Badges Row */}
+                          <div className="flex items-center gap-2 flex-wrap mb-3">
+                            {/* Match Type Badge */}
+                            <Badge className={
+                              match.matchType === 'practice'
+                                ? 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20'
+                                : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                            }>
+                              {match.matchType === 'practice' ? 'Practice' : 'Tournament'}
+                            </Badge>
+                            
+                            {/* Status Badge */}
+                            <Badge className={getStatusColor(match.status)}>
+                              <StatusIcon className="h-3 w-3 mr-1" />
+                              {match.status.replace('_', ' ')}
+                            </Badge>
+                            
+                            {/* Category Badge */}
+                            <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 capitalize">
+                              {match.category}
+                            </Badge>
+                            
+                            {/* Age Group Badge */}
+                            {match.ageGroup && (
+                              <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20">
+                                {match.ageGroup}
+                              </Badge>
+                            )}
+                            
+                            {/* Win/Loss Badge */}
+                            {isCompleted && matchResult && (
+                              <Badge className={
+                                matchResult === 'Won' 
+                                  ? 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20' 
+                                  : matchResult === 'Lost'
+                                  ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'
+                                  : 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20'
+                              }>
+                                {matchResult === 'Won' ? '✓ Won' : matchResult === 'Lost' ? '✗ Lost' : 'Draw'}
+                              </Badge>
+                            )}
                           </div>
-                        ) : (
-                          <div className="glass-card rounded-lg p-4">
-                            <div className="text-center">
-                              <div className="text-lg font-semibold text-primary mb-1">
-                                {match.status === 'scheduled' ? 'Scheduled' : 'In Progress'}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {match.status === 'scheduled' ? 'Match will start soon' : 'Live match in progress'}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action Buttons - Only show for in-progress matches */}
-                    {match.status === 'in_progress' && (
-                      <div className="flex items-center justify-end pt-4 mt-4 border-t border-white/10">
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-400 border border-blue-500/30">
-                            <AlertCircle className="h-3.5 w-3.5" />
-                            Live Match
-                          </span>
-                          <button
-                            onClick={() => router.push(`/player/scoring?matchId=${match._id}`)}
-                            className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"
-                          >
-                            <Trophy className="h-4 w-4" />
-                            Update Score
-                          </button>
                         </div>
                       </div>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })
-          )}
-        </motion.div>
-      </motion.div>
-    </div>
-  );
-}
 
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  color,
-}: {
-  title: string;
-  value: number;
-  icon: any;
-  color: string;
-}) {
-  return (
-    <div className="glass-card-intense p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-muted-foreground text-sm mb-1">{title}</div>
-          <div className="text-primary text-3xl font-bold">{value}</div>
-        </div>
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color}`}>
-          <Icon className="h-6 w-6 text-white" />
-        </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Match Details */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Users className="h-4 w-4" />
+                            <span className="font-medium text-gray-900 dark:text-white">{match.opponentName}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Calendar className="h-4 w-4" />
+                            <span>{new Date(match.scheduledDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Clock className="h-4 w-4" />
+                            <span>{new Date(match.scheduledDate).toLocaleTimeString('en-US', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}</span>
+                          </div>
+                          {match.court && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                              <MapPin className="h-4 w-4" />
+                              <span>{match.court}</span>
+                            </div>
+                          )}
+                          {match.matchType === 'tournament' && match.tournamentVenue && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                              <MapPin className="h-4 w-4" />
+                              <span className="truncate">{match.tournamentVenue}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Score Section */}
+                        <div className="space-y-2">
+                          {isCompleted ? (
+                            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                              <div className="text-center">
+                                <div className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                                  {formatScore(match)}
+                                </div>
+                                {match.winnerId && (
+                                  <div className={`text-sm font-medium ${
+                                    isWinner(match) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                                  }`}>
+                                    {isWinner(match) ? (
+                                      <div className="flex items-center justify-center gap-1">
+                                        <Award className="h-4 w-4" />
+                                        Victory!
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center justify-center gap-1">
+                                        <TrendingUp className="h-4 w-4" />
+                                        Keep improving!
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                              <div className="text-center">
+                                <div className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+                                  {match.status === 'scheduled' ? 'Scheduled' : 'In Progress'}
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  {match.status === 'scheduled' ? 'Match will start soon' : 'Live match'}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action Buttons - Only show for in-progress matches */}
+                      {match.status === 'in_progress' && (
+                        <div className="flex items-center justify-end pt-4 mt-4 border-t border-gray-200 dark:border-gray-800">
+                          <Button
+                            type="button"
+                            variant="default"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              router.push(`/player/scoring?matchId=${match._id}`);
+                            }}
+                          >
+                            <Trophy className="h-4 w-4 mr-2" />
+                            Update Score
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+

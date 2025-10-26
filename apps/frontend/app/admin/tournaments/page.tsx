@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { AuthGuard } from '@/components/auth-guard';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { 
   Plus,
   Search,
@@ -55,6 +56,7 @@ export default function AdminTournamentsPage() {
 
 function AdminTournamentsContent() {
   const router = useRouter();
+  const { canAccessTournaments } = useFeatureFlags();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [filteredTournaments, setFilteredTournaments] = useState<Tournament[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -187,6 +189,25 @@ function AdminTournamentsContent() {
       alert('Failed to archive tournament');
     }
   };
+
+  // Check feature flag access
+  const hasAccess = canAccessTournaments('admin');
+
+  if (!hasAccess) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="glass-card max-w-md space-y-4 p-8 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
+            <XCircle className="h-8 w-8 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-primary">Feature Disabled</h2>
+          <p className="text-tertiary">
+            Tournaments feature is currently disabled. Please contact a super administrator for more information.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

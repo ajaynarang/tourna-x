@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { 
   Search,
   Trophy,
@@ -52,7 +53,8 @@ interface Tournament {
 }
 
 export default function TournamentsPage() {
-  const { user } = useAuth();
+  const { user, currentRole } = useAuth();
+  const { canAccessTournaments } = useFeatureFlags();
   const router = useRouter();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [filteredTournaments, setFilteredTournaments] = useState<Tournament[]>([]);
@@ -151,6 +153,25 @@ export default function TournamentsPage() {
       isEligibleForTournament(tournament)
     );
   };
+
+  // Check feature flag access
+  const hasAccess = canAccessTournaments(currentRole === 'admin' ? 'admin' : 'player');
+
+  if (!hasAccess) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="glass-card max-w-md space-y-4 p-8 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
+            <XCircle className="h-8 w-8 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-primary">Feature Disabled</h2>
+          <p className="text-tertiary">
+            Tournaments feature is currently disabled. Please contact an administrator for more information.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

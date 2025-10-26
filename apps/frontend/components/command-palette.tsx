@@ -20,6 +20,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
 
 interface CommandItem {
   id: string;
@@ -39,6 +40,7 @@ interface CommandPaletteProps {
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const router = useRouter();
   const { user, logout, currentRole } = useAuth();
+  const { canAccessPracticeMatches, canAccessTournaments, canAccessTournamentStats } = useFeatureFlags();
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const commandRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -54,60 +56,69 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       keywords: ['home', 'overview', 'stats', 'admin'],
       category: 'Navigate',
     },
-    {
-      id: 'admin-tournaments',
-      title: 'Tournaments',
-      subtitle: 'Manage tournaments',
-      icon: Trophy,
-      action: () => router.push('/admin/tournaments'),
-      keywords: ['tournaments', 'events', 'competitions'],
-      category: 'Navigate',
-    },
-    {
-      id: 'admin-participants',
-      title: 'Participants',
-      subtitle: 'Manage participants',
-      icon: Users,
-      action: () => router.push('/admin/participants'),
-      keywords: ['participants', 'players', 'users'],
-      category: 'Navigate',
-    },
-    {
-      id: 'admin-fixtures',
-      title: 'Fixtures',
-      subtitle: 'View and manage fixtures',
-      icon: Calendar,
-      action: () => router.push('/admin/fixtures'),
-      keywords: ['fixtures', 'schedule', 'matches'],
-      category: 'Navigate',
-    },
-    {
-      id: 'admin-practice-matches',
-      title: 'Practice Matches',
-      subtitle: 'Record daily practice',
-      icon: Target,
-      action: () => router.push('/practice-matches'),
-      keywords: ['practice', 'matches', 'daily', 'training', 'practice sessions'],
-      category: 'Navigate',
-    },
-    {
-      id: 'admin-tournament-matches',
-      title: 'Tournament Matches',
-      subtitle: 'View match history & stats',
-      icon: History,
-      action: () => router.push('/admin/tournament-matches'),
-      keywords: ['tournament', 'matches', 'history', 'results', 'completed'],
-      category: 'Navigate',
-    },
-    {
-      id: 'admin-analytics',
-      title: 'Analytics',
-      subtitle: 'View insights and reports',
-      icon: BarChart3,
-      action: () => router.push('/admin/analytics'),
-      keywords: ['analytics', 'reports', 'insights', 'data'],
-      category: 'Navigate',
-    },
+    // Tournament commands - only show if enabled for admin
+    ...(canAccessTournaments('admin') ? [
+      {
+        id: 'admin-tournaments',
+        title: 'Tournaments',
+        subtitle: 'Manage tournaments',
+        icon: Trophy,
+        action: () => router.push('/admin/tournaments'),
+        keywords: ['tournaments', 'events', 'competitions'],
+        category: 'Navigate',
+      },
+      {
+        id: 'admin-participants',
+        title: 'Participants',
+        subtitle: 'Manage participants',
+        icon: Users,
+        action: () => router.push('/admin/participants'),
+        keywords: ['participants', 'players', 'users'],
+        category: 'Navigate',
+      },
+      {
+        id: 'admin-fixtures',
+        title: 'Fixtures',
+        subtitle: 'View and manage fixtures',
+        icon: Calendar,
+        action: () => router.push('/admin/fixtures'),
+        keywords: ['fixtures', 'schedule', 'matches'],
+        category: 'Navigate',
+      },
+    ] : []),
+    // Practice matches - only show if enabled for admin
+    ...(canAccessPracticeMatches('admin') ? [
+      {
+        id: 'admin-practice-matches',
+        title: 'Practice Matches',
+        subtitle: 'Record daily practice',
+        icon: Target,
+        action: () => router.push('/practice-matches'),
+        keywords: ['practice', 'matches', 'daily', 'training', 'practice sessions'],
+        category: 'Navigate',
+      },
+    ] : []),
+    // Tournament matches/stats - only show if tournament stats enabled
+    ...(canAccessTournamentStats('admin') ? [
+      {
+        id: 'admin-tournament-matches',
+        title: 'Tournament Matches',
+        subtitle: 'View match history & stats',
+        icon: History,
+        action: () => router.push('/admin/tournament-matches'),
+        keywords: ['tournament', 'matches', 'history', 'results', 'completed'],
+        category: 'Navigate',
+      },
+      {
+        id: 'admin-analytics',
+        title: 'Analytics',
+        subtitle: 'View insights and reports',
+        icon: BarChart3,
+        action: () => router.push('/admin/analytics'),
+        keywords: ['analytics', 'reports', 'insights', 'data'],
+        category: 'Navigate',
+      },
+    ] : []),
     {
       id: 'admin-requests',
       title: 'Admin Requests',
@@ -115,6 +126,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       icon: Users,
       action: () => router.push('/admin/admin-requests'),
       keywords: ['admin', 'requests', 'approve', 'super admin', 'access'],
+      category: 'Navigate',
+    },
+    {
+      id: 'feature-flags',
+      title: 'Feature Flags',
+      subtitle: 'Control feature visibility',
+      icon: Settings,
+      action: () => router.push('/admin/feature-flags'),
+      keywords: ['feature', 'flags', 'settings', 'toggle', 'enable', 'disable'],
       category: 'Navigate',
     },
   ];
@@ -129,15 +149,19 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       keywords: ['home', 'overview', 'dashboard'],
       category: 'Navigate',
     },
-    {
-      id: 'player-practice-matches',
-      title: 'Practice Matches',
-      subtitle: 'Create and view practice sessions',
-      icon: Target,
-      action: () => router.push('/practice-matches'),
-      keywords: ['practice', 'matches', 'training', 'sessions'],
-      category: 'Navigate',
-    },
+    // Practice matches - only show if enabled for player
+    ...(canAccessPracticeMatches('player') ? [
+      {
+        id: 'player-practice-matches',
+        title: 'Practice Matches',
+        subtitle: 'Create and view practice sessions',
+        icon: Target,
+        action: () => router.push('/practice-matches'),
+        keywords: ['practice', 'matches', 'training', 'sessions'],
+        category: 'Navigate',
+      },
+    ] : []),
+
     {
       id: 'player-matches',
       title: 'My Matches',
@@ -147,25 +171,31 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       keywords: ['matches', 'fixtures', 'games'],
       category: 'Navigate',
     },
-    {
-      id: 'player-stats',
-      title: 'My Stats',
-      subtitle: 'View your stats',
-      icon: TrendingUp,
-      action: () => router.push('/player/stats'),
-      keywords: ['stats', 'performance', 'analytics'],
-      category: 'Navigate',
-    },
-
-    {
-      id: 'tournaments',
-      title: 'Tournaments',
-      subtitle: 'Browse tournaments',
-      icon: Trophy,
-      action: () => router.push('/tournaments'),
-      keywords: ['tournaments', 'events', 'browse'],
-      category: 'Navigate',
-    },
+    // Tournament matches - only show if tournaments enabled for player
+    ...(canAccessTournaments('player') ? [
+     
+      {
+        id: 'tournaments',
+        title: 'Tournaments',
+        subtitle: 'Browse tournaments',
+        icon: Trophy,
+        action: () => router.push('/tournaments'),
+        keywords: ['tournaments', 'events', 'browse'],
+        category: 'Navigate',
+      },
+    ] : []),
+    // Player stats - only show if tournament stats enabled
+    ...(canAccessTournamentStats('player') ? [
+      {
+        id: 'player-stats',
+        title: 'My Stats',
+        subtitle: 'View your stats',
+        icon: TrendingUp,
+        action: () => router.push('/player/stats'),
+        keywords: ['stats', 'performance', 'analytics'],
+        category: 'Navigate',
+      },
+    ] : []),
   ];
 
   const commonCommands: CommandItem[] = [

@@ -210,7 +210,7 @@ function PlayerDashboardContent() {
         <motion.div variants={item} className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-primary text-3xl font-bold">Welcome back, {user?.name}!</h1>
+              <h1 className="text-primary text-2xl font-bold">Welcome back, {user?.name}!</h1>
               <p className="text-muted-foreground mt-2">Track your progress and join tournaments</p>
             </div>
             <button
@@ -218,7 +218,6 @@ function PlayerDashboardContent() {
               className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"
             >
               <RefreshCw className="h-4 w-4" />
-              Refresh
             </button>
           </div>
         </motion.div>

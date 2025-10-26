@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/auth-guard';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { Button } from '@repo/ui';
 import { 
   ArrowLeft,
@@ -17,6 +18,7 @@ import Link from 'next/link';
 export default function CreatePracticeMatchPage() {
   const router = useRouter();
   const { user, currentRole } = useAuth();
+  const { canAccessPracticeMatches } = useFeatureFlags();
   const isAdmin = currentRole === 'admin';
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -322,6 +324,33 @@ export default function CreatePracticeMatchPage() {
       </div>
     );
   };
+
+  // Check feature flag access
+  const hasAccess = canAccessPracticeMatches(isAdmin ? 'admin' : 'player');
+
+  if (!hasAccess) {
+    return (
+      <AuthGuard requiredRoles={['admin', 'player']}>
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+          <div className="glass-card max-w-md space-y-4 p-8 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
+              <XCircle className="h-8 w-8 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-primary">Feature Disabled</h2>
+            <p className="text-tertiary">
+              Practice matches feature is currently disabled. Please contact an administrator for more information.
+            </p>
+            <Link href={isAdmin ? '/admin/dashboard' : '/player/dashboard'}>
+              <Button variant="outline">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </AuthGuard>
+    );
+  }
 
   return (
     <AuthGuard requiredRoles={['admin', 'player']}>

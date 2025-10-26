@@ -45,10 +45,28 @@ interface UserProfile {
   createdAt: string;
 }
 
+interface PlayerStats {
+  totalMatches: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  totalTournaments: number;
+  tournamentMatches: number;
+  tournamentWins: number;
+  tournamentLosses: number;
+  tournamentWinRate: number;
+  practiceMatches: number;
+  practiceWins: number;
+  practiceLosses: number;
+  practiceWinRate: number;
+  activeTournaments: number;
+}
+
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [stats, setStats] = useState<PlayerStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -75,15 +93,14 @@ export default function ProfilePage() {
       }
 
       // Fetch user stats if player
-      // TODO: Implement stats display
-      // if (user?.roles?.includes('player')) {
-      //   const statsResponse = await fetch('/api/player/stats');
-      //   const statsResult = await statsResponse.json();
-      //   
-      //   if (statsResult.success) {
-      //     // Store stats in state
-      //   }
-      // }
+      if (user?.roles?.includes('player')) {
+        const statsResponse = await fetch('/api/player/dashboard');
+        const statsResult = await statsResponse.json();
+        
+        if (statsResult.success && statsResult.data?.player?.stats) {
+          setStats(statsResult.data.player.stats);
+        }
+      }
     } catch (error) {
       console.error('Error fetching profile data:', error);
     } finally {
@@ -130,11 +147,11 @@ export default function ProfilePage() {
   const renderProfileTab = () => (
     <div className="space-y-6">
       {/* Profile Header */}
-      <div className="glass-card-intense p-6">
-        <div className="flex items-center gap-6">
-          <div className="relative">
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center">
-              <User className="h-12 w-12 text-primary" />
+      <div className="glass-card-intense p-4 md:p-6">
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
+          <div className="relative flex-shrink-0">
+            <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center">
+              <User className="h-10 w-10 md:h-12 md:w-12 text-primary" />
             </div>
             {isEditing && (
               <Button
@@ -146,49 +163,49 @@ export default function ProfilePage() {
             )}
           </div>
           
-          <div className="flex-1">
-            <div className="flex items-center gap-4 mb-2">
+          <div className="flex-1 min-w-0 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
               {isEditing ? (
                 <input
                   type="text"
                   value={formData.name || ''}
                   onChange={(e) => updateFormData('name', e.target.value)}
-                  className="text-2xl font-bold bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="text-xl md:text-2xl font-bold bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 w-full sm:w-auto"
                 />
               ) : (
-                <h1 className="text-2xl font-bold text-primary">{profile?.name}</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-primary truncate">{profile?.name}</h1>
               )}
-              <Badge className="bg-blue-500/10 border-blue-500/30 text-blue-400">
+              <Badge className="bg-blue-500/10 border-blue-500/30 text-blue-400 w-fit">
                 {profile?.roles.join(', ')}
               </Badge>
             </div>
             
-            <div className="flex items-center gap-4 text-sm text-tertiary">
-              <span className="flex items-center">
-                <Phone className="h-4 w-4 mr-1" />
-                {profile?.phone}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-tertiary">
+              <span className="flex items-center gap-1">
+                <Phone className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="truncate">{profile?.phone}</span>
               </span>
               {profile?.email && (
-                <span className="flex items-center">
-                  <Mail className="h-4 w-4 mr-1" />
-                  {profile.email}
+                <span className="flex items-center gap-1 min-w-0">
+                  <Mail className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">{profile.email}</span>
                 </span>
               )}
-              <span className="flex items-center">
-                <Calendar className="h-4 w-4 mr-1" />
-                Joined {new Date(profile?.createdAt || '').toLocaleDateString()}
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">Joined {new Date(profile?.createdAt || '').toLocaleDateString()}</span>
               </span>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full md:w-auto">
             {isEditing ? (
               <>
                 <Button
                   onClick={() => setIsEditing(false)}
                   variant="outline"
                   size="sm"
-                  className="bg-white/5 border-white/10 hover:bg-white/10"
+                  className="bg-white/5 border-white/10 hover:bg-white/10 flex-1 md:flex-initial"
                 >
                   Cancel
                 </Button>
@@ -196,7 +213,7 @@ export default function ProfilePage() {
                   onClick={handleSave}
                   disabled={isSaving}
                   size="sm"
-                  className="bg-primary hover:bg-primary/80"
+                  className="bg-primary hover:bg-primary/80 flex-1 md:flex-initial"
                 >
                   {isSaving ? (
                     <>
@@ -216,7 +233,7 @@ export default function ProfilePage() {
                 onClick={() => setIsEditing(true)}
                 size="sm"
                 variant="outline"
-                className="bg-white/5 border-white/10 hover:bg-white/10"
+                className="bg-white/5 border-white/10 hover:bg-white/10 w-full md:w-auto"
               >
                 <Edit className="h-4 w-4 mr-1" />
                 Edit Profile
@@ -421,66 +438,238 @@ export default function ProfilePage() {
     </div>
   );
 
+  const renderStatsTab = () => {
+    if (!profile?.roles.includes('player')) {
+      return (
+        <div className="glass-card-intense p-12 text-center">
+          <BarChart3 className="h-16 w-16 text-tertiary mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-primary mb-2">Stats Not Available</h3>
+          <p className="text-tertiary">Statistics are only available for player accounts.</p>
+        </div>
+      );
+    }
+
+    if (!stats) {
+      return (
+        <div className="glass-card-intense p-12 text-center">
+          <BarChart3 className="h-16 w-16 text-tertiary mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-primary mb-2">No Stats Yet</h3>
+          <p className="text-tertiary">Start playing matches to see your statistics here.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Overall Stats */}
+        <div className="glass-card-intense p-6">
+          <h3 className="text-lg font-semibold text-primary mb-4 flex items-center">
+            <Trophy className="h-5 w-5 mr-2 text-yellow-400" />
+            Overall Statistics
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-white/5 rounded-lg">
+              <p className="text-3xl font-bold text-primary">{stats.totalMatches}</p>
+              <p className="text-sm text-tertiary mt-1">Total Matches</p>
+            </div>
+            <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+              <p className="text-3xl font-bold text-green-400">{stats.wins}</p>
+              <p className="text-sm text-tertiary mt-1">Wins</p>
+            </div>
+            <div className="text-center p-4 bg-red-500/10 rounded-lg border border-red-500/20">
+              <p className="text-3xl font-bold text-red-400">{stats.losses}</p>
+              <p className="text-sm text-tertiary mt-1">Losses</p>
+            </div>
+            <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+              <p className="text-3xl font-bold text-blue-400">{stats.winRate.toFixed(1)}%</p>
+              <p className="text-sm text-tertiary mt-1">Win Rate</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Tournament Stats */}
+        <div className="glass-card-intense p-6">
+          <h3 className="text-lg font-semibold text-primary mb-4 flex items-center">
+            <Trophy className="h-5 w-5 mr-2 text-purple-400" />
+            Tournament Statistics
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-white/5 rounded-lg">
+              <p className="text-3xl font-bold text-primary">{stats.totalTournaments}</p>
+              <p className="text-sm text-tertiary mt-1">Tournaments</p>
+            </div>
+            <div className="text-center p-4 bg-white/5 rounded-lg">
+              <p className="text-3xl font-bold text-primary">{stats.tournamentMatches}</p>
+              <p className="text-sm text-tertiary mt-1">Matches</p>
+            </div>
+            <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+              <p className="text-3xl font-bold text-green-400">{stats.tournamentWins}</p>
+              <p className="text-sm text-tertiary mt-1">Wins</p>
+            </div>
+            <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+              <p className="text-3xl font-bold text-blue-400">{stats.tournamentWinRate.toFixed(1)}%</p>
+              <p className="text-sm text-tertiary mt-1">Win Rate</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Practice Stats */}
+        <div className="glass-card-intense p-6">
+          <h3 className="text-lg font-semibold text-primary mb-4 flex items-center">
+            <Users className="h-5 w-5 mr-2 text-orange-400" />
+            Practice Match Statistics
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-white/5 rounded-lg">
+              <p className="text-3xl font-bold text-primary">{stats.practiceMatches}</p>
+              <p className="text-sm text-tertiary mt-1">Matches</p>
+            </div>
+            <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+              <p className="text-3xl font-bold text-green-400">{stats.practiceWins}</p>
+              <p className="text-sm text-tertiary mt-1">Wins</p>
+            </div>
+            <div className="text-center p-4 bg-red-500/10 rounded-lg border border-red-500/20">
+              <p className="text-3xl font-bold text-red-400">{stats.practiceLosses}</p>
+              <p className="text-sm text-tertiary mt-1">Losses</p>
+            </div>
+            <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+              <p className="text-3xl font-bold text-blue-400">{stats.practiceWinRate.toFixed(1)}%</p>
+              <p className="text-sm text-tertiary mt-1">Win Rate</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Tournaments */}
+        {stats.activeTournaments > 0 && (
+          <div className="glass-card-intense p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-primary">Active Tournaments</h3>
+                <p className="text-tertiary text-sm">You are currently registered in {stats.activeTournaments} tournament{stats.activeTournaments > 1 ? 's' : ''}</p>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/tournaments">
+                  View Tournaments
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderSettingsTab = () => (
     <div className="space-y-6">
-      <div className="glass-card-intense p-6">
-        <h3 className="text-lg font-semibold text-primary mb-4">Account Settings</h3>
+      {/* Notification Settings */}
+      <div className="glass-card-intense p-4 md:p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Bell className="h-5 w-5 text-blue-400" />
+          <h3 className="text-lg font-semibold text-primary">Notification Settings</h3>
+        </div>
+        
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium text-primary">Notifications</h4>
-              <p className="text-sm text-tertiary">Manage your notification preferences</p>
+          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-primary text-sm md:text-base">Tournament Updates</h4>
+              <p className="text-xs md:text-sm text-tertiary">Get notified about tournament changes</p>
             </div>
-            <Button variant="outline" size="sm" className="bg-white/5 border-white/10 hover:bg-white/10">
-              <Bell className="h-4 w-4 mr-1" />
-              Settings
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/5 border-white/10 hover:bg-white/10 ml-2"
+            >
+              <Bell className="h-4 w-4" />
             </Button>
           </div>
           
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium text-primary">Privacy</h4>
-              <p className="text-sm text-tertiary">Control your privacy settings</p>
+          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-primary text-sm md:text-base">Match Reminders</h4>
+              <p className="text-xs md:text-sm text-tertiary">Reminders before your matches</p>
             </div>
-            <Button variant="outline" size="sm" className="bg-white/5 border-white/10 hover:bg-white/10">
-              <Shield className="h-4 w-4 mr-1" />
-              Manage
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/5 border-white/10 hover:bg-white/10 ml-2"
+            >
+              <Bell className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-primary text-sm md:text-base">Registration Updates</h4>
+              <p className="text-xs md:text-sm text-tertiary">Updates about your registrations</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/5 border-white/10 hover:bg-white/10 ml-2"
+            >
+              <Bell className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-            <div className="flex items-start gap-3">
-              <Phone className="h-5 w-5 text-blue-400 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-primary mb-1">Phone Authentication</h4>
-                <p className="text-sm text-tertiary">
-                  Your account is secured with phone number and OTP authentication. 
-                  No password is required for login.
-                </p>
-              </div>
+          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-primary text-sm md:text-base">Match Results</h4>
+              <p className="text-xs md:text-sm text-tertiary">Get notified when results are posted</p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/5 border-white/10 hover:bg-white/10 ml-2"
+            >
+              <Bell className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="pt-2">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="w-full bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20"
+            >
+              <Link href="/notifications">
+                <Settings className="h-4 w-4 mr-2" />
+                Manage All Notification Settings
+              </Link>
+            </Button>
           </div>
         </div>
       </div>
 
-      <div className="glass-card-intense p-6">
-        <h3 className="text-lg font-semibold text-primary mb-4">Session Management</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium text-red-400">Logout</h4>
-              <p className="text-sm text-tertiary">Sign out of your account</p>
+      {/* Account Info */}
+      <div className="glass-card-intense p-4 md:p-6">
+        <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20 mb-4">
+          <div className="flex items-start gap-3">
+            <Phone className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+            <div className="min-w-0">
+              <h4 className="font-medium text-primary mb-1 text-sm md:text-base">Phone Authentication</h4>
+              <p className="text-xs md:text-sm text-tertiary">
+                Your account is secured with phone number and OTP authentication. 
+                No password is required for login.
+              </p>
             </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              size="sm"
-              className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
-            >
-              <LogOut className="h-4 w-4 mr-1" />
-              Logout
-            </Button>
           </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h4 className="font-medium text-red-400 text-sm md:text-base">Logout</h4>
+            <p className="text-xs md:text-sm text-tertiary">Sign out of your account</p>
+          </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            size="sm"
+            className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 w-full sm:w-auto"
+          >
+            <LogOut className="h-4 w-4 mr-1" />
+            Logout
+          </Button>
         </div>
       </div>
     </div>
@@ -513,29 +702,40 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="relative z-10 min-h-screen p-8">
+    <div className="relative z-10 min-h-screen p-4 md:p-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 md:mb-8">
         {/* Tab Navigation */}
-        <div className="glass-card-intense p-6">
+        <div className="glass-card-intense p-3 md:p-6">
           <div className="flex bg-white/5 border border-white/10 rounded-lg overflow-hidden">
             <Button
               onClick={() => setActiveTab('profile')}
               variant={activeTab === 'profile' ? 'default' : 'ghost'}
               size="sm"
-              className="flex-1 rounded-r-none  hover:bg-white/10"
+              className={`flex-1 ${profile?.roles.includes('player') ? 'rounded-none' : 'rounded-r-none'} hover:bg-white/10 text-xs md:text-sm`}
             >
-              <User className="h-4 w-4 mr-1" />
-              Profile
+              <User className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+              <span className="hidden sm:inline">Profile</span>
             </Button>
+            {profile?.roles.includes('player') && (
+              <Button
+                onClick={() => setActiveTab('stats')}
+                variant={activeTab === 'stats' ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1 rounded-none hover:bg-white/10 text-xs md:text-sm"
+              >
+                <BarChart3 className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                <span className="hidden sm:inline">Stats</span>
+              </Button>
+            )}
             <Button
               onClick={() => setActiveTab('settings')}
               variant={activeTab === 'settings' ? 'default' : 'ghost'}
               size="sm"
-              className="flex-1 rounded-l-none hover:bg-white/10"
+              className="flex-1 rounded-l-none hover:bg-white/10 text-xs md:text-sm"
             >
-              <Settings className="h-4 w-4 mr-1" />
-              Settings
+              <Settings className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+              <span className="hidden sm:inline">Settings</span>
             </Button>
           </div>
         </div>
@@ -543,6 +743,7 @@ export default function ProfilePage() {
 
       {/* Tab Content */}
       {activeTab === 'profile' && renderProfileTab()}
+      {activeTab === 'stats' && renderStatsTab()}
       {activeTab === 'settings' && renderSettingsTab()}
     </div>
   );

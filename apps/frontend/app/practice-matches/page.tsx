@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/auth-guard';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { Card, CardContent } from '@repo/ui';
 import { Button } from '@repo/ui';
 import { Badge } from '@repo/ui';
@@ -70,6 +71,7 @@ interface PracticeMatch {
 
 export default function PracticeMatchesPage() {
   const { user, currentRole } = useAuth();
+  const { canAccessPracticeMatches } = useFeatureFlags();
   const router = useRouter();
   const isAdmin = currentRole === 'admin';
   const [matches, setMatches] = useState<PracticeMatch[]>([]);
@@ -218,6 +220,27 @@ export default function PracticeMatchesPage() {
       return `${team1} vs ${team2}`;
     }
   };
+
+  // Check feature flag access
+  const hasAccess = canAccessPracticeMatches(isAdmin ? 'admin' : 'player');
+
+  if (!hasAccess) {
+    return (
+      <AuthGuard requiredRoles={['admin', 'player']}>
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+          <div className="glass-card max-w-md space-y-4 p-8 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
+              <XCircle className="h-8 w-8 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-primary">Feature Disabled</h2>
+            <p className="text-tertiary">
+              Practice matches feature is currently disabled. Please contact an administrator for more information.
+            </p>
+          </div>
+        </div>
+      </AuthGuard>
+    );
+  }
 
   return (
     <AuthGuard requiredRoles={['admin', 'player']}>

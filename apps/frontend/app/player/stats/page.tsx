@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/auth-guard';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { 
   Trophy, 
   TrendingUp,
@@ -19,7 +20,8 @@ import {
   Flame,
   CheckCircle2,
   Play,
-  Users
+  Users,
+  XCircle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -57,6 +59,7 @@ export default function PlayerStats() {
 
 function PlayerStatsContent() {
   const { user } = useAuth();
+  const { canAccessTournamentStats, canAccessPracticeStats } = useFeatureFlags();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'tournament' | 'practice' | 'overall'>('overall');
@@ -95,6 +98,54 @@ function PlayerStatsContent() {
     setActiveTab(tab);
     router.push(`/player/stats?type=${tab}`);
   };
+
+  // Check feature flag access based on active tab
+  const hasTournamentAccess = canAccessTournamentStats('player');
+  const hasPracticeAccess = canAccessPracticeStats('player');
+
+  // If trying to view tournament stats without access
+  if (activeTab === 'tournament' && !hasTournamentAccess) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="glass-card max-w-md space-y-4 p-8 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
+            <XCircle className="h-8 w-8 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-primary">Feature Disabled</h2>
+          <p className="text-tertiary">
+            Tournament statistics are currently disabled.
+          </p>
+          <Link href="/player/dashboard">
+            <button className="bg-primary text-white px-6 py-3 rounded-lg font-medium">
+              Back to Dashboard
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // If trying to view practice stats without access
+  if (activeTab === 'practice' && !hasPracticeAccess) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="glass-card max-w-md space-y-4 p-8 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
+            <XCircle className="h-8 w-8 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-primary">Feature Disabled</h2>
+          <p className="text-tertiary">
+            Practice match statistics are currently disabled.
+          </p>
+          <Link href="/player/dashboard">
+            <button className="bg-primary text-white px-6 py-3 rounded-lg font-medium">
+              Back to Dashboard
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -157,39 +208,45 @@ function PlayerStatsContent() {
         <motion.div variants={item} className="mb-8">
           <div className="glass-card-intense p-2">
             <div className="flex gap-2">
-              <button
-                onClick={() => handleTabChange('overall')}
-                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
-                  activeTab === 'overall'
-                    ? 'bg-primary text-white shadow-lg'
-                    : 'text-tertiary hover:text-primary hover:bg-white/5'
-                }`}
-              >
-                <BarChart3 className="h-4 w-4 inline mr-2" />
-                Overall
-              </button>
-              <button
-                onClick={() => handleTabChange('tournament')}
-                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
-                  activeTab === 'tournament'
-                    ? 'bg-primary text-white shadow-lg'
-                    : 'text-tertiary hover:text-primary hover:bg-white/5'
-                }`}
-              >
-                <Trophy className="h-4 w-4 inline mr-2" />
-                Tournament
-              </button>
-              <button
-                onClick={() => handleTabChange('practice')}
-                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
-                  activeTab === 'practice'
-                    ? 'bg-primary text-white shadow-lg'
-                    : 'text-tertiary hover:text-primary hover:bg-white/5'
-                }`}
-              >
-                <Play className="h-4 w-4 inline mr-2" />
-                Practice
-              </button>
+              {(hasTournamentAccess || hasPracticeAccess) && (
+                <button
+                  onClick={() => handleTabChange('overall')}
+                  className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+                    activeTab === 'overall'
+                      ? 'bg-primary text-white shadow-lg'
+                      : 'text-tertiary hover:text-primary hover:bg-white/5'
+                  }`}
+                >
+                  <BarChart3 className="h-4 w-4 inline mr-2" />
+                  Overall
+                </button>
+              )}
+              {hasTournamentAccess && (
+                <button
+                  onClick={() => handleTabChange('tournament')}
+                  className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+                    activeTab === 'tournament'
+                      ? 'bg-primary text-white shadow-lg'
+                      : 'text-tertiary hover:text-primary hover:bg-white/5'
+                  }`}
+                >
+                  <Trophy className="h-4 w-4 inline mr-2" />
+                  Tournament
+                </button>
+              )}
+              {hasPracticeAccess && (
+                <button
+                  onClick={() => handleTabChange('practice')}
+                  className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+                    activeTab === 'practice'
+                      ? 'bg-primary text-white shadow-lg'
+                      : 'text-tertiary hover:text-primary hover:bg-white/5'
+                  }`}
+                >
+                  <Play className="h-4 w-4 inline mr-2" />
+                  Practice
+                </button>
+              )}
             </div>
           </div>
         </motion.div>

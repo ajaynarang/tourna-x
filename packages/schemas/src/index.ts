@@ -406,6 +406,79 @@ export const whatsappGroupSchema = z.object({
   createdAt: z.date().default(() => new Date()),
 });
 
+// Feature flags schema for controlling feature visibility
+export const featureFlagsSchema = z.object({
+  _id: objectIdSchema.optional(),
+  // Practice matches feature flags (includes practice stats)
+  practiceMatches: z.object({
+    enabled: z.boolean().default(true), // Global toggle for practice matches
+    playerEnabled: z.boolean().default(true), // Player can create/view practice matches
+    adminEnabled: z.boolean().default(true), // Admin can view/manage practice matches
+    statsEnabled: z.boolean().default(true), // Practice stats visibility (controlled by practice matches flag)
+  }).default({
+    enabled: true,
+    playerEnabled: true,
+    adminEnabled: true,
+    statsEnabled: true,
+  }),
+  // Tournament feature flags (includes tournament stats)
+  tournaments: z.object({
+    enabled: z.boolean().default(true), // Global toggle for tournaments
+    playerEnabled: z.boolean().default(true), // Player can browse/register for tournaments
+    adminEnabled: z.boolean().default(true), // Admin can create/manage tournaments
+    statsEnabled: z.boolean().default(true), // Tournament stats visibility (controlled by tournament flag)
+  }).default({
+    enabled: true,
+    playerEnabled: true,
+    adminEnabled: true,
+    statsEnabled: true,
+  }),
+  updatedAt: z.date().default(() => new Date()),
+  updatedBy: objectIdSchema.optional(), // Admin who last updated flags
+});
+
+// Notification settings schema for user preferences
+export const notificationSettingsSchema = z.object({
+  _id: objectIdSchema.optional(),
+  userId: objectIdSchema,
+  // Notification channels
+  emailNotifications: z.boolean().default(true),
+  smsNotifications: z.boolean().default(true),
+  pushNotifications: z.boolean().default(true),
+  // Notification types
+  tournamentUpdates: z.boolean().default(true),
+  matchReminders: z.boolean().default(true),
+  registrationUpdates: z.boolean().default(true),
+  resultNotifications: z.boolean().default(true),
+  practiceMatchNotifications: z.boolean().default(true),
+  adminNotifications: z.boolean().default(true),
+  createdAt: z.date().default(() => new Date()),
+  updatedAt: z.date().default(() => new Date()),
+});
+
+// User settings schema for general preferences
+export const userSettingsSchema = z.object({
+  _id: objectIdSchema.optional(),
+  userId: objectIdSchema,
+  // Privacy settings
+  profileVisibility: z.enum(["public", "friends", "private"]).default("public"),
+  showEmail: z.boolean().default(false),
+  showPhone: z.boolean().default(false),
+  showStats: z.boolean().default(true),
+  // Display preferences
+  theme: z.enum(["light", "dark", "auto"]).default("auto"),
+  language: z.string().default("en"),
+  timezone: z.string().default("Asia/Kolkata"),
+  // Match preferences
+  preferredCategories: z.array(z.enum(["singles", "doubles", "mixed"])).default([]),
+  preferredTimeSlots: z.array(z.string()).default([]), // e.g., ["morning", "evening"]
+  // Communication preferences
+  allowDirectMessages: z.boolean().default(true),
+  allowMatchInvites: z.boolean().default(true),
+  createdAt: z.date().default(() => new Date()),
+  updatedAt: z.date().default(() => new Date()),
+});
+
 // Insert schemas (without _id and createdAt)
 export const insertUserSchema = userSchema.omit({
   _id: true,
@@ -467,6 +540,23 @@ export const insertWhatsappGroupSchema = whatsappGroupSchema.omit({
   createdAt: true,
 });
 
+export const insertFeatureFlagsSchema = featureFlagsSchema.omit({
+  _id: true,
+  updatedAt: true,
+});
+
+export const insertNotificationSettingsSchema = notificationSettingsSchema.omit({
+  _id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserSettingsSchema = userSettingsSchema.omit({
+  _id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Type definitions
 export type User = z.infer<typeof userSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -504,6 +594,15 @@ export type InsertWhatsappGroup = z.infer<typeof insertWhatsappGroupSchema>;
 export type Otp = z.infer<typeof otpSchema>;
 export type InsertOtp = z.infer<typeof insertOtpSchema>;
 
+export type FeatureFlags = z.infer<typeof featureFlagsSchema>;
+export type InsertFeatureFlags = z.infer<typeof insertFeatureFlagsSchema>;
+
+export type NotificationSettings = z.infer<typeof notificationSettingsSchema>;
+export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;
+
+export type UserSettings = z.infer<typeof userSettingsSchema>;
+export type InsertUserSettings = z.infer<typeof insertUserSettingsSchema>;
+
 // Collection names
 export const COLLECTIONS = {
   USERS: "users",
@@ -518,6 +617,9 @@ export const COLLECTIONS = {
   PRACTICE_STATS: "practice_stats",
   WHATSAPP_GROUPS: "whatsapp_groups",
   OTPS: "otps",
+  FEATURE_FLAGS: "feature_flags",
+  NOTIFICATION_SETTINGS: "notification_settings",
+  USER_SETTINGS: "user_settings",
 } as const;
 
 // MongoDB indexes for better performance
@@ -605,6 +707,17 @@ export const INDEXES = {
     { phone: 1 },
     { expiresAt: 1 },
     { createdAt: -1 },
+  ],
+  FEATURE_FLAGS: [
+    { updatedAt: -1 },
+  ],
+  NOTIFICATION_SETTINGS: [
+    { userId: 1 }, // unique index
+    { updatedAt: -1 },
+  ],
+  USER_SETTINGS: [
+    { userId: 1 }, // unique index
+    { updatedAt: -1 },
   ],
 } as const;
 
