@@ -90,6 +90,7 @@ export default function TournamentDetailsPage() {
   const [error, setError] = useState('');
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState<any>(null);
   const [registrationLoading, setRegistrationLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [registrationError, setRegistrationError] = useState('');
@@ -137,6 +138,7 @@ export default function TournamentDetailsPage() {
       const result = await response.json();
       if (result.registered) {
         setAlreadyRegistered(true);
+        setRegistrationStatus(result.registration);
       }
     } catch (error) {
       console.error('Error checking registration:', error);
@@ -439,11 +441,78 @@ export default function TournamentDetailsPage() {
               </Alert>
             )}
 
-            {alreadyRegistered && !success && (
-              <Alert className="mb-6 border-blue-200 bg-blue-50">
-                <Info className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800">
-                  You are already registered for this tournament. Check your dashboard for status updates.
+            {alreadyRegistered && !success && registrationStatus && (
+              <Alert className={`mb-6 ${
+                registrationStatus.isApproved 
+                  ? 'border-green-200 bg-green-50' 
+                  : registrationStatus.rejectionReason
+                  ? 'border-red-200 bg-red-50'
+                  : 'border-yellow-200 bg-yellow-50'
+              }`}>
+                {registrationStatus.isApproved ? (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : registrationStatus.rejectionReason ? (
+                  <XCircle className="h-4 w-4 text-red-600" />
+                ) : (
+                  <Clock className="h-4 w-4 text-yellow-600" />
+                )}
+                <AlertDescription className={
+                  registrationStatus.isApproved 
+                    ? 'text-green-800' 
+                    : registrationStatus.rejectionReason
+                    ? 'text-red-800'
+                    : 'text-yellow-800'
+                }>
+                  <div className="space-y-2">
+                    <p className="font-semibold">
+                      {registrationStatus.isApproved 
+                        ? '✓ Registration Approved' 
+                        : registrationStatus.rejectionReason
+                        ? '✗ Registration Rejected'
+                        : '⏳ Registration Pending Approval'}
+                    </p>
+                    <div className="text-sm space-y-1">
+                      <p><strong>Category:</strong> {registrationStatus.category}</p>
+                      {registrationStatus.ageGroups && registrationStatus.ageGroups.length > 0 && (
+                        <p><strong>Age Groups:</strong> {registrationStatus.ageGroups.join(', ')}</p>
+                      )}
+                      {registrationStatus.partnerName && (
+                        <p><strong>Partner:</strong> {registrationStatus.partnerName}</p>
+                      )}
+                      {tournament && tournament.entryFee > 0 && (
+                        <p>
+                          <strong>Payment Status:</strong>{' '}
+                          <span className={
+                            registrationStatus.paymentStatus === 'paid' 
+                              ? 'text-green-700 font-semibold' 
+                              : 'text-yellow-700 font-semibold'
+                          }>
+                            {registrationStatus.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                          </span>
+                        </p>
+                      )}
+                      <p className="text-xs opacity-75">
+                        Registered on {new Date(registrationStatus.registeredAt).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      {registrationStatus.rejectionReason && (
+                        <p className="mt-2 p-2 bg-red-100 rounded">
+                          <strong>Reason:</strong> {registrationStatus.rejectionReason}
+                        </p>
+                      )}
+                      {!registrationStatus.isApproved && !registrationStatus.rejectionReason && (
+                        <p className="mt-2 text-xs">
+                          Your registration is being reviewed by the tournament admin. 
+                          You'll receive a notification once it's approved.
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </AlertDescription>
               </Alert>
             )}

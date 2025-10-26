@@ -27,18 +27,25 @@ interface Match {
   matchType: string;
   tournamentId?: string;
   tournamentName?: string;
+  tournamentVenue?: string;
   round?: string;
   category: string;
   player1Id: string;
   player1Name: string;
   player2Id: string;
   player2Name: string;
+  player3Name?: string;
+  player4Name?: string;
+  opponentName: string;
+  opponentId: string;
+  isPlayer1: boolean;
   scheduledDate: string;
   court: string;
   status: string;
   player1Score: number[];
   player2Score: number[];
   winnerId?: string;
+  ageGroup?: string;
 }
 
 export default function PlayerMatches() {
@@ -66,8 +73,8 @@ function PlayerMatchesContent() {
     try {
       setIsLoading(true);
       
-      // Fetch matches from the API
-      const response = await fetch('/api/matches');
+      // Fetch matches from the player-specific API endpoint
+      const response = await fetch('/api/player/matches');
       const result = await response.json();
 
       if (result.success && Array.isArray(result.data)) {
@@ -129,21 +136,42 @@ function PlayerMatchesContent() {
     return true;
   });
 
-  const formatScore = (player1Score: number[], player2Score: number[]) => {
+  const formatScore = (match: Match) => {
+    const { player1Score, player2Score, isPlayer1 } = match;
+    
     if (!player1Score || player1Score.length === 0 || !player2Score || player2Score.length === 0) {
       return 'TBD';
     }
-    return `${player1Score.join('-')} vs ${player2Score.join('-')}`;
+    
+    // Show current player's score first
+    if (isPlayer1) {
+      return `${player1Score.join('-')} vs ${player2Score.join('-')}`;
+    } else {
+      return `${player2Score.join('-')} vs ${player1Score.join('-')}`;
+    }
   };
 
   const isWinner = (match: Match) => {
-    return match.winnerId === user?._id;
+    return match.winnerId?.toString() === user?._id?.toString();
   };
 
   const getMatchResult = (match: Match) => {
     if (match.status !== 'completed') return null;
     if (!match.winnerId) return 'Draw';
     return isWinner(match) ? 'Won' : 'Lost';
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'singles':
+        return '👤';
+      case 'doubles':
+        return '👥';
+      case 'mixed':
+        return '👫';
+      default:
+        return '🏸';
+    }
   };
 
   if (isLoading) {
@@ -395,60 +423,72 @@ function PlayerMatchesContent() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className={`glass-card p-6 transition-all hover:scale-[1.01] ${
-                    isCompleted && matchResult === 'Won' 
-                      ? 'border-l-4 border-l-green-500' 
-                      : isCompleted && matchResult === 'Lost'
-                      ? 'border-l-4 border-l-red-500'
-                      : isUpcoming
-                      ? 'border-l-4 border-l-blue-500'
-                      : ''
-                  }`}
+                  className="glass-card p-6 transition-all hover:scale-[1.01]"
                 >
-                  <div className="p-6">
+                  <div className="space-y-4">
                     {/* Match Header */}
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          {match.matchType === 'practice' ? (
-                            <span className="rounded-full px-3 py-1 text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/30">
-                              ⚡ Practice Match
-                            </span>
-                          ) : (
-                            <>
-                              <h3 className="text-lg font-semibold text-primary">
-                                {match.tournamentName}
-                              </h3>
-                              <span className="rounded-full px-3 py-1 text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/30">
-                                🏆 Tournament
-                              </span>
-                            </>
-                          )}
+                        {match.matchType === 'practice' ? (
+                          <h3 className="text-lg font-semibold text-primary mb-2">
+                            Practice Match
+                          </h3>
+                        ) : (
+                          <div className="mb-2">
+                            <h3 className="text-lg font-semibold text-primary">
+                              {match.tournamentName}
+                            </h3>
+                            {match.round && (
+                              <p className="text-sm text-muted-foreground">
+                                {match.round}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Badges Row */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Match Type Badge */}
+                          <span className={`rounded-full px-3 py-1 text-xs font-medium ${
+                            match.matchType === 'practice'
+                              ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+                              : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
+                          }`}>
+                            {match.matchType === 'practice' ? '⚡ Practice' : '🏆 Tournament'}
+                          </span>
+                          
+                          {/* Status Badge */}
                           <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(match.status)}`}>
                             <StatusIcon className="h-3 w-3 mr-1 inline" />
                             {match.status.replace('_', ' ').toUpperCase()}
                           </span>
+                          
+                          {/* Category Badge */}
                           <span className="rounded-full px-3 py-1 text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/30 capitalize">
-                            {match.category}
+                            {getCategoryIcon(match.category)} {match.category}
                           </span>
+                          
+                          {/* Age Group Badge (for tournaments) */}
+                          {match.ageGroup && (
+                            <span className="rounded-full px-3 py-1 text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/30">
+                              {match.ageGroup}
+                            </span>
+                          )}
+                          
+                          {/* Win/Loss Badge */}
+                          {isCompleted && matchResult && (
+                            <span className={`rounded-full px-3 py-1 text-xs font-medium ${
+                              matchResult === 'Won' 
+                                ? 'bg-green-500/20 text-green-400 border border-green-500/50' 
+                                : matchResult === 'Lost'
+                                ? 'bg-red-500/20 text-red-400 border border-red-500/50'
+                                : 'bg-gray-500/20 text-gray-400 border border-gray-500/50'
+                            }`}>
+                              {matchResult === 'Won' ? '✓ Won' : matchResult === 'Lost' ? '✗ Lost' : 'Draw'}
+                            </span>
+                          )}
                         </div>
-                        {match.round && (
-                          <p className="text-sm text-muted-foreground">
-                            <strong>Round:</strong> {match.round}
-                          </p>
-                        )}
                       </div>
-                      {isCompleted && matchResult && (
-                        <div className={`px-4 py-2 rounded-lg font-bold text-lg ${
-                          matchResult === 'Won' 
-                            ? 'bg-green-500 text-white' 
-                            : matchResult === 'Lost'
-                            ? 'bg-red-500 text-white'
-                            : 'bg-gray-500 text-white'
-                        }`}>
-                          {matchResult === 'Won' ? '🏆 Won' : matchResult === 'Lost' ? '😔 Lost' : 'Draw'}
-                        </div>
-                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -457,7 +497,7 @@ function PlayerMatchesContent() {
                         <h4 className="font-semibold text-primary text-sm mb-3">Match Details</h4>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Users className="h-4 w-4 text-tertiary" />
-                          <span><strong>Opponent:</strong> {match.player2Name}</span>
+                          <span><strong>Opponent:</strong> {match.opponentName}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4 text-tertiary" />
@@ -480,6 +520,12 @@ function PlayerMatchesContent() {
                             <span><strong>Court:</strong> {match.court}</span>
                           </div>
                         )}
+                        {match.matchType === 'tournament' && match.tournamentVenue && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin className="h-4 w-4 text-tertiary" />
+                            <span><strong>Venue:</strong> {match.tournamentVenue}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Score Section */}
@@ -491,7 +537,7 @@ function PlayerMatchesContent() {
                           <div className="glass-card rounded-lg p-4">
                             <div className="text-center">
                               <div className="text-2xl font-bold text-primary mb-2">
-                                {formatScore(match.player1Score, match.player2Score)}
+                                {formatScore(match)}
                               </div>
                               {match.winnerId && (
                                 <div className={`text-sm font-medium ${
@@ -527,31 +573,24 @@ function PlayerMatchesContent() {
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/10">
-                      <button
-                        onClick={() => router.push(`/tournaments/${match.tournamentId}`)}
-                        className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"
-                      >
-                        <Trophy className="h-4 w-4" />
-                        View Tournament
-                      </button>
-                      {match.status === 'in_progress' && (
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400">
-                            <AlertCircle className="h-3 w-3 mr-1" />
+                    {/* Action Buttons - Only show for in-progress matches */}
+                    {match.status === 'in_progress' && (
+                      <div className="flex items-center justify-end pt-4 mt-4 border-t border-white/10">
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-400 border border-blue-500/30">
+                            <AlertCircle className="h-3.5 w-3.5" />
                             Live Match
                           </span>
                           <button
                             onClick={() => router.push(`/player/scoring?matchId=${match._id}`)}
-                            className="glass-card flex items-center gap-2 rounded-lg px-3 py-1 font-medium text-primary transition-all hover:bg-white/10 text-xs"
+                            className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"
                           >
-                            <Trophy className="h-3 w-3" />
-                            Score
+                            <Trophy className="h-4 w-4" />
+                            Update Score
                           </button>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               );

@@ -34,7 +34,7 @@ import { motion } from 'framer-motion';
 interface Notification {
   _id: string;
   userId: string;
-  type: 'registration_approved' | 'registration_rejected' | 'match_scheduled' | 'match_starting' | 'match_result' | 'tournament_update';
+  type: 'registration_approved' | 'registration_rejected' | 'match_scheduled' | 'match_starting' | 'match_result' | 'tournament_update' | 'practice_match_created';
   title: string;
   message: string;
   isRead: boolean;
@@ -179,6 +179,7 @@ export default function NotificationsPage() {
       match_starting: Bell,
       match_result: Trophy,
       tournament_update: Info,
+      practice_match_created: Users,
     };
     
     return iconMap[type as keyof typeof iconMap] || Bell;
@@ -192,6 +193,7 @@ export default function NotificationsPage() {
       match_starting: 'text-yellow-400',
       match_result: 'text-purple-400',
       tournament_update: 'text-cyan-400',
+      practice_match_created: 'text-orange-400',
     };
     
     return colorMap[type as keyof typeof colorMap] || 'text-primary';

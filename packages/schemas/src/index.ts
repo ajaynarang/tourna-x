@@ -135,10 +135,10 @@ export const matchSchema = z.object({
   
   // Singles: player1 vs player2
   // Doubles/Mixed: team1 (player1 + player3) vs team2 (player2 + player4)
-  player1Id: objectIdSchema.optional(),
-  player2Id: objectIdSchema.optional(),
-  player3Id: objectIdSchema.optional(), // Team 1 partner (for doubles/mixed)
-  player4Id: objectIdSchema.optional(), // Team 2 partner (for doubles/mixed)
+  player1Id: objectIdSchema,
+  player2Id: objectIdSchema,
+  player3Id: objectIdSchema.optional(), // Team 1 partner (for doubles/mixed) - REQUIRED for doubles/mixed
+  player4Id: objectIdSchema.optional(), // Team 2 partner (for doubles/mixed) - REQUIRED for doubles/mixed
   
   player1Name: z.string().optional(),
   player2Name: z.string().optional(),
@@ -159,6 +159,10 @@ export const matchSchema = z.object({
   player2Gender: z.enum(["male", "female", "other"]).optional(),
   player3Gender: z.enum(["male", "female", "other"]).optional(),
   player4Gender: z.enum(["male", "female", "other"]).optional(),
+  
+  // Team structure for efficient querying
+  team1PlayerIds: z.array(objectIdSchema).optional(), // [player1Id, player3Id] for doubles, [player1Id] for singles
+  team2PlayerIds: z.array(objectIdSchema).optional(), // [player2Id, player4Id] for doubles, [player2Id] for singles
   
   // Flexible scoring system
   scoringFormat: z.object({
@@ -194,9 +198,10 @@ export const matchSchema = z.object({
   player1Score: z.array(z.number()).default([]), // Game scores [21, 19, 21]
   player2Score: z.array(z.number()).default([]), // Game scores [19, 21, 19]
   
-  // Match result
-  winnerId: objectIdSchema.optional(),
-  winnerName: z.string().optional(),
+  // Match result - NEW STRUCTURE
+  winnerIds: z.array(objectIdSchema).optional(), // Array of winner IDs (1 for singles, 2 for doubles/mixed)
+  winnerTeam: z.enum(["team1", "team2"]).optional(), // Which team won (team1 = player1+player3, team2 = player2+player4)
+  winnerName: z.string().optional(), // Display name of winner(s)
   matchResult: z.object({
     player1GamesWon: z.number().min(0).default(0),
     player2GamesWon: z.number().min(0).default(0),
@@ -233,14 +238,41 @@ export const matchSchema = z.object({
   
   // Additional info
   notes: z.string().optional(),
+  isPublic: z.boolean().default(true), // For practice matches - visibility to other players
   
-  // Legacy fields (deprecated, use completionType/completionReason instead)
-  isWalkover: z.boolean().optional(), // Deprecated: use completionType
-  walkoverReason: z.string().optional(), // Deprecated: use completionReason
-  isManualEntry: z.boolean().optional(), // Deprecated: use completionType = "manual"
+  // Audit fields
+  createdBy: objectIdSchema.optional(), // User who created this match
+  lastModifiedBy: objectIdSchema.optional(), // User who last updated this match
   
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
+}).superRefine((data, ctx) => {
+  // Validation: Tournament matches must have tournamentId
+  if (data.matchType === 'tournament' && !data.tournamentId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Tournament matches must have a tournamentId',
+      path: ['tournamentId'],
+    });
+  }
+  
+  // Validation: Doubles and mixed must have player3 and player4
+  if ((data.category === 'doubles' || data.category === 'mixed') && (!data.player3Id || !data.player4Id)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Doubles and mixed matches must have player3Id and player4Id',
+      path: ['player3Id'],
+    });
+  }
+  
+  // Validation: Singles should not have player3 or player4
+  if (data.category === 'singles' && (data.player3Id || data.player4Id)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Singles matches should not have player3Id or player4Id',
+      path: ['player3Id'],
+    });
+  }
 });
 
 // New schema for OTP verification
@@ -272,7 +304,7 @@ export const pairingSchema = z.object({
 export const notificationSchema = z.object({
   _id: objectIdSchema.optional(),
   userId: objectIdSchema,
-  type: z.enum(["registration_approved", "registration_rejected", "match_scheduled", "match_starting", "match_result", "tournament_update"]),
+  type: z.enum(["registration_approved", "registration_rejected", "match_scheduled", "match_starting", "match_result", "tournament_update", "practice_match_created"]),
   title: z.string(),
   message: z.string(),
   isRead: z.boolean().default(false),
@@ -516,6 +548,16 @@ export const INDEXES = {
     { matchType: 1, createdAt: -1 },
     { matchType: 1, player1Id: 1 },
     { matchType: 1, player2Id: 1 },
+    { matchType: 1, player3Id: 1 }, // NEW: For doubles player queries
+    { matchType: 1, player4Id: 1 }, // NEW: For doubles player queries
+    { player1Id: 1 }, // NEW: General player queries
+    { player2Id: 1 }, // NEW: General player queries
+    { player3Id: 1 }, // NEW: General player queries
+    { player4Id: 1 }, // NEW: General player queries
+    { team1PlayerIds: 1 }, // NEW: Team-based queries
+    { team2PlayerIds: 1 }, // NEW: Team-based queries
+    { winnerTeam: 1 }, // NEW: Winner queries
+    { createdBy: 1 }, // NEW: Audit queries
   ],
   PAIRINGS: [
     { tournamentId: 1 },

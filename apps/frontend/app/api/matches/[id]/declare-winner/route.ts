@@ -61,15 +61,32 @@ export async function POST(
 
     // Determine winner and loser
     const isPlayer1Winner = winnerId === match.player1Id?.toString();
-    const winnerName = isPlayer1Winner ? match.player1Name : match.player2Name;
+    const isPlayer3Winner = winnerId === match.player3Id?.toString();
+    const isTeam1Winner = isPlayer1Winner || isPlayer3Winner;
+    
+    // Set winner name based on category
+    let winnerName: string;
+    if (match.category === 'singles') {
+      winnerName = isPlayer1Winner ? match.player1Name : match.player2Name;
+    } else {
+      // For doubles/mixed, show team name
+      winnerName = isTeam1Winner 
+        ? `${match.player1Name} / ${match.player3Name}`
+        : `${match.player2Name} / ${match.player4Name}`;
+    }
 
     // Determine if scores were provided
     const hasScores = player1Score && player2Score && player1Score.length > 0;
 
-    // Update match with winner declaration
+    // Update match with winner declaration - NEW STRUCTURE
     const updateData: any = {
       status: 'completed',
-      winnerId: new ObjectId(winnerId),
+      winnerTeam: isTeam1Winner ? 'team1' : 'team2',
+      winnerIds: match.category === 'singles'
+        ? [new ObjectId(winnerId)]
+        : isTeam1Winner
+          ? [match.player1Id, match.player3Id].filter(Boolean).map(id => new ObjectId(id))
+          : [match.player2Id, match.player4Id].filter(Boolean).map(id => new ObjectId(id)),
       winnerName,
       completedAt: new Date(),
       updatedAt: new Date(),
@@ -92,13 +109,6 @@ export async function POST(
       updateData.player2Score = [];
     }
     
-    // Keep legacy fields for backward compatibility
-    if (reason !== 'manual') {
-      updateData.isWalkover = true;
-      updateData.walkoverReason = reason;
-    } else {
-      updateData.isManualEntry = true;
-    }
 
     await db.collection(COLLECTIONS.MATCHES).updateOne(
       { _id: new ObjectId(id) },

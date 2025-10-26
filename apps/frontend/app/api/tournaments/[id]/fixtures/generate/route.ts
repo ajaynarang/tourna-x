@@ -65,6 +65,7 @@ function generateKnockoutBracket(participants: any[], category: string, seedingM
                `Round ${round}`,
         roundNumber: round,
         matchNumber: globalMatchNumber++,
+        matchType: 'tournament',
         player1Id: null,
         player2Id: null,
         player3Id: null,
@@ -114,24 +115,37 @@ function generateKnockoutBracket(participants: any[], category: string, seedingM
           }
         }
         
+        // NEW: Populate team arrays
+        if (category === 'singles') {
+          matchData.team1PlayerIds = matchData.player1Id ? [matchData.player1Id] : [];
+          matchData.team2PlayerIds = matchData.player2Id ? [matchData.player2Id] : [];
+        } else {
+          matchData.team1PlayerIds = [matchData.player1Id, matchData.player3Id].filter(Boolean);
+          matchData.team2PlayerIds = [matchData.player2Id, matchData.player4Id].filter(Boolean);
+        }
+        
         // BYE LOGIC: Only in first round when one slot is empty (odd number of players)
         // Player gets automatic bye - no match needed, just advances
         if (round === 1 && matchData.player1Name !== 'TBD' && matchData.player2Name === 'TBD') {
           // Player 1 gets bye (no opponent)
           matchData.status = 'completed';
-          matchData.winnerId = matchData.player1Id;
+          matchData.winnerTeam = 'team1';
+          matchData.winnerIds = matchData.team1PlayerIds;
           matchData.winnerName = matchData.player1Name;
           matchData.player1Score = []; // No score for bye
           matchData.player2Score = [];
-          matchData.isBye = true;
+          matchData.completionType = 'walkover';
+          matchData.completionReason = 'Bye - no opponent';
         } else if (round === 1 && matchData.player2Name !== 'TBD' && matchData.player1Name === 'TBD') {
           // Player 2 gets bye (no opponent)
           matchData.status = 'completed';
-          matchData.winnerId = matchData.player2Id;
+          matchData.winnerTeam = 'team2';
+          matchData.winnerIds = matchData.team2PlayerIds;
           matchData.winnerName = matchData.player2Name;
           matchData.player1Score = [];
           matchData.player2Score = [];
-          matchData.isBye = true;
+          matchData.completionType = 'walkover';
+          matchData.completionReason = 'Bye - no opponent';
         }
       }
       
@@ -228,6 +242,15 @@ function generateRoundRobin(participants: any[], category: string, ageGroup?: st
         matchData.player3Name = participants[i].partnerName || 'TBD';
         matchData.player4Id = participants[j].partnerId || null;
         matchData.player4Name = participants[j].partnerName || 'TBD';
+      }
+      
+      // NEW: Populate team arrays
+      if (category === 'singles') {
+        matchData.team1PlayerIds = [matchData.player1Id];
+        matchData.team2PlayerIds = [matchData.player2Id];
+      } else {
+        matchData.team1PlayerIds = [matchData.player1Id, matchData.player3Id].filter(Boolean);
+        matchData.team2PlayerIds = [matchData.player2Id, matchData.player4Id].filter(Boolean);
       }
       
       matches.push(matchData);

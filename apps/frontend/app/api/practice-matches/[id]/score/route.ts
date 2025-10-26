@@ -49,24 +49,37 @@ function determineMatchWinner(games: any[], scoringFormat: any): 'player1' | 'pl
 
 // Update practice stats helper
 async function updatePracticeStats(db: any, match: any) {
-  if (!match.winnerId) return;
+  if (!match.winnerTeam) return;
 
   const player1Id = match.player1Id;
   const player2Id = match.player2Id;
-  const winnerId = match.winnerId;
+  const player3Id = match.player3Id;
+  const player4Id = match.player4Id;
+  const winnerTeam = match.winnerTeam; // 'team1' or 'team2'
   const category = match.category;
 
+  // Build list of all players (including doubles partners)
+  const allPlayers = [player1Id, player2Id];
+  if (category === 'doubles' || category === 'mixed') {
+    if (player3Id) allPlayers.push(player3Id);
+    if (player4Id) allPlayers.push(player4Id);
+  }
+
   // Only update stats for registered players (not guests)
-  for (const playerId of [player1Id, player2Id]) {
+  for (const playerId of allPlayers) {
     if (!playerId) continue;
 
-    const isWinner = playerId.toString() === winnerId.toString();
+    // Determine if this player won
+    // Team 1: player1 + player3, Team 2: player2 + player4
+    const isTeam1Player = playerId.toString() === player1Id?.toString() || playerId.toString() === player3Id?.toString();
+    const isWinner = (isTeam1Player && winnerTeam === 'team1') || (!isTeam1Player && winnerTeam === 'team2');
+    
     const stats = await db.collection(COLLECTIONS.PRACTICE_STATS).findOne({ playerId });
 
     const player1GamesWon = match.matchResult?.player1GamesWon || 0;
     const player2GamesWon = match.matchResult?.player2GamesWon || 0;
-    const gamesWon = playerId.toString() === player1Id?.toString() ? player1GamesWon : player2GamesWon;
-    const gamesLost = playerId.toString() === player1Id?.toString() ? player2GamesWon : player1GamesWon;
+    const gamesWon = isTeam1Player ? player1GamesWon : player2GamesWon;
+    const gamesLost = isTeam1Player ? player2GamesWon : player1GamesWon;
 
     if (!stats) {
       // Create new stats
@@ -148,7 +161,7 @@ export async function POST(
     const db = await connectToDatabase();
     const authUser = await getAuthUser(request);
 
-    if (!authUser || !authUser.roles.includes('admin')) {
+    if (!authUser || (!authUser.roles.includes('admin') && !authUser.roles.includes('player'))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -270,13 +283,18 @@ export async function POST(
         if (matchWinner) {
           updatedMatch.status = 'completed';
           updatedMatch.endTime = new Date();
-          updatedMatch.winnerId = matchWinner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id;
           
-          // Set winner name based on category (team names for doubles/mixed)
+          // NEW: Set winnerTeam and winnerIds
+          updatedMatch.winnerTeam = matchWinner === 'player1' ? 'team1' : 'team2';
+          
           if (updatedMatch.category === 'singles') {
+            updatedMatch.winnerIds = [matchWinner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id];
             updatedMatch.winnerName = matchWinner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
           } else {
-            // For doubles/mixed, show team name
+            // For doubles/mixed, include both team members
+            updatedMatch.winnerIds = matchWinner === 'player1' 
+              ? [updatedMatch.player1Id, updatedMatch.player3Id].filter(Boolean)
+              : [updatedMatch.player2Id, updatedMatch.player4Id].filter(Boolean);
             updatedMatch.winnerName = matchWinner === 'player1' 
               ? `${updatedMatch.player1Name} / ${updatedMatch.player3Name}`
               : `${updatedMatch.player2Name} / ${updatedMatch.player4Name}`;
@@ -310,13 +328,17 @@ export async function POST(
         // Calculate final result
         const finalWinner = determineMatchWinner(updatedMatch.games, scoringFormat || updatedMatch.scoringFormat);
         if (finalWinner) {
-          updatedMatch.winnerId = finalWinner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id;
+          // NEW: Set winnerTeam and winnerIds
+          updatedMatch.winnerTeam = finalWinner === 'player1' ? 'team1' : 'team2';
           
-          // Set winner name based on category (team names for doubles/mixed)
           if (updatedMatch.category === 'singles') {
+            updatedMatch.winnerIds = [finalWinner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id];
             updatedMatch.winnerName = finalWinner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
           } else {
-            // For doubles/mixed, show team name
+            // For doubles/mixed, include both team members
+            updatedMatch.winnerIds = finalWinner === 'player1' 
+              ? [updatedMatch.player1Id, updatedMatch.player3Id].filter(Boolean)
+              : [updatedMatch.player2Id, updatedMatch.player4Id].filter(Boolean);
             updatedMatch.winnerName = finalWinner === 'player1' 
               ? `${updatedMatch.player1Name} / ${updatedMatch.player3Name}`
               : `${updatedMatch.player2Name} / ${updatedMatch.player4Name}`;

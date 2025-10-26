@@ -13,7 +13,7 @@ export async function GET(
     const db = await connectToDatabase();
     const authUser = await getAuthUser(request);
 
-    if (!authUser || !authUser.roles.includes('admin')) {
+    if (!authUser || (!authUser.roles.includes('admin') && !authUser.roles.includes('player'))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -53,7 +53,7 @@ export async function PUT(
     const db = await connectToDatabase();
     const authUser = await getAuthUser(request);
 
-    if (!authUser || !authUser.roles.includes('admin')) {
+    if (!authUser || (!authUser.roles.includes('admin') && !authUser.roles.includes('player'))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -119,7 +119,7 @@ export async function DELETE(
     const db = await connectToDatabase();
     const authUser = await getAuthUser(request);
 
-    if (!authUser || !authUser.roles.includes('admin')) {
+    if (!authUser || (!authUser.roles.includes('admin') && !authUser.roles.includes('player'))) {
       console.log('Unauthorized delete attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

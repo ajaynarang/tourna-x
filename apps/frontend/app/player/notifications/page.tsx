@@ -32,7 +32,7 @@ import Link from 'next/link';
 interface Notification {
   _id: string;
   userId: string;
-  type: 'registration_approved' | 'registration_rejected' | 'match_scheduled' | 'match_starting' | 'match_result' | 'tournament_update';
+  type: 'registration_approved' | 'registration_rejected' | 'match_scheduled' | 'match_starting' | 'match_result' | 'tournament_update' | 'practice_match_created';
   title: string;
   message: string;
   isRead: boolean;
@@ -185,6 +185,7 @@ function PlayerNotificationsContent() {
       match_starting: Bell,
       match_result: Trophy,
       tournament_update: Info,
+      practice_match_created: Users,
     };
     
     return iconMap[type as keyof typeof iconMap] || Bell;
@@ -198,6 +199,7 @@ function PlayerNotificationsContent() {
       match_starting: 'bg-yellow-100 text-yellow-600',
       match_result: 'bg-purple-100 text-purple-600',
       tournament_update: 'bg-cyan-100 text-cyan-600',
+      practice_match_created: 'bg-orange-100 text-orange-600',
     };
     
     return colorMap[type as keyof typeof colorMap] || 'bg-gray-100 text-gray-600';

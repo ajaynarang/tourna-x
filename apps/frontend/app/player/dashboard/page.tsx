@@ -628,9 +628,9 @@ function SkillLevelCard({
       <div className="text-muted-foreground text-sm font-medium">Skill Level</div>
       
       {/* Description */}
-      {description && (
+      {/* {description && (
         <div className="text-tertiary text-xs mt-2 line-clamp-2">{description}</div>
-      )}
+      )} */}
     </motion.button>
   );
 }

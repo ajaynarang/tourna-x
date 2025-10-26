@@ -4,6 +4,21 @@ import { COLLECTIONS } from '@repo/schemas';
 import { getAuthUser } from '@/lib/auth-utils';
 import { ObjectId } from 'mongodb';
 
+// Helper function to check if player won a match
+function isPlayerWinner(match: any, playerId: string): boolean {
+  // Check if player is in winnerIds array (new structure)
+  if (match.winnerIds && Array.isArray(match.winnerIds)) {
+    return match.winnerIds.some((id: any) => id.toString() === playerId);
+  }
+  // Fallback: check winnerTeam
+  if (match.winnerTeam) {
+    const isTeam1 = match.player1Id?.toString() === playerId || match.player3Id?.toString() === playerId;
+    const isTeam2 = match.player2Id?.toString() === playerId || match.player4Id?.toString() === playerId;
+    return (isTeam1 && match.winnerTeam === 'team1') || (isTeam2 && match.winnerTeam === 'team2');
+  }
+  return false;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const db = await connectToDatabase();
@@ -17,12 +32,14 @@ export async function GET(request: NextRequest) {
     const tournamentId = searchParams.get('tournamentId');
     const type = searchParams.get('type') || 'overall'; // tournament, practice, or overall
 
-    // Get all matches for the player
+    // Get all matches for the player (including doubles as player3/player4)
     const allMatches = await db.collection(COLLECTIONS.MATCHES)
       .find({
         $or: [
           { player1Id: new ObjectId(authUser.userId) },
-          { player2Id: new ObjectId(authUser.userId) }
+          { player2Id: new ObjectId(authUser.userId) },
+          { player3Id: new ObjectId(authUser.userId) },
+          { player4Id: new ObjectId(authUser.userId) }
         ]
       })
       .sort({ createdAt: -1 })
@@ -44,15 +61,15 @@ export async function GET(request: NextRequest) {
     // Calculate stats
     const completedMatches = matches.filter(m => m.status === 'completed');
     const totalMatches = completedMatches.length;
-    const wins = completedMatches.filter(m => m.winnerId?.toString() === authUser.userId).length;
-    const losses = completedMatches.filter(m => m.winnerId && m.winnerId.toString() !== authUser.userId).length;
+    const wins = completedMatches.filter(m => isPlayerWinner(m, authUser.userId)).length;
+    const losses = totalMatches - wins;
     const winRate = totalMatches > 0 ? (wins / totalMatches) * 100 : 0;
 
     // Category-wise breakdown
     const categories = ['singles', 'doubles', 'mixed'];
     const categoryStats = categories.map(category => {
       const categoryMatches = completedMatches.filter(m => m.category === category);
-      const categoryWins = categoryMatches.filter(m => m.winnerId?.toString() === authUser.userId).length;
+      const categoryWins = categoryMatches.filter(m => isPlayerWinner(m, authUser.userId)).length;
       return {
         category,
         played: categoryMatches.length,
@@ -65,14 +82,14 @@ export async function GET(request: NextRequest) {
     // Recent form (last 10 matches)
     const recentMatches = completedMatches.slice(0, 10);
     const recentForm = recentMatches.map(m => 
-      m.winnerId?.toString() === authUser.userId ? 'W' : 'L'
+      isPlayerWinner(m, authUser.userId) ? 'W' : 'L'
     );
 
     // Calculate current streak
     let currentStreak = 0;
-    let streakType = recentMatches.length > 0 && recentMatches[0].winnerId?.toString() === authUser.userId ? 'W' : 'L';
+    let streakType = recentMatches.length > 0 && isPlayerWinner(recentMatches[0], authUser.userId) ? 'W' : 'L';
     for (const match of recentMatches) {
-      const isWin = match.winnerId?.toString() === authUser.userId;
+      const isWin = isPlayerWinner(match, authUser.userId);
       if ((streakType === 'W' && isWin) || (streakType === 'L' && !isWin)) {
         currentStreak++;
       } else {
@@ -85,7 +102,7 @@ export async function GET(request: NextRequest) {
     let tempStreak = 0;
     let lastResult = '';
     for (const match of completedMatches.reverse()) {
-      const result = match.winnerId?.toString() === authUser.userId ? 'W' : 'L';
+      const result = isPlayerWinner(match, authUser.userId) ? 'W' : 'L';
       if (result === 'W') {
         if (lastResult === 'W') {
           tempStreak++;

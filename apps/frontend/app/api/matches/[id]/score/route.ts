@@ -180,8 +180,21 @@ export async function POST(
         // Calculate final result
         const finalWinner = determineMatchWinner(updatedMatch.games, scoringFormat || updatedMatch.scoringFormat);
         if (finalWinner) {
-          updatedMatch.winnerId = finalWinner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id;
-          updatedMatch.winnerName = finalWinner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
+          // NEW: Set winnerTeam and winnerIds
+          updatedMatch.winnerTeam = finalWinner === 'player1' ? 'team1' : 'team2';
+          
+          if (updatedMatch.category === 'singles') {
+            updatedMatch.winnerIds = [finalWinner === 'player1' ? updatedMatch.player1Id : updatedMatch.player2Id];
+            updatedMatch.winnerName = finalWinner === 'player1' ? updatedMatch.player1Name : updatedMatch.player2Name;
+          } else {
+            // For doubles/mixed, include both team members
+            updatedMatch.winnerIds = finalWinner === 'player1' 
+              ? [updatedMatch.player1Id, updatedMatch.player3Id].filter(Boolean)
+              : [updatedMatch.player2Id, updatedMatch.player4Id].filter(Boolean);
+            updatedMatch.winnerName = finalWinner === 'player1' 
+              ? `${updatedMatch.player1Name} / ${updatedMatch.player3Name}`
+              : `${updatedMatch.player2Name} / ${updatedMatch.player4Name}`;
+          }
         }
         break;
 
@@ -189,14 +202,26 @@ export async function POST(
         const { walkoverReason, winner } = body;
         updatedMatch.status = 'walkover';
         updatedMatch.endTime = new Date();
-        updatedMatch.walkoverReason = walkoverReason;
+        updatedMatch.completionType = 'walkover';
+        updatedMatch.completionReason = walkoverReason;
+        
+        // NEW: Set winnerTeam and winnerIds
+        updatedMatch.winnerTeam = winner === 'player1' ? 'team1' : 'team2';
         
         if (winner === 'player1') {
-          updatedMatch.winnerId = updatedMatch.player1Id;
-          updatedMatch.winnerName = updatedMatch.player1Name;
+          updatedMatch.winnerIds = updatedMatch.category === 'singles'
+            ? [updatedMatch.player1Id]
+            : [updatedMatch.player1Id, updatedMatch.player3Id].filter(Boolean);
+          updatedMatch.winnerName = updatedMatch.category === 'singles'
+            ? updatedMatch.player1Name
+            : `${updatedMatch.player1Name} / ${updatedMatch.player3Name}`;
         } else if (winner === 'player2') {
-          updatedMatch.winnerId = updatedMatch.player2Id;
-          updatedMatch.winnerName = updatedMatch.player2Name;
+          updatedMatch.winnerIds = updatedMatch.category === 'singles'
+            ? [updatedMatch.player2Id]
+            : [updatedMatch.player2Id, updatedMatch.player4Id].filter(Boolean);
+          updatedMatch.winnerName = updatedMatch.category === 'singles'
+            ? updatedMatch.player2Name
+            : `${updatedMatch.player2Name} / ${updatedMatch.player4Name}`;
         }
         break;
 

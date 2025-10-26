@@ -3,6 +3,21 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { COLLECTIONS } from '@repo/schemas';
 import { ObjectId } from 'mongodb';
 
+// Helper function to check if player won a match
+function isPlayerWinner(match: any, playerId: string): boolean {
+  // Check if player is in winnerIds array (new structure)
+  if (match.winnerIds && Array.isArray(match.winnerIds)) {
+    return match.winnerIds.some((id: any) => id.toString() === playerId);
+  }
+  // Fallback: check winnerTeam
+  if (match.winnerTeam) {
+    const isTeam1 = match.player1Id?.toString() === playerId || match.player3Id?.toString() === playerId;
+    const isTeam2 = match.player2Id?.toString() === playerId || match.player4Id?.toString() === playerId;
+    return (isTeam1 && match.winnerTeam === 'team1') || (isTeam2 && match.winnerTeam === 'team2');
+  }
+  return false;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const db = await connectToDatabase();
@@ -93,79 +108,32 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Calculate match statistics
+    // Calculate match statistics - process ALL 4 players
     for (const match of matches) {
       try {
         if (match.status !== 'completed') continue;
 
         const player1Id = match.player1Id?.toString();
         const player2Id = match.player2Id?.toString();
-        const winnerId = match.winnerId?.toString();
-
-        // Update player 1 stats
-        if (player1Id && playerStatsMap.has(player1Id)) {
-          const stats = playerStatsMap.get(player1Id);
-          stats.totalMatches++;
-          
-          if (winnerId === player1Id) {
-            stats.wins++;
-            stats.recentForm.unshift('W');
-          } else {
-            stats.losses++;
-            stats.recentForm.unshift('L');
-          }
-          
-          if (match.duration) {
-            stats.totalPoints += match.duration;
-          }
-        }
-
-        // Update player 2 stats
-        if (player2Id && playerStatsMap.has(player2Id)) {
-          const stats = playerStatsMap.get(player2Id);
-          stats.totalMatches++;
-          
-          if (winnerId === player2Id) {
-            stats.wins++;
-            stats.recentForm.unshift('W');
-          } else {
-            stats.losses++;
-            stats.recentForm.unshift('L');
-          }
-          
-          if (match.duration) {
-            stats.totalPoints += match.duration;
-          }
-        }
-
-      // For doubles matches, update player 3 and player 4 stats
-      if (match.player3Id) {
         const player3Id = match.player3Id?.toString();
-        if (player3Id && playerStatsMap.has(player3Id)) {
-          const stats = playerStatsMap.get(player3Id);
-          stats.totalMatches++;
-          
-          if (winnerId === player1Id || winnerId === player3Id) {
-            stats.wins++;
-            stats.recentForm.unshift('W');
-          } else {
-            stats.losses++;
-            stats.recentForm.unshift('L');
-          }
-          
-          if (match.duration) {
-            stats.totalPoints += match.duration;
-          }
-        }
-      }
-
-      if (match.player4Id) {
         const player4Id = match.player4Id?.toString();
-        if (player4Id && playerStatsMap.has(player4Id)) {
-          const stats = playerStatsMap.get(player4Id);
+
+        // Build list of all players in this match
+        const allPlayers = [player1Id, player2Id];
+        if (match.category === 'doubles' || match.category === 'mixed') {
+          if (player3Id) allPlayers.push(player3Id);
+          if (player4Id) allPlayers.push(player4Id);
+        }
+
+        // Update stats for each player
+        for (const playerId of allPlayers) {
+          if (!playerId || !playerStatsMap.has(playerId)) continue;
+
+          const stats = playerStatsMap.get(playerId);
           stats.totalMatches++;
           
-          if (winnerId === player2Id || winnerId === player4Id) {
+          const isWinner = isPlayerWinner(match, playerId);
+          if (isWinner) {
             stats.wins++;
             stats.recentForm.unshift('W');
           } else {
@@ -177,7 +145,6 @@ export async function GET(request: NextRequest) {
             stats.totalPoints += match.duration;
           }
         }
-      }
       } catch (matchError) {
         console.error('Error processing match:', match._id, matchError);
         // Continue processing other matches

@@ -31,5 +31,5 @@ export async function getAuthUser(request: NextRequest) {
     return null;
   }
 
-  return user;
+  return  { ...user, userId: user._id.toString(), roles: user.roles || [] };
 }

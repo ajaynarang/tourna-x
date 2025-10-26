@@ -15,6 +15,7 @@ import {
   Users,
   Target,
   History,
+  TrendingUp,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -128,6 +129,16 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       keywords: ['matches', 'fixtures', 'games'],
       category: 'Navigate',
     },
+    {
+      id: 'player-stats',
+      title: 'My Stats',
+      subtitle: 'View your stats',
+      icon: TrendingUp,
+      action: () => router.push('/player/stats'),
+      keywords: ['stats', 'performance', 'analytics'],
+      category: 'Navigate',
+    },
+
     {
       id: 'tournaments',
       title: 'Tournaments',

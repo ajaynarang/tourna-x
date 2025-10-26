@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     console.log('Auth user:', authUser);
 
-    if (!authUser || !authUser.roles.includes('admin')) {
+    if (!authUser || (!authUser.roles.includes('admin') && !authUser.roles.includes('player'))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -42,7 +42,9 @@ export async function GET(request: NextRequest) {
     if (playerId && ObjectId.isValid(playerId)) {
       query.$or = [
         { player1Id: new ObjectId(playerId) },
-        { player2Id: new ObjectId(playerId) }
+        { player2Id: new ObjectId(playerId) },
+        { player3Id: new ObjectId(playerId) },
+        { player4Id: new ObjectId(playerId) }
       ];
     }
 
@@ -94,7 +96,7 @@ export async function POST(request: NextRequest) {
     const db = await connectToDatabase();
     const authUser = await getAuthUser(request);
 
-    if (!authUser || !authUser.roles.includes('admin')) {
+    if (!authUser || (!authUser.roles.includes('admin') && !authUser.roles.includes('player'))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -203,6 +205,34 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await db.collection(COLLECTIONS.MATCHES).insertOne(practiceMatchData);
+    
+    // Create notifications for all players with player role
+    try {
+      const allPlayers = await db.collection(COLLECTIONS.USERS)
+        .find({ roles: 'player' })
+        .toArray();
+      
+      const creatorName = (authUser as any).name || 'A player';
+      const matchCategory = body.category === 'singles' ? 'Singles' : 
+                           body.category === 'doubles' ? 'Doubles' : 'Mixed Doubles';
+      
+      const notifications = allPlayers.map((player: any) => ({
+        userId: player._id,
+        type: 'practice_match_created',
+        title: 'New Practice Match Created',
+        message: `${creatorName} has created a new ${matchCategory} practice match${body.venue ? ` at ${body.venue}` : ''}.`,
+        matchId: result.insertedId,
+        isRead: false,
+        createdAt: new Date(),
+      }));
+      
+      if (notifications.length > 0) {
+        await db.collection(COLLECTIONS.NOTIFICATIONS).insertMany(notifications);
+      }
+    } catch (notifError) {
+      console.error('Error creating notifications:', notifError);
+      // Don't fail the match creation if notifications fail
+    }
     
     return NextResponse.json({
       success: true,

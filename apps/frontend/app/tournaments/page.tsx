@@ -16,7 +16,10 @@ import {
   XCircle,
   Sparkles,
   LogIn,
-  Target
+  Target,
+  AlertCircle,
+  DollarSign,
+  UserCheck
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -38,6 +41,14 @@ interface Tournament {
   tournamentType: string;
   allowedSociety?: string;
   createdAt: string;
+  // Registration status (populated for logged-in users)
+  registrationStatus?: {
+    registered: boolean;
+    isApproved?: boolean;
+    paymentStatus?: string;
+    category?: string;
+    registeredAt?: string;
+  };
 }
 
 export default function TournamentsPage() {
@@ -66,7 +77,38 @@ export default function TournamentsPage() {
       if (result.success) {
         // Show only published tournaments for public/players
         const published = result.data.filter((t: Tournament) => t.isPublished);
-        setTournaments(published || []);
+        
+        // If user is logged in, fetch registration status for each tournament
+        if (user) {
+          const tournamentsWithStatus = await Promise.all(
+            published.map(async (tournament: Tournament) => {
+              try {
+                const statusResponse = await fetch(`/api/tournaments/${tournament._id}/check-registration`);
+                const statusResult = await statusResponse.json();
+                
+                if (statusResult.success && statusResult.registered) {
+                  return {
+                    ...tournament,
+                    registrationStatus: {
+                      registered: true,
+                      isApproved: statusResult.registration.isApproved,
+                      paymentStatus: statusResult.registration.paymentStatus,
+                      category: statusResult.registration.category,
+                      registeredAt: statusResult.registration.registeredAt
+                    }
+                  };
+                }
+                return tournament;
+              } catch (error) {
+                console.error(`Error fetching registration status for tournament ${tournament._id}:`, error);
+                return tournament;
+              }
+            })
+          );
+          setTournaments(tournamentsWithStatus);
+        } else {
+          setTournaments(published || []);
+        }
       }
     } catch (error) {
       console.error('Error fetching tournaments:', error);
@@ -330,6 +372,55 @@ function TournamentCard({
         </div>
       </button>
 
+      {/* Registration Status Badge (if registered) */}
+      {tournament.registrationStatus?.registered && (
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-tertiary">Registration Status:</span>
+              <span className={`flex items-center gap-1 font-medium ${
+                tournament.registrationStatus.isApproved 
+                  ? 'text-green-400' 
+                  : 'text-yellow-400'
+              }`}>
+                {tournament.registrationStatus.isApproved ? (
+                  <>
+                    <UserCheck className="h-3 w-3" />
+                    Approved
+                  </>
+                ) : (
+                  <>
+                    <Clock className="h-3 w-3" />
+                    Pending Approval
+                  </>
+                )}
+              </span>
+            </div>
+            
+            {tournament.entryFee > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-tertiary">Payment Status:</span>
+                <span className={`flex items-center gap-1 font-medium ${
+                  tournament.registrationStatus.paymentStatus === 'paid' 
+                    ? 'text-green-400' 
+                    : 'text-yellow-400'
+                }`}>
+                  <DollarSign className="h-3 w-3" />
+                  {tournament.registrationStatus.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                </span>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-tertiary">Category:</span>
+              <span className="text-primary font-medium capitalize">
+                {tournament.registrationStatus.category}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="mt-4 flex items-center gap-2 pt-4 border-t border-white/10">
         <button
@@ -341,7 +432,12 @@ function TournamentCard({
         </button>
 
         {/* Registration Button Logic */}
-        {tournament.status === 'registration_open' && !isFull && (
+        {tournament.registrationStatus?.registered ? (
+          <div className="flex-1 flex items-center justify-center gap-2 text-sm font-medium text-green-400">
+            <CheckCircle className="h-4 w-4" />
+            Registered
+          </div>
+        ) : tournament.status === 'registration_open' && !isFull ? (
           <>
             {user ? (
               canRegister ? (
@@ -368,28 +464,22 @@ function TournamentCard({
               </button>
             )}
           </>
-        )}
-
-        {isFull && tournament.status === 'registration_open' && (
+        ) : isFull && tournament.status === 'registration_open' ? (
           <div className="flex-1 flex items-center justify-center gap-2 text-sm font-medium text-red-400">
             <XCircle className="h-4 w-4" />
             Tournament Full
           </div>
-        )}
-
-        {tournament.status === 'ongoing' && (
+        ) : tournament.status === 'ongoing' ? (
           <div className="flex-1 flex items-center justify-center gap-2 text-sm font-medium text-blue-400">
             <Clock className="h-4 w-4" />
             Ongoing
           </div>
-        )}
-
-        {tournament.status === 'completed' && (
+        ) : tournament.status === 'completed' ? (
           <div className="flex-1 flex items-center justify-center gap-2 text-sm font-medium text-gray-400">
             <CheckCircle className="h-4 w-4" />
             Completed
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
