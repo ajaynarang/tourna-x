@@ -17,8 +17,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpTimer, setOtpTimer] = useState(0);
   
   const [form, setForm] = useState({
     name: '',
@@ -30,7 +28,6 @@ export default function RegisterPage() {
     block: '',
     flatNumber: '',
     skillLevel: '',
-    otp: '',
     passcode: '',
     confirmPasscode: '',
     requestAdminAccess: false,
@@ -38,7 +35,7 @@ export default function RegisterPage() {
 
   const router = useRouter();
 
-  const handleSendOtp = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -49,49 +46,6 @@ export default function RegisterPage() {
       setIsLoading(false);
       return;
     }
-
-    try {
-      const response = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phone: form.phone, purpose: 'register' }),
-      });
-
-      if (response.ok) {
-        setOtpSent(true);
-        setOtpTimer(60);
-        
-        // Start countdown timer
-        const interval = setInterval(() => {
-          setOtpTimer((prev) => {
-            if (prev <= 1) {
-              clearInterval(interval);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      } else {
-        const errorData = await response.json();
-        if (errorData.userExists) {
-          setError('An account with this phone number already exists. Please sign in instead.');
-        } else {
-          throw new Error(errorData.error || 'Failed to send OTP');
-        }
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to send OTP. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
 
     // Validate passcode if provided
     if (form.passcode) {
@@ -148,52 +102,10 @@ export default function RegisterPage() {
         }, 2000);
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+        throw new Error(errorData.error || 'Registration failed');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const resendOtp = async () => {
-    if (otpTimer > 0) return;
-    
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phone: form.phone, purpose: 'register' }),
-      });
-
-      if (response.ok) {
-        setOtpTimer(60);
-        
-        const interval = setInterval(() => {
-          setOtpTimer((prev) => {
-            if (prev <= 1) {
-              clearInterval(interval);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      } else {
-        const errorData = await response.json();
-        if (errorData.userExists) {
-          setError('An account with this phone number already exists. Please sign in instead.');
-        } else {
-          throw new Error(errorData.error || 'Failed to resend OTP');
-        }
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -210,7 +122,7 @@ export default function RegisterPage() {
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
               <p className="text-gray-600 mb-6">
-                Your account has been created successfully. You can now sign in to your account.
+                Your account has been created successfully. Please proceed to login to verify your phone number and access your account.
               </p>
               <Button asChild className="w-full">
                 <Link href="/login">Sign In Now</Link>
@@ -244,7 +156,7 @@ export default function RegisterPage() {
 
         <Card>
           <CardContent className="p-6">
-            <form onSubmit={otpSent ? handleRegister : handleSendOtp} className="space-y-4">
+            <form onSubmit={handleRegister} className="space-y-4">
               {/* Basic Information */}
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -489,35 +401,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* OTP Verification */}
-              {otpSent && (
-                <div className="space-y-2">
-                  <Label htmlFor="otp">Verification Code</Label>
-                  <Input
-                    id="otp"
-                    type="text"
-                    placeholder="Enter 6-digit code"
-                    value={form.otp}
-                    onChange={(e) => setForm({ ...form, otp: e.target.value })}
-                    maxLength={6}
-                    required
-                  />
-                  <p className="text-sm text-gray-500">
-                    Enter the code sent to {form.phone}
-                  </p>
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={resendOtp}
-                      disabled={otpTimer > 0}
-                      className="text-sm text-primary hover:text-primary/80 disabled:text-gray-400"
-                    >
-                      {otpTimer > 0 ? `Resend in ${otpTimer}s` : 'Resend OTP'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -526,7 +409,7 @@ export default function RegisterPage() {
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {otpSent ? 'Complete Registration' : 'Send OTP & Continue'}
+                Register
               </Button>
             </form>
 

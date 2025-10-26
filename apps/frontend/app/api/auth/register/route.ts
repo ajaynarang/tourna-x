@@ -4,11 +4,11 @@ import { insertUserSchema, COLLECTIONS, isSequentialPasscode } from '@repo/schem
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, phone, email, age, gender, society, block, flatNumber, skillLevel, otp, requestAdminAccess, passcode } = await request.json();
+    const { name, phone, email, age, gender, society, block, flatNumber, skillLevel, requestAdminAccess, passcode } = await request.json();
 
-    if (!name || !phone || !otp) {
+    if (!name || !phone) {
       return NextResponse.json(
-        { error: 'Name, phone number, and OTP are required' },
+        { error: 'Name and phone number are required' },
         { status: 400 }
       );
     }
@@ -57,24 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await connectToDatabase();
-    const otpsCollection = db.collection(COLLECTIONS.OTPS);
     const usersCollection = db.collection(COLLECTIONS.USERS);
-
-    // Verify OTP
-    const otpRecord = await otpsCollection.findOne({
-      phone: phoneNumber,
-      countryCode: '+91',
-      otp,
-      isUsed: false,
-      expiresAt: { $gt: new Date() },
-    });
-
-    if (!otpRecord) {
-      return NextResponse.json(
-        { error: 'Invalid or expired OTP' },
-        { status: 400 }
-      );
-    }
 
     // Check if user already exists
     const existingUser = await usersCollection.findOne({ phone: phoneNumber });
@@ -105,12 +88,6 @@ export async function POST(request: NextRequest) {
     });
 
     const result = await usersCollection.insertOne(userData);
-
-    // Mark OTP as used
-    await otpsCollection.updateOne(
-      { _id: otpRecord._id },
-      { $set: { isUsed: true } }
-    );
 
     return NextResponse.json({
       message: 'Registration successful',
