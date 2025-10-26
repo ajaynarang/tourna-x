@@ -4,6 +4,18 @@ import { ObjectId } from "mongodb";
 // MongoDB ObjectId validation
 export const objectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ObjectId");
 
+// Skill level enum for players
+export const skillLevelEnum = z.enum(["beginner", "intermediate", "advanced", "expert", "elite"]);
+
+// Skill level descriptions for UI
+export const SKILL_LEVEL_DESCRIPTIONS = {
+  beginner: "Learning basic strokes, rallies under 5 shots",
+  intermediate: "Consistent rallies, basic strategy, club-level play",
+  advanced: "Strong fundamentals, competitive club/league player",
+  expert: "Tournament experience, district/state level",
+  elite: "National/international competitive level",
+} as const;
+
 // Base schemas for MongoDB collections
 export const userSchema = z.object({
   _id: objectIdSchema.optional(),
@@ -19,6 +31,7 @@ export const userSchema = z.object({
   flatNumber: z.string().max(20).optional(), // Flat number
   age: z.number().min(1).max(100).optional(),
   gender: z.enum(["male", "female", "other"]).optional(),
+  skillLevel: skillLevelEnum.optional(), // Required for players, optional for admins
   createdAt: z.date().default(() => new Date()),
 });
 

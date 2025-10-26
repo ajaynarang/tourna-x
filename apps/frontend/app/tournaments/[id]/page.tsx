@@ -163,7 +163,14 @@ export default function TournamentDetailPage() {
         // Refresh tournament data
         setTimeout(() => {
           fetchTournament();
-        }, 2000);
+        }, 1500);
+
+        // Show success message and redirect to dashboard after delay
+        setTimeout(() => {
+          if (confirm('Registration successful! Would you like to view your tournaments on the dashboard?')) {
+            router.push('/player/dashboard#my-tournaments');
+          }
+        }, 3000);
       } else {
         setError(result.error || 'Registration failed');
       }
@@ -429,7 +436,15 @@ export default function TournamentDetailPage() {
             {success && (
               <Alert className="mb-6 border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">{success}</AlertDescription>
+                <AlertDescription className="text-green-800">
+                  <div className="space-y-2">
+                    <p className="font-semibold">{success}</p>
+                    <p className="text-sm">
+                      You'll receive a notification once your registration is approved. 
+                      Check your dashboard to track the status.
+                    </p>
+                  </div>
+                </AlertDescription>
               </Alert>
             )}
 

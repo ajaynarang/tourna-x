@@ -11,11 +11,6 @@ import {
   Clock, 
   MapPin, 
   Users,
-  Phone,
-  Mail,
-  Home,
-  Plus,
-  Eye,
   RefreshCw,
   Sparkles,
   Target,
@@ -25,9 +20,13 @@ import {
   ArrowRight,
   CheckCircle2,
   AlertCircle,
-  XCircle
+  XCircle,
+  Zap,
+  Star,
+  Play
 } from 'lucide-react';
 import Link from 'next/link';
+import { SKILL_LEVEL_DESCRIPTIONS } from '@repo/schemas';
 
 interface Tournament {
   _id: string;
@@ -40,12 +39,16 @@ interface Tournament {
   entryFee: number;
   tournamentType: string;
   allowedSociety?: string;
+  registrationStatus?: string;
+  paymentStatus?: string;
+  category?: string;
 }
 
 interface Match {
   _id: string;
-  tournamentName: string;
-  round: string;
+  matchType: string;
+  tournamentName?: string;
+  round?: string;
   player1Name: string;
   player2Name: string;
   scheduledDate: string;
@@ -55,14 +58,21 @@ interface Match {
   player2Score: number[];
 }
 
-interface Participant {
-  _id: string;
-  tournamentId: string;
-  tournamentName: string;
-  category: string;
-  paymentStatus: string;
-  isApproved: boolean;
-  registeredAt: string;
+interface PlayerStats {
+  totalMatches: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  totalTournaments: number;
+  tournamentMatches: number;
+  tournamentWins: number;
+  tournamentLosses: number;
+  tournamentWinRate: number;
+  practiceMatches: number;
+  practiceWins: number;
+  practiceLosses: number;
+  practiceWinRate: number;
+  activeTournaments: number;
 }
 
 export default function PlayerDashboard() {
@@ -76,16 +86,26 @@ export default function PlayerDashboard() {
 function PlayerDashboardContent() {
   const { user } = useAuth();
   const router = useRouter();
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [availableTournaments, setAvailableTournaments] = useState<Tournament[]>([]);
+  const [myTournaments, setMyTournaments] = useState<Tournament[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
-  const [participations, setParticipations] = useState<Participant[]>([]);
-  const [playerStats, setPlayerStats] = useState({
+  const [playerStats, setPlayerStats] = useState<PlayerStats>({
     totalMatches: 0,
     wins: 0,
     losses: 0,
     winRate: 0,
-    totalTournaments: 0
+    totalTournaments: 0,
+    tournamentMatches: 0,
+    tournamentWins: 0,
+    tournamentLosses: 0,
+    tournamentWinRate: 0,
+    practiceMatches: 0,
+    practiceWins: 0,
+    practiceLosses: 0,
+    practiceWinRate: 0,
+    activeTournaments: 0
   });
+  const [skillLevel, setSkillLevel] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -102,18 +122,13 @@ function PlayerDashboardContent() {
       if (dashboardResult.success && dashboardResult.data) {
         const data = dashboardResult.data;
         
-        setTournaments(data.availableTournaments || []);
+        setAvailableTournaments(data.availableTournaments || []);
+        setMyTournaments(data.myTournaments || []);
         setMatches(data.upcomingMatches || []);
-        setParticipations(data.recentParticipations || []);
+        setSkillLevel(data.player?.skillLevel || '');
         
-        if (data.player) {
-          setPlayerStats(data.player.stats || {
-            totalMatches: 0,
-            wins: 0,
-            losses: 0,
-            winRate: 0,
-            totalTournaments: 0
-          });
+        if (data.player?.stats) {
+          setPlayerStats(data.player.stats);
         }
       }
     } catch (error) {
@@ -141,29 +156,30 @@ function PlayerDashboardContent() {
     }
   };
 
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+  const getSkillLevelColor = (level: string) => {
+    switch (level) {
+      case 'beginner':
+        return 'from-gray-500 to-gray-600';
+      case 'intermediate':
+        return 'from-blue-500 to-blue-600';
+      case 'advanced':
+        return 'from-purple-500 to-purple-600';
+      case 'expert':
+        return 'from-orange-500 to-orange-600';
+      case 'elite':
+        return 'from-red-500 to-red-600';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'from-gray-500 to-gray-600';
     }
-  };
-
-  const isEligibleForTournament = (tournament: Tournament) => {
-    if (tournament.tournamentType === 'open') return true;
-    if (tournament.tournamentType === 'society_only' && tournament.allowedSociety) {
-      return user?.society === tournament.allowedSociety;
-    }
-    return false;
   };
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="spinner"></div>
+        <div className="text-center">
+          <div className="spinner mb-4"></div>
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -192,7 +208,11 @@ function PlayerDashboardContent() {
       >
         {/* Header */}
         <motion.div variants={item} className="mb-8">
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-primary text-3xl font-bold">Welcome back, {user?.name}!</h1>
+              <p className="text-muted-foreground mt-2">Track your progress and join tournaments</p>
+            </div>
             <button
               onClick={fetchDashboardData}
               className="glass-card flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-primary transition-all hover:bg-white/10"
@@ -203,70 +223,164 @@ function PlayerDashboardContent() {
           </div>
         </motion.div>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - 6 cards */}
         <motion.div
           variants={item}
-          className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+          className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
         >
           <StatCard
-            title="Total Matches"
-            value={playerStats.totalMatches}
-            icon={Activity}
-            color="from-blue-500 to-cyan-500"
-            href="/player/matches"
-          />
-          <StatCard
-            title="Win Rate"
-            value={`${playerStats.winRate.toFixed(0)}%`}
-            icon={TrendingUp}
-            color="from-green-500 to-emerald-500"
-            href="/player/stats"
-          />
-          <StatCard
-            title="Victories"
-            value={playerStats.wins}
-            icon={CheckCircle2}
-            color="from-purple-500 to-pink-500"
-            href="/player/matches"
-          />
-          <StatCard
-            title="Tournaments"
-            value={playerStats.totalTournaments}
+            title="Tournament Matches"
+            value={playerStats.tournamentMatches}
             icon={Trophy}
+            color="from-blue-500 to-cyan-500"
+            href="/player/stats?type=tournament"
+          />
+          <StatCard
+            title="Practice Matches"
+            value={playerStats.practiceMatches}
+            icon={Play}
+            color="from-green-500 to-emerald-500"
+            href="/player/stats?type=practice"
+          />
+          <StatCard
+            title="Tournament Win Rate"
+            value={`${playerStats.tournamentWinRate.toFixed(0)}%`}
+            icon={TrendingUp}
+            color="from-purple-500 to-pink-500"
+            href="/player/stats?type=tournament"
+          />
+          <StatCard
+            title="Practice Win Rate"
+            value={`${playerStats.practiceWinRate.toFixed(0)}%`}
+            icon={Activity}
             color="from-orange-500 to-amber-500"
-            href="/tournaments"
+            href="/player/stats?type=practice"
+          />
+          <StatCard
+            title="Active Tournaments"
+            value={playerStats.activeTournaments}
+            icon={Zap}
+            color="from-indigo-500 to-blue-500"
+            href="#my-tournaments"
+          />
+          <SkillLevelCard
+            level={skillLevel}
+            color={getSkillLevelColor(skillLevel)}
+            href="/profile"
           />
         </motion.div>
 
         {/* Quick Actions */}
         <motion.div variants={item} className="mb-8">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-primary text-xl font-semibold">Quick Actions</h2>
-          </div>
           <div className="grid gap-4 sm:grid-cols-3">
             <QuickActionCard
               title="Browse Tournaments"
-              description="Discover tournaments"
+              description="Discover new tournaments"
               icon={Trophy}
               color="from-blue-500 to-cyan-500"
               href="/tournaments"
             />
             <QuickActionCard
               title="My Matches"
-              description="Track your matches"
+              description="View match history"
               icon={Calendar}
               color="from-green-500 to-emerald-500"
               href="/player/matches"
             />
             <QuickActionCard
-              title="My Profile"
-              description="Manage profile"
-              icon={Users}
+              title="My Stats"
+              description="Track performance"
+              icon={TrendingUp}
               color="from-purple-500 to-pink-500"
-              href="/profile"
+              href="/player/stats"
             />
           </div>
         </motion.div>
+
+        {/* My Tournaments Section */}
+        {myTournaments.length > 0 && (
+          <motion.div variants={item} className="mb-8" id="my-tournaments">
+            <div className="glass-card-intense p-6">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h3 className="text-primary text-xl font-semibold flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-400" />
+                    My Tournaments
+                  </h3>
+                  <p className="text-muted-foreground text-sm">Tournaments you're registered for</p>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {myTournaments.map((tournament, index) => (
+                  <motion.div
+                    key={tournament._id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => router.push(`/tournaments/${tournament._id}`)}
+                    className="glass-card group p-4 transition-all hover:scale-[1.02] cursor-pointer"
+                  >
+                    <div className="mb-3 flex items-start justify-between">
+                      <h4 className="text-primary font-semibold text-sm line-clamp-2 flex-1">
+                        {tournament.name}
+                      </h4>
+                      <span className={`rounded-full px-2 py-1 text-xs font-medium ml-2 ${getStatusColor(tournament.status)}`}>
+                        {tournament.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2 mb-3">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Trophy className="h-3 w-3" />
+                        <span className="capitalize">{tournament.sport}</span>
+                        {tournament.category && (
+                          <>
+                            <span className="text-tertiary">•</span>
+                            <span className="capitalize">{tournament.category}</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span>{new Date(tournament.startDate).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short'
+                        })}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        <span className="line-clamp-1">{tournament.venue}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                        tournament.registrationStatus === 'approved' 
+                          ? 'bg-green-500/10 text-green-400 border border-green-500/30' 
+                          : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
+                      }`}>
+                        {tournament.registrationStatus === 'approved' ? (
+                          <><CheckCircle2 className="h-3 w-3 inline mr-1" /> Approved</>
+                        ) : (
+                          <><Clock className="h-3 w-3 inline mr-1" /> Pending</>
+                        )}
+                      </span>
+                      {tournament.paymentStatus && (
+                        <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                          tournament.paymentStatus === 'paid'
+                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
+                            : 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
+                        }`}>
+                          {tournament.paymentStatus}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Upcoming Matches */}
@@ -302,7 +416,7 @@ function PlayerDashboardContent() {
                     </button>
                   </div>
                 ) : (
-                  matches.map((match, index) => (
+                  matches.slice(0, 5).map((match, index) => (
                     <motion.div
                       key={match._id}
                       initial={{ opacity: 0, x: -20 }}
@@ -312,10 +426,22 @@ function PlayerDashboardContent() {
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="mb-3 flex items-center gap-3">
-                            <h4 className="text-primary text-lg font-semibold group-hover:text-green-400 transition-colors">
-                              {match.tournamentName}
-                            </h4>
+                          <div className="mb-3 flex items-center gap-3 flex-wrap">
+                            {match.matchType === 'practice' ? (
+                              <span className="rounded-full px-3 py-1 text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/30">
+                                <Play className="h-3 w-3 inline mr-1" />
+                                Practice Match
+                              </span>
+                            ) : (
+                              <>
+                                <h4 className="text-primary text-sm font-semibold group-hover:text-green-400 transition-colors">
+                                  {match.tournamentName}
+                                </h4>
+                                {match.round && (
+                                  <span className="text-xs text-tertiary">• {match.round}</span>
+                                )}
+                              </>
+                            )}
                             <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(match.status)}`}>
                               {match.status.replace('_', ' ')}
                             </span>
@@ -356,7 +482,7 @@ function PlayerDashboardContent() {
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-primary text-xl font-semibold">Open Tournaments</h3>
-                  <p className="text-muted-foreground text-sm">Join these tournaments</p>
+                  <p className="text-muted-foreground text-sm">Available for registration</p>
                 </div>
                 <Link
                   href="/tournaments"
@@ -367,7 +493,7 @@ function PlayerDashboardContent() {
                 </Link>
               </div>
               <div className="space-y-4">
-                {tournaments.length === 0 ? (
+                {availableTournaments.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-green-500/20 to-blue-500/20">
                       <Trophy className="h-10 w-10 text-green-400" />
@@ -376,12 +502,13 @@ function PlayerDashboardContent() {
                     <p className="text-muted-foreground">Check back later for new tournaments</p>
                   </div>
                 ) : (
-                  tournaments.slice(0, 3).map((tournament, index) => (
+                  availableTournaments.slice(0, 5).map((tournament, index) => (
                     <motion.div
                       key={tournament._id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
+                      onClick={() => router.push(`/tournaments/${tournament._id}`)}
                       className="glass-card group p-4 transition-all hover:scale-[1.01] cursor-pointer"
                     >
                       <div className="flex items-start justify-between">
@@ -425,81 +552,6 @@ function PlayerDashboardContent() {
             </div>
           </motion.div>
         </div>
-
-        {/* Recent Participations */}
-        <motion.div variants={item}>
-          <div className="glass-card-intense p-6">
-            <div className="mb-6">
-              <h3 className="text-primary text-xl font-semibold">My Registrations</h3>
-              <p className="text-muted-foreground text-sm">Recent tournament registrations and their status</p>
-            </div>
-            
-            <div className="space-y-4">
-              {participations.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-green-500/20 to-blue-500/20">
-                    <Users className="h-10 w-10 text-green-400" />
-                  </div>
-                  <h3 className="text-primary mb-2 text-xl font-semibold">No Registrations Yet</h3>
-                  <p className="text-muted-foreground mb-6">Register for tournaments to see your participations here</p>
-                  <button
-                    onClick={() => router.push('/tournaments')}
-                    className="bg-primary inline-flex items-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-transform hover:scale-105"
-                  >
-                    <Trophy className="h-5 w-5" />
-                    Browse Tournaments
-                  </button>
-                </div>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {participations.map((participation, index) => (
-                    <motion.div
-                      key={participation._id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="glass-card p-4 transition-all hover:scale-[1.02]"
-                    >
-                      <div className="mb-3">
-                        <h4 className="text-primary font-semibold text-sm line-clamp-2">
-                          {participation.tournamentName}
-                        </h4>
-                      </div>
-                      
-                      <div className="space-y-2 mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className={`rounded-full px-2 py-1 text-xs font-medium ${getPaymentStatusColor(participation.paymentStatus)}`}>
-                            {participation.paymentStatus}
-                          </span>
-                          <span className={`rounded-full px-2 py-1 text-xs font-medium ${
-                            participation.isApproved 
-                              ? 'bg-green-500/10 text-green-400' 
-                              : 'bg-yellow-500/10 text-yellow-400'
-                          }`}>
-                            {participation.isApproved ? (
-                              <><CheckCircle2 className="h-3 w-3 mr-1" /> Approved</>
-                            ) : (
-                              <><Clock className="h-3 w-3 mr-1" /> Pending</>
-                            )}
-                          </span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          <strong>Category:</strong> {participation.category}
-                        </div>
-                        <div className="text-xs text-tertiary">
-                          Registered: {new Date(participation.registeredAt).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short'
-                          })}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
       </motion.div>
     </div>
   );
@@ -543,6 +595,46 @@ function StatCard({
   );
 }
 
+function SkillLevelCard({
+  level,
+  color,
+  href,
+}: {
+  level: string;
+  color: string;
+  href: string;
+}) {
+  const router = useRouter();
+  const description = SKILL_LEVEL_DESCRIPTIONS[level as keyof typeof SKILL_LEVEL_DESCRIPTIONS] || '';
+
+  return (
+    <motion.button
+      onClick={() => router.push(href)}
+      whileHover={{ scale: 1.02, y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      className="glass-card-intense group relative overflow-hidden p-6 text-left"
+    >
+      {/* Icon */}
+      <div className="mb-4 flex items-center gap-4">
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color} transition-transform group-hover:scale-110`}>
+          <Star className="h-6 w-6 text-white" />
+        </div>
+      </div>
+
+      {/* Value */}
+      <div className="text-primary mb-1 text-2xl font-bold capitalize">{level || 'Not Set'}</div>
+
+      {/* Title */}
+      <div className="text-muted-foreground text-sm font-medium">Skill Level</div>
+      
+      {/* Description */}
+      {description && (
+        <div className="text-tertiary text-xs mt-2 line-clamp-2">{description}</div>
+      )}
+    </motion.button>
+  );
+}
+
 function QuickActionCard({
   title,
   description,
@@ -574,7 +666,7 @@ function QuickActionCard({
           <Icon className="h-6 w-6 text-white" />
         </div>
       </div>
-      <ArrowRight className="text-tertiary absolute right-4 top-4 h-5 w-5 transition-transform group-hover:translate-x-1" />
+      <ArrowRight className="text-tertiary absolute right-4 top-4 h-5 w-5 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
     </motion.button>
   );
 }

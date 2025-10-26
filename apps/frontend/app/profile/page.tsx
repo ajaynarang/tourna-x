@@ -22,9 +22,10 @@ import {
   Trophy,
   BarChart3,
   Bell,
-  Key,
-  LogOut
+  LogOut,
+  Star
 } from 'lucide-react';
+import { SKILL_LEVEL_DESCRIPTIONS } from '@repo/schemas';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -38,6 +39,7 @@ interface UserProfile {
   flatNumber?: string;
   age?: number;
   gender?: string;
+  skillLevel?: string;
   roles: string[];
   createdAt: string;
 }
@@ -110,7 +112,7 @@ export default function ProfilePage() {
     try {
       setIsSaving(true);
       
-      const response = await fetch('/api/auth/profile', {
+      const response = await fetch('/api/auth/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -308,6 +310,39 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
+
+          {/* Skill Level Section */}
+          {profile?.roles.includes('player') && (
+            <div className="mt-6 p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/20">
+              <div className="flex items-center gap-2 mb-3">
+                <Star className="h-5 w-5 text-yellow-400" />
+                <h4 className="font-semibold text-primary">Skill Level</h4>
+              </div>
+              {isEditing ? (
+                <select
+                  value={formData.skillLevel || ''}
+                  onChange={(e) => updateFormData('skillLevel', e.target.value)}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-primary"
+                >
+                  <option value="">Select skill level</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                  <option value="expert">Expert</option>
+                  <option value="elite">Elite</option>
+                </select>
+              ) : (
+                <div>
+                  <p className="text-primary font-semibold capitalize mb-1">{profile?.skillLevel || 'Not set'}</p>
+                  {profile?.skillLevel && (
+                    <p className="text-sm text-tertiary">
+                      {SKILL_LEVEL_DESCRIPTIONS[profile.skillLevel as keyof typeof SKILL_LEVEL_DESCRIPTIONS]}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="glass-card-intense p-6">
@@ -510,17 +545,6 @@ export default function ProfilePage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-medium text-primary">Change Password</h4>
-              <p className="text-sm text-tertiary">Update your account password</p>
-            </div>
-            <Button variant="outline" size="sm" className="bg-white/5 border-white/10 hover:bg-white/10">
-              <Key className="h-4 w-4 mr-1" />
-              Change
-            </Button>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
               <h4 className="font-medium text-primary">Notifications</h4>
               <p className="text-sm text-tertiary">Manage your notification preferences</p>
             </div>
@@ -540,11 +564,24 @@ export default function ProfilePage() {
               Manage
             </Button>
           </div>
+
+          <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+            <div className="flex items-start gap-3">
+              <Phone className="h-5 w-5 text-blue-400 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-primary mb-1">Phone Authentication</h4>
+                <p className="text-sm text-tertiary">
+                  Your account is secured with phone number and OTP authentication. 
+                  No password is required for login.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="glass-card-intense p-6">
-        <h3 className="text-lg font-semibold text-primary mb-4">Danger Zone</h3>
+        <h3 className="text-lg font-semibold text-primary mb-4">Session Management</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>

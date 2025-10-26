@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/auth-guard';
@@ -17,30 +17,33 @@ import {
   Star,
   Zap,
   Flame,
-  CheckCircle2
+  CheckCircle2,
+  Play,
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
 
-interface PlayerStats {
+interface StatsData {
+  type: string;
   totalMatches: number;
   wins: number;
   losses: number;
   winRate: number;
-  totalTournaments: number;
   currentStreak: number;
   longestStreak: number;
-  totalPoints: number;
+  recentForm: string[];
+  categoryStats: CategoryStat[];
+  totalTournaments?: number;
+  titles?: number;
+  runnerUps?: number;
 }
 
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: any;
-  unlocked: boolean;
-  progress: number;
-  maxProgress: number;
-  color: string;
+interface CategoryStat {
+  category: string;
+  played: number;
+  won: number;
+  lost: number;
+  winRate: number;
 }
 
 export default function PlayerStats() {
@@ -54,41 +57,31 @@ export default function PlayerStats() {
 function PlayerStatsContent() {
   const { user } = useAuth();
   const router = useRouter();
-  const [stats, setStats] = useState<PlayerStats>({
-    totalMatches: 0,
-    wins: 0,
-    losses: 0,
-    winRate: 0,
-    totalTournaments: 0,
-    currentStreak: 0,
-    longestStreak: 0,
-    totalPoints: 0
-  });
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'tournament' | 'practice' | 'overall'>('overall');
+  const [stats, setStats] = useState<StatsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const typeParam = searchParams.get('type');
+    if (typeParam === 'tournament' || typeParam === 'practice' || typeParam === 'overall') {
+      setActiveTab(typeParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     fetchPlayerStats();
-  }, []);
+  }, [activeTab]);
 
   const fetchPlayerStats = async () => {
     try {
       setIsLoading(true);
       
-      const response = await fetch('/api/player/dashboard');
+      const response = await fetch(`/api/player/stats?type=${activeTab}`);
       const result = await response.json();
 
-      if (result.success && result.data?.player?.stats) {
-        const playerStats = result.data.player.stats;
-        setStats({
-          ...playerStats,
-          currentStreak: 3,
-          longestStreak: 5,
-          totalPoints: playerStats.wins * 10
-        });
-
-        // Generate achievements based on stats
-        generateAchievements(playerStats);
+      if (result.success && result.data) {
+        setStats(result.data);
       }
     } catch (error) {
       console.error('Error fetching player stats:', error);
@@ -97,80 +90,36 @@ function PlayerStatsContent() {
     }
   };
 
-  const generateAchievements = (playerStats: any) => {
-    const achievementsList: Achievement[] = [
-      {
-        id: 'first-match',
-        title: 'First Steps',
-        description: 'Complete your first match',
-        icon: Target,
-        unlocked: playerStats.totalMatches >= 1,
-        progress: Math.min(playerStats.totalMatches, 1),
-        maxProgress: 1,
-        color: 'from-blue-500 to-blue-600'
-      },
-      {
-        id: 'veteran',
-        title: 'Veteran Player',
-        description: 'Play 10 matches',
-        icon: Trophy,
-        unlocked: playerStats.totalMatches >= 10,
-        progress: Math.min(playerStats.totalMatches, 10),
-        maxProgress: 10,
-        color: 'from-purple-500 to-purple-600'
-      },
-      {
-        id: 'champion',
-        title: 'Champion',
-        description: 'Win 5 matches',
-        icon: Crown,
-        unlocked: playerStats.wins >= 5,
-        progress: Math.min(playerStats.wins, 5),
-        maxProgress: 5,
-        color: 'from-yellow-500 to-yellow-600'
-      },
-      {
-        id: 'tournament-seeker',
-        title: 'Tournament Seeker',
-        description: 'Participate in 3 tournaments',
-        icon: Award,
-        unlocked: playerStats.totalTournaments >= 3,
-        progress: Math.min(playerStats.totalTournaments, 3),
-        maxProgress: 3,
-        color: 'from-green-500 to-green-600'
-      },
-      {
-        id: 'winning-streak',
-        title: 'Hot Streak',
-        description: 'Win 3 matches in a row',
-        icon: Flame,
-        unlocked: stats.currentStreak >= 3,
-        progress: Math.min(stats.currentStreak, 3),
-        maxProgress: 3,
-        color: 'from-orange-500 to-orange-600'
-      },
-      {
-        id: 'perfectionist',
-        title: 'Perfectionist',
-        description: 'Maintain 75% win rate (min 5 matches)',
-        icon: Star,
-        unlocked: playerStats.winRate >= 75 && playerStats.totalMatches >= 5,
-        progress: Math.min(playerStats.winRate, 75),
-        maxProgress: 75,
-        color: 'from-pink-500 to-pink-600'
-      }
-    ];
-
-    setAchievements(achievementsList);
+  const handleTabChange = (tab: 'tournament' | 'practice' | 'overall') => {
+    setActiveTab(tab);
+    router.push(`/player/stats?type=${tab}`);
   };
-
-  const unlockedAchievements = achievements.filter(a => a.unlocked);
-  const lockedAchievements = achievements.filter(a => !a.unlocked);
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="spinner"></div>
+        <div className="text-center">
+          <div className="spinner mb-4"></div>
+          <p className="text-muted-foreground">Loading your stats...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <BarChart3 className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-primary mb-2">Failed to Load Stats</h2>
+          <p className="text-muted-foreground mb-6">Unable to fetch your statistics.</p>
+          <button
+            onClick={() => router.push('/player/dashboard')}
+            className="bg-primary text-white px-6 py-3 rounded-lg font-medium"
+          >
+            Back to Dashboard
+          </button>
+        </div>
       </div>
     );
   }
@@ -210,6 +159,49 @@ function PlayerStatsContent() {
               </Link>
             </div>
           </div>
+          <h1 className="text-primary text-3xl font-bold mt-4">Player Statistics</h1>
+          <p className="text-muted-foreground mt-2">Track your performance across all matches</p>
+        </motion.div>
+
+        {/* Tab Navigation */}
+        <motion.div variants={item} className="mb-8">
+          <div className="glass-card-intense p-2">
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleTabChange('overall')}
+                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+                  activeTab === 'overall'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'text-tertiary hover:text-primary hover:bg-white/5'
+                }`}
+              >
+                <BarChart3 className="h-4 w-4 inline mr-2" />
+                Overall
+              </button>
+              <button
+                onClick={() => handleTabChange('tournament')}
+                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+                  activeTab === 'tournament'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'text-tertiary hover:text-primary hover:bg-white/5'
+                }`}
+              >
+                <Trophy className="h-4 w-4 inline mr-2" />
+                Tournament
+              </button>
+              <button
+                onClick={() => handleTabChange('practice')}
+                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+                  activeTab === 'practice'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'text-tertiary hover:text-primary hover:bg-white/5'
+                }`}
+              >
+                <Play className="h-4 w-4 inline mr-2" />
+                Practice
+              </button>
+            </div>
+          </div>
         </motion.div>
 
         {/* Stats Overview */}
@@ -231,22 +223,31 @@ function PlayerStatsContent() {
           />
           <StatCard
             title="Win Rate"
-            value={`${stats.winRate.toFixed(0)}%`}
+            value={`${stats.winRate.toFixed(1)}%`}
             icon={TrendingUp}
             color="from-purple-500 to-pink-500"
           />
-          <StatCard
-            title="Tournaments"
-            value={stats.totalTournaments}
-            icon={Trophy}
-            color="from-orange-500 to-amber-500"
-          />
+          {activeTab === 'tournament' && stats.totalTournaments !== undefined ? (
+            <StatCard
+              title="Tournaments"
+              value={stats.totalTournaments}
+              icon={Trophy}
+              color="from-orange-500 to-amber-500"
+            />
+          ) : (
+            <StatCard
+              title="Losses"
+              value={stats.losses}
+              icon={Target}
+              color="from-red-500 to-red-600"
+            />
+          )}
         </motion.div>
 
-        {/* Additional Stats */}
+        {/* Streak Stats */}
         <motion.div variants={item} className="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="glass-card-intense p-6">
-            <div className="mb-6">
+            <div className="mb-4">
               <h3 className="text-primary text-lg font-semibold mb-2 flex items-center gap-2">
                 <Flame className="h-5 w-5 text-orange-400" />
                 Current Streak
@@ -254,8 +255,10 @@ function PlayerStatsContent() {
             </div>
             <div className="text-center">
               <div className="text-5xl font-bold text-orange-400 mb-2">{stats.currentStreak}</div>
-              <div className="text-sm text-muted-foreground">Consecutive Wins</div>
-              {stats.currentStreak > 0 && (
+              <div className="text-sm text-muted-foreground">
+                {stats.currentStreak > 0 ? 'Consecutive Wins' : 'No Active Streak'}
+              </div>
+              {stats.currentStreak >= 3 && (
                 <span className="mt-3 inline-block rounded-full bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-400">
                   🔥 On Fire!
                 </span>
@@ -264,7 +267,7 @@ function PlayerStatsContent() {
           </div>
 
           <div className="glass-card-intense p-6">
-            <div className="mb-6">
+            <div className="mb-4">
               <h3 className="text-primary text-lg font-semibold mb-2 flex items-center gap-2">
                 <Star className="h-5 w-5 text-yellow-400" />
                 Longest Streak
@@ -277,15 +280,31 @@ function PlayerStatsContent() {
           </div>
 
           <div className="glass-card-intense p-6">
-            <div className="mb-6">
+            <div className="mb-4">
               <h3 className="text-primary text-lg font-semibold mb-2 flex items-center gap-2">
                 <Zap className="h-5 w-5 text-blue-400" />
-                Total Points
+                Recent Form
               </h3>
             </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-blue-400 mb-2">{stats.totalPoints}</div>
-              <div className="text-sm text-muted-foreground">Career Points</div>
+            <div className="flex justify-center gap-2 flex-wrap">
+              {stats.recentForm.length === 0 ? (
+                <span className="text-sm text-muted-foreground">No matches yet</span>
+              ) : (
+                stats.recentForm.map((result, i) => (
+                  <span
+                    key={i}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                      result === 'W' ? 'bg-green-500/20 text-green-400 border-2 border-green-500/30' :
+                      'bg-red-500/20 text-red-400 border-2 border-red-500/30'
+                    }`}
+                  >
+                    {result}
+                  </span>
+                ))
+              )}
+            </div>
+            <div className="text-center mt-3 text-xs text-muted-foreground">
+              Last {stats.recentForm.length} matches
             </div>
           </div>
         </motion.div>
@@ -306,7 +325,7 @@ function PlayerStatsContent() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-primary">Wins</span>
-                  <span className="text-sm font-bold text-green-400">{stats.wins}</span>
+                  <span className="text-sm font-bold text-green-400">{stats.wins} ({stats.totalMatches > 0 ? ((stats.wins / stats.totalMatches) * 100).toFixed(1) : 0}%)</span>
                 </div>
                 <div className="w-full bg-white/5 rounded-full h-4 overflow-hidden">
                   <motion.div 
@@ -322,7 +341,7 @@ function PlayerStatsContent() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-primary">Losses</span>
-                  <span className="text-sm font-bold text-red-400">{stats.losses}</span>
+                  <span className="text-sm font-bold text-red-400">{stats.losses} ({stats.totalMatches > 0 ? ((stats.losses / stats.totalMatches) * 100).toFixed(1) : 0}%)</span>
                 </div>
                 <div className="w-full bg-white/5 rounded-full h-4 overflow-hidden">
                   <motion.div 
@@ -337,124 +356,104 @@ function PlayerStatsContent() {
           </div>
         </motion.div>
 
-        {/* Achievements Section */}
-        <div className="space-y-6">
-          {/* Unlocked Achievements */}
-          <motion.div variants={item}>
+        {/* Category Breakdown */}
+        <motion.div variants={item} className="mb-8">
+          <div className="glass-card-intense p-6">
+            <div className="mb-6">
+              <h3 className="text-primary text-lg font-semibold mb-2 flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-400" />
+                Performance by Category
+              </h3>
+              <p className="text-muted-foreground text-sm">Singles, Doubles, and Mixed stats</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {stats.categoryStats.map((categoryStat, index) => (
+                <motion.div
+                  key={categoryStat.category}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="glass-card p-4"
+                >
+                  <h4 className="text-primary font-semibold capitalize mb-4 text-center">
+                    {categoryStat.category}
+                  </h4>
+                  
+                  {categoryStat.played === 0 ? (
+                    <div className="text-center py-4 text-tertiary text-sm">
+                      No matches played
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Played</span>
+                        <span className="text-primary font-semibold">{categoryStat.played}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Won</span>
+                        <span className="text-green-400 font-semibold">{categoryStat.won}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Lost</span>
+                        <span className="text-red-400 font-semibold">{categoryStat.lost}</span>
+                      </div>
+                      <div className="pt-3 border-t border-white/10">
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-muted-foreground">Win Rate</span>
+                          <span className="text-primary font-bold">{categoryStat.winRate.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${categoryStat.winRate}%` }}
+                            transition={{ duration: 1, ease: 'easeOut', delay: index * 0.1 }}
+                            className="h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Tournament-specific stats */}
+        {activeTab === 'tournament' && stats.totalTournaments !== undefined && (
+          <motion.div variants={item} className="mb-8">
             <div className="glass-card-intense p-6">
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <h3 className="text-primary text-xl font-semibold mb-2 flex items-center gap-2">
-                    <Award className="h-5 w-5 text-yellow-400" />
-                    Unlocked Achievements
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {unlockedAchievements.length} of {achievements.length} achievements unlocked
-                  </p>
-                </div>
-                <span className="rounded-full bg-yellow-500/10 px-4 py-2 text-lg font-medium text-yellow-400">
-                  🏆 {unlockedAchievements.length}
-                </span>
+              <div className="mb-6">
+                <h3 className="text-primary text-lg font-semibold mb-2 flex items-center gap-2">
+                  <Crown className="h-5 w-5 text-yellow-400" />
+                  Tournament Achievements
+                </h3>
+                <p className="text-muted-foreground text-sm">Your tournament performance</p>
               </div>
               
-              {unlockedAchievements.length === 0 ? (
-                <div className="text-center py-8 text-tertiary">
-                  <Trophy className="h-12 w-12 mx-auto mb-3 text-tertiary" />
-                  <p>No achievements unlocked yet. Keep playing to earn your first achievement!</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {unlockedAchievements.map((achievement, index) => {
-                    const Icon = achievement.icon;
-                    return (
-                      <motion.div
-                        key={achievement.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="p-4 rounded-xl glass-card border-2 border-yellow-500/20"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`p-3 bg-gradient-to-br ${achievement.color} rounded-xl shadow-lg`}>
-                            <Icon className="h-6 w-6 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-primary mb-1">{achievement.title}</h4>
-                            <p className="text-sm text-muted-foreground mb-2">{achievement.description}</p>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-400">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Unlocked
-                            </span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Locked Achievements */}
-          {lockedAchievements.length > 0 && (
-            <motion.div variants={item}>
-              <div className="glass-card-intense p-6">
-                <div className="mb-6">
-                  <h3 className="text-primary text-xl font-semibold mb-2 flex items-center gap-2">
-                    <Target className="h-5 w-5 text-tertiary" />
-                    In Progress
-                  </h3>
-                  <p className="text-muted-foreground text-sm">Keep playing to unlock these achievements</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center p-6 glass-card">
+                  <Trophy className="h-12 w-12 text-yellow-400 mx-auto mb-3" />
+                  <div className="text-3xl font-bold text-primary mb-1">{stats.totalTournaments}</div>
+                  <div className="text-sm text-muted-foreground">Tournaments Played</div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {lockedAchievements.map((achievement, index) => {
-                    const Icon = achievement.icon;
-                    const progressPercent = (achievement.progress / achievement.maxProgress) * 100;
-                    
-                    return (
-                      <motion.div
-                        key={achievement.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="p-4 rounded-xl glass-card border-2 border-white/10"
-                      >
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-3 bg-white/10 rounded-xl">
-                            <Icon className="h-6 w-6 text-tertiary" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-primary mb-1">{achievement.title}</h4>
-                            <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                          </div>
-                        </div>
-                        
-                        {/* Progress Bar */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Progress</span>
-                            <span className="font-semibold text-primary">
-                              {achievement.progress} / {achievement.maxProgress}
-                            </span>
-                          </div>
-                          <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: `${progressPercent}%` }}
-                              transition={{ duration: 1, ease: 'easeOut' }}
-                              className={`h-2 bg-gradient-to-r ${achievement.color} rounded-full`}
-                            />
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                <div className="text-center p-6 glass-card">
+                  <Crown className="h-12 w-12 text-yellow-400 mx-auto mb-3" />
+                  <div className="text-3xl font-bold text-primary mb-1">{stats.titles || 0}</div>
+                  <div className="text-sm text-muted-foreground">Championships</div>
+                </div>
+                
+                <div className="text-center p-6 glass-card">
+                  <Award className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <div className="text-3xl font-bold text-primary mb-1">{stats.runnerUps || 0}</div>
+                  <div className="text-sm text-muted-foreground">Runner-ups</div>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </div>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );
@@ -485,4 +484,3 @@ function StatCard({
     </div>
   );
 }
-

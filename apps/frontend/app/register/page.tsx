@@ -28,6 +28,7 @@ export default function RegisterPage() {
     society: '',
     block: '',
     flatNumber: '',
+    skillLevel: '',
     otp: '',
   });
 
@@ -268,6 +269,54 @@ export default function RegisterPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="skillLevel">Skill Level *</Label>
+                  <Select 
+                    value={form.skillLevel} 
+                    onValueChange={(value) => setForm({ ...form, skillLevel: value })}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your skill level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="beginner">
+                        <div className="flex flex-col">
+                          <span className="font-semibold">Beginner</span>
+                          <span className="text-xs text-gray-500">Learning basic strokes, rallies under 5 shots</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="intermediate">
+                        <div className="flex flex-col">
+                          <span className="font-semibold">Intermediate</span>
+                          <span className="text-xs text-gray-500">Consistent rallies, basic strategy, club-level play</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="advanced">
+                        <div className="flex flex-col">
+                          <span className="font-semibold">Advanced</span>
+                          <span className="text-xs text-gray-500">Strong fundamentals, competitive club/league player</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="expert">
+                        <div className="flex flex-col">
+                          <span className="font-semibold">Expert</span>
+                          <span className="text-xs text-gray-500">Tournament experience, district/state level</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="elite">
+                        <div className="flex flex-col">
+                          <span className="font-semibold">Elite</span>
+                          <span className="text-xs text-gray-500">National/international competitive level</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">
+                    Select the level that best describes your current playing ability
+                  </p>
                 </div>
               </div>
 

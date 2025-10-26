@@ -4,11 +4,18 @@ import { insertUserSchema, COLLECTIONS } from '@repo/schemas';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, phone, email, age, gender, society, block, flatNumber, otp } = await request.json();
+    const { name, phone, email, age, gender, society, block, flatNumber, skillLevel, otp } = await request.json();
 
     if (!name || !phone || !otp) {
       return NextResponse.json(
         { error: 'Name, phone number, and OTP are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!skillLevel) {
+      return NextResponse.json(
+        { error: 'Skill level is required for player registration' },
         { status: 400 }
       );
     }
@@ -78,6 +85,7 @@ export async function POST(request: NextRequest) {
       society: society || undefined,
       block: block || undefined,
       flatNumber: flatNumber || undefined,
+      skillLevel: skillLevel,
       roles: ['player'],
     });
 

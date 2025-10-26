@@ -24,9 +24,11 @@ import Link from 'next/link';
 
 interface Match {
   _id: string;
-  tournamentId: string;
-  tournamentName: string;
-  round: string;
+  matchType: string;
+  tournamentId?: string;
+  tournamentName?: string;
+  round?: string;
+  category: string;
   player1Id: string;
   player1Name: string;
   player2Id: string;
@@ -52,7 +54,9 @@ function PlayerMatchesContent() {
   const router = useRouter();
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'tournament' | 'practice'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'singles' | 'doubles' | 'mixed'>('all');
 
   useEffect(() => {
     fetchMatches();
@@ -111,8 +115,17 @@ function PlayerMatchesContent() {
   };
 
   const filteredMatches = matches.filter(match => {
-    if (filter === 'upcoming') return match.status === 'scheduled' || match.status === 'in_progress';
-    if (filter === 'completed') return match.status === 'completed';
+    // Status filter
+    if (statusFilter === 'upcoming' && !(match.status === 'scheduled' || match.status === 'in_progress')) return false;
+    if (statusFilter === 'completed' && match.status !== 'completed') return false;
+    
+    // Type filter
+    if (typeFilter === 'tournament' && match.matchType !== 'tournament') return false;
+    if (typeFilter === 'practice' && match.matchType !== 'practice') return false;
+    
+    // Category filter
+    if (categoryFilter !== 'all' && match.category !== categoryFilter) return false;
+    
     return true;
   });
 
@@ -212,24 +225,28 @@ function PlayerMatchesContent() {
 
         {/* Filter Tabs */}
         <motion.div variants={item} className="mb-6">
-          <div className="glass-card-intense p-4">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-tertiary" />
+          <div className="glass-card-intense p-4 space-y-4">
+            {/* Status Filter */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Filter className="h-4 w-4 text-tertiary" />
+                <span className="text-sm font-medium text-primary">Status</span>
+              </div>
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => setFilter('all')}
+                  onClick={() => setStatusFilter('all')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    filter === 'all'
+                    statusFilter === 'all'
                       ? 'bg-primary text-white shadow-md'
                       : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
                   }`}
                 >
-                  All Matches ({matches.length})
+                  All ({matches.length})
                 </button>
                 <button
-                  onClick={() => setFilter('upcoming')}
+                  onClick={() => setStatusFilter('upcoming')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    filter === 'upcoming'
+                    statusFilter === 'upcoming'
                       ? 'bg-primary text-white shadow-md'
                       : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
                   }`}
@@ -237,14 +254,104 @@ function PlayerMatchesContent() {
                   Upcoming ({matches.filter(m => m.status === 'scheduled' || m.status === 'in_progress').length})
                 </button>
                 <button
-                  onClick={() => setFilter('completed')}
+                  onClick={() => setStatusFilter('completed')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    filter === 'completed'
+                    statusFilter === 'completed'
                       ? 'bg-primary text-white shadow-md'
                       : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
                   }`}
                 >
                   Completed ({matches.filter(m => m.status === 'completed').length})
+                </button>
+              </div>
+            </div>
+
+            {/* Type Filter */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy className="h-4 w-4 text-tertiary" />
+                <span className="text-sm font-medium text-primary">Match Type</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setTypeFilter('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    typeFilter === 'all'
+                      ? 'bg-primary text-white shadow-md'
+                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
+                  }`}
+                >
+                  All Matches
+                </button>
+                <button
+                  onClick={() => setTypeFilter('tournament')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    typeFilter === 'tournament'
+                      ? 'bg-primary text-white shadow-md'
+                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
+                  }`}
+                >
+                  🏆 Tournament ({matches.filter(m => m.matchType === 'tournament').length})
+                </button>
+                <button
+                  onClick={() => setTypeFilter('practice')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    typeFilter === 'practice'
+                      ? 'bg-primary text-white shadow-md'
+                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
+                  }`}
+                >
+                  ⚡ Practice ({matches.filter(m => m.matchType === 'practice').length})
+                </button>
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="h-4 w-4 text-tertiary" />
+                <span className="text-sm font-medium text-primary">Category</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setCategoryFilter('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    categoryFilter === 'all'
+                      ? 'bg-primary text-white shadow-md'
+                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
+                  }`}
+                >
+                  All Categories
+                </button>
+                <button
+                  onClick={() => setCategoryFilter('singles')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    categoryFilter === 'singles'
+                      ? 'bg-primary text-white shadow-md'
+                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
+                  }`}
+                >
+                  Singles ({matches.filter(m => m.category === 'singles').length})
+                </button>
+                <button
+                  onClick={() => setCategoryFilter('doubles')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    categoryFilter === 'doubles'
+                      ? 'bg-primary text-white shadow-md'
+                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
+                  }`}
+                >
+                  Doubles ({matches.filter(m => m.category === 'doubles').length})
+                </button>
+                <button
+                  onClick={() => setCategoryFilter('mixed')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    categoryFilter === 'mixed'
+                      ? 'bg-primary text-white shadow-md'
+                      : 'glass-card text-tertiary hover:text-primary hover:bg-white/10'
+                  }`}
+                >
+                  Mixed ({matches.filter(m => m.category === 'mixed').length})
                 </button>
               </div>
             </div>
@@ -260,9 +367,9 @@ function PlayerMatchesContent() {
               </div>
               <h3 className="text-primary mb-2 text-xl font-semibold">No Matches Found</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                {filter === 'upcoming' 
+                {statusFilter === 'upcoming' 
                   ? "You don't have any upcoming matches scheduled. Register for tournaments to start playing!"
-                  : filter === 'completed'
+                  : statusFilter === 'completed'
                   ? "You haven't completed any matches yet. Play your first match to see results here."
                   : "You don't have any matches yet. Browse and register for tournaments to get started!"
                 }
@@ -302,18 +409,34 @@ function PlayerMatchesContent() {
                     {/* Match Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-primary">
-                            {match.tournamentName}
-                          </h3>
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          {match.matchType === 'practice' ? (
+                            <span className="rounded-full px-3 py-1 text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/30">
+                              ⚡ Practice Match
+                            </span>
+                          ) : (
+                            <>
+                              <h3 className="text-lg font-semibold text-primary">
+                                {match.tournamentName}
+                              </h3>
+                              <span className="rounded-full px-3 py-1 text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/30">
+                                🏆 Tournament
+                              </span>
+                            </>
+                          )}
                           <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(match.status)}`}>
-                            <StatusIcon className="h-3 w-3 mr-1" />
+                            <StatusIcon className="h-3 w-3 mr-1 inline" />
                             {match.status.replace('_', ' ').toUpperCase()}
                           </span>
+                          <span className="rounded-full px-3 py-1 text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/30 capitalize">
+                            {match.category}
+                          </span>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          <strong>Round:</strong> {match.round}
-                        </p>
+                        {match.round && (
+                          <p className="text-sm text-muted-foreground">
+                            <strong>Round:</strong> {match.round}
+                          </p>
+                        )}
                       </div>
                       {isCompleted && matchResult && (
                         <div className={`px-4 py-2 rounded-lg font-bold text-lg ${
