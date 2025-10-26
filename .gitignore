@@ -7,3 +7,6 @@ vite.config.ts.*
 .next
 .turbo
 *.log
+
+# Database backups
+backups/

@@ -4,7 +4,18 @@ import { COLLECTIONS } from '@repo/schemas';
 import { getAuthUser } from '@/lib/auth-utils';
 import { ObjectId } from 'mongodb';
 
-// Helper function to get authenticated user
+// Helper function to check if player won a match
+function isPlayerWinner(match: any, playerId: string): boolean {
+  // Check if player is in winnerIds array (new structure)
+  if (match.winnerIds && Array.isArray(match.winnerIds)) {
+    return match.winnerIds.some((id: any) => id.toString() === playerId);
+  }
+  // Fallback: check legacy winnerId field
+  if (match.winnerId) {
+    return match.winnerId.toString() === playerId;
+  }
+  return false;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +29,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const userId = user._id;
+    const userId = user._id?.toString();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid user ID' },
+        { status: 400 }
+      );
+    }
 
     // Get player's participations
     const participations = await db.collection(COLLECTIONS.PARTICIPANTS)
@@ -79,7 +97,7 @@ export async function GET(request: NextRequest) {
       .toArray();
 
     // Enhance registered tournaments with participation status
-    const myTournaments = registeredTournaments.map(tournament => {
+    const myTournaments = registeredTournaments.map((tournament: any) => {
       const participation = participations.find(p => p.tournamentId.toString() === tournament._id.toString());
       return {
         ...tournament,
@@ -93,19 +111,19 @@ export async function GET(request: NextRequest) {
     // Calculate player stats - separate tournament and practice
     const totalTournamentMatches = tournamentMatches.length;
     const tournamentWins = tournamentMatches.filter(match => 
-      match.status === 'completed' && match.winnerId?.toString() === userId.toString()
+      match.status === 'completed' && isPlayerWinner(match, userId)
     ).length;
     const tournamentLosses = tournamentMatches.filter(match => 
-      match.status === 'completed' && match.winnerId && match.winnerId.toString() !== userId.toString()
+      match.status === 'completed' && !isPlayerWinner(match, userId)
     ).length;
     const tournamentWinRate = totalTournamentMatches > 0 ? (tournamentWins / totalTournamentMatches) * 100 : 0;
 
     const totalPracticeMatches = practiceMatches.length;
     const practiceWins = practiceMatches.filter(match => 
-      match.status === 'completed' && match.winnerId?.toString() === userId.toString()
+      match.status === 'completed' && isPlayerWinner(match, userId)
     ).length;
     const practiceLosses = practiceMatches.filter(match => 
-      match.status === 'completed' && match.winnerId && match.winnerId.toString() !== userId.toString()
+      match.status === 'completed' && !isPlayerWinner(match, userId)
     ).length;
     const practiceWinRate = totalPracticeMatches > 0 ? (practiceWins / totalPracticeMatches) * 100 : 0;
 

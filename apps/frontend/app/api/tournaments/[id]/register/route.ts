@@ -209,7 +209,7 @@ export async function POST(
     // Validate registration data
     const validatedData = insertParticipantSchema.parse({
       tournamentId: id,
-      userId: user._id.toString(),
+      userId: user._id?.toString() || user.userId,
       name: registrationData.name || user.name,
       phone: registrationData.phone || user.phone,
       email: registrationData.email || user.email,

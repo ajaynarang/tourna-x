@@ -75,14 +75,15 @@ export default function ProfilePage() {
       }
 
       // Fetch user stats if player
-      if (user?.roles?.includes('player')) {
-        const statsResponse = await fetch('/api/player/stats');
-        const statsResult = await statsResponse.json();
-        
-        if (statsResult.success) {
-          setStats(statsResult.data);
-        }
-      }
+      // TODO: Implement stats display
+      // if (user?.roles?.includes('player')) {
+      //   const statsResponse = await fetch('/api/player/stats');
+      //   const statsResult = await statsResponse.json();
+      //   
+      //   if (statsResult.success) {
+      //     // Store stats in state
+      //   }
+      // }
     } catch (error) {
       console.error('Error fetching profile data:', error);
     } finally {

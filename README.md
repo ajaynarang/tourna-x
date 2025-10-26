@@ -61,11 +61,19 @@ This will start:
 
 ## 📦 Available Scripts
 
+### Development
 - `pnpm dev` - Start all apps in development mode
 - `pnpm build` - Build all apps for production
 - `pnpm lint` - Lint all packages
 - `pnpm check-types` - Type check all packages
-- `pnpm db:init` - Initialize database with sample data
+
+### Database Backup & Restore
+- `pnpm dump-db-native` - Backup database (no tools required)
+- `pnpm restore-db-native <backup-name>` - Restore database backup
+- `pnpm dump-db` - Backup using MongoDB tools (requires installation)
+- `pnpm restore-db <backup-name>` - Restore using MongoDB tools
+
+See [scripts/README.md](scripts/README.md) for detailed backup documentation.
 
 ## 🗄️ Database
 

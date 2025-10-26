@@ -96,15 +96,15 @@ export default function CreatePracticeMatchPage() {
     
     // Players must be participants, admins can create any match
     if (!isAdmin) {
-      const currentUserId = user?._id;
+      const currentUserId = user?._id?.toString();
       const participantIds = [
         formData.team1Player1.userId,
         formData.team2Player1.userId,
         formData.category !== 'singles' ? formData.team1Player2.userId : null,
         formData.category !== 'singles' ? formData.team2Player2.userId : null,
-      ].filter(Boolean);
+      ].filter((id): id is string => Boolean(id));
 
-      if (!participantIds.includes(currentUserId)) {
+      if (!currentUserId || !participantIds.includes(currentUserId)) {
         alert('You must be one of the participants in the practice match');
         setIsLoading(false);
         return;
