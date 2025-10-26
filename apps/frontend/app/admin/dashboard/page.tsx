@@ -125,7 +125,7 @@ function AdminDashboardContent() {
         {/* Quick Actions */}
         <motion.div variants={item} className="mb-8 flex flex-col lg:flex-row gap-4">
         <button
-            onClick={() => router.push('/admin/practice-matches')}
+            onClick={() => router.push('/practice-matches')}
             className="glass-card-intense group flex w-full items-center justify-between p-6 transition-all hover:scale-[1.02] sm:w-auto"
           >
             <div className="flex items-center gap-4">

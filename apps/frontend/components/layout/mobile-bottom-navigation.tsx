@@ -24,13 +24,14 @@ export default function MobileBottomNavigation() {
   const adminNavItems = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: BarChart3 },
     { name: 'Tournaments', href: '/admin/tournaments', icon: Trophy },
-    { name: 'Practice', href: '/admin/practice-matches', icon: Target },
+    { name: 'Practice', href: '/practice-matches', icon: Target },
     { name: 'Fixtures', href: '/admin/fixtures', icon: Calendar },
     { name: 'Scoring', href: '/admin/scoring', icon: Settings },
   ];
 
   const playerNavItems = [
     { name: 'Dashboard', href: '/player/dashboard', icon: BarChart3 },
+    { name: 'Practice', href: '/practice-matches', icon: Target },
     { name: 'Matches', href: '/player/matches', icon: Calendar },
     { name: 'Tournaments', href: '/tournaments', icon: Trophy },
     { name: 'Profile', href: '/profile', icon: User },

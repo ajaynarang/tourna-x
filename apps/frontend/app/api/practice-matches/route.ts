@@ -100,6 +100,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check daily rate limit for players (admins are exempt)
+    if (authUser.roles.includes('player') && !authUser.roles.includes('admin')) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const todayMatchCount = await db.collection(COLLECTIONS.MATCHES).countDocuments({
+        matchType: 'practice',
+        createdBy: new ObjectId(authUser.userId),
+        createdAt: {
+          $gte: today,
+          $lt: tomorrow
+        }
+      });
+      
+      if (todayMatchCount >= 10) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Daily limit reached. You can create maximum 10 practice matches per day.' 
+          },
+          { status: 429 }
+        );
+      }
+    }
+
     const body = await request.json();
     
     // Validate practice match data
@@ -130,6 +157,7 @@ export async function POST(request: NextRequest) {
       player1Score: [],
       player2Score: [],
       status: 'scheduled',
+      createdBy: new ObjectId(authUser.userId),
       createdAt: new Date(),
       updatedAt: new Date(),
     };

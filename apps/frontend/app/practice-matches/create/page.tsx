@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
+import { AuthGuard } from '@/components/auth-guard';
 import { Button } from '@repo/ui';
 import { 
   ArrowLeft,
@@ -11,18 +13,11 @@ import {
   X
 } from 'lucide-react';
 import Link from 'next/link';
-import { AuthGuard } from '@/components/auth-guard';
 
 export default function CreatePracticeMatchPage() {
-  return (
-    <AuthGuard requiredRoles={['player']}>
-      <CreatePracticeMatchContent />
-    </AuthGuard>
-  );
-}
-
-function CreatePracticeMatchContent() {
   const router = useRouter();
+  const { user, currentRole } = useAuth();
+  const isAdmin = currentRole === 'admin';
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     category: 'singles',
@@ -55,7 +50,9 @@ function CreatePracticeMatchContent() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/users');
+      // Admins use admin endpoint, players use public endpoint
+      const endpoint = isAdmin ? '/api/admin/users' : '/api/users';
+      const response = await fetch(endpoint);
       const data = await response.json();
       if (data.success) {
         setUsers(data.data);
@@ -96,6 +93,24 @@ function CreatePracticeMatchContent() {
 
   const handleSubmit = async () => {
     setIsLoading(true);
+    
+    // Players must be participants, admins can create any match
+    if (!isAdmin) {
+      const currentUserId = user?._id;
+      const participantIds = [
+        formData.team1Player1.userId,
+        formData.team2Player1.userId,
+        formData.category !== 'singles' ? formData.team1Player2.userId : null,
+        formData.category !== 'singles' ? formData.team2Player2.userId : null,
+      ].filter(Boolean);
+
+      if (!participantIds.includes(currentUserId)) {
+        alert('You must be one of the participants in the practice match');
+        setIsLoading(false);
+        return;
+      }
+    }
+    
     try {
       // Build the request body based on category
       let body: any = {
@@ -125,7 +140,7 @@ function CreatePracticeMatchContent() {
 
       if (response.ok) {
         // Navigate back to practice matches list
-        router.push('/player/practice-matches');
+        router.push('/practice-matches');
       } else {
         const data = await response.json();
         alert(data.error || 'Failed to create practice match');
@@ -309,13 +324,14 @@ function CreatePracticeMatchContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <AuthGuard requiredRoles={['admin', 'player']}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <Link href="/player/practice-matches">
+              <Link href="/admin/practice-matches">
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
                   <ArrowLeft className="h-4 w-4" />
                   Back
@@ -562,5 +578,6 @@ function CreatePracticeMatchContent() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
+import { AuthGuard } from '@/components/auth-guard';
 import { Card, CardContent } from '@repo/ui';
 import { Button } from '@repo/ui';
 import { Badge } from '@repo/ui';
@@ -55,6 +56,7 @@ interface PracticeMatch {
   venue?: string;
   notes?: string;
   createdAt: string;
+  createdBy?: string;
   games?: any[];
   winnerId?: string;
   winnerName?: string;
@@ -67,8 +69,9 @@ interface PracticeMatch {
 }
 
 export default function PracticeMatchesPage() {
-  const { user } = useAuth();
+  const { user, currentRole } = useAuth();
   const router = useRouter();
+  const isAdmin = currentRole === 'admin';
   const [matches, setMatches] = useState<PracticeMatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
@@ -123,6 +126,18 @@ export default function PracticeMatchesPage() {
 
   const confirmDeleteMatch = async () => {
     if (!deleteConfirmDialog.matchId) return;
+
+    // Check if match is completed
+    const matchToDelete = matches.find(m => m._id === deleteConfirmDialog.matchId);
+    if (matchToDelete?.status === 'completed') {
+      alert('Cannot delete completed matches');
+      setDeleteConfirmDialog({
+        isOpen: false,
+        matchId: null,
+        matchName: '',
+      });
+      return;
+    }
 
     try {
       console.log('Deleting match:', deleteConfirmDialog.matchId);
@@ -205,7 +220,8 @@ export default function PracticeMatchesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <AuthGuard requiredRoles={['admin', 'player']}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header - Apple-style clean design */}
       <div className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -367,7 +383,7 @@ export default function PracticeMatchesPage() {
               return (
                 <Link
                   key={match._id}
-                  href={`/admin/practice-matches/${match._id}`}
+                  href={`/practice-matches/${match._id}`}
                   className="block group"
                 >
                   <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all hover:shadow-lg hover:shadow-blue-500/10">
@@ -427,7 +443,7 @@ export default function PracticeMatchesPage() {
                         
                         {/* Action Button */}
                         <div className="flex items-center gap-2">
-                          {match.status !== 'completed' && match.status !== 'cancelled' && (
+                          {((isAdmin || match.createdBy === user?._id) && match.status !== 'completed' && match.status !== 'cancelled') && (
                             <Button
                               type="button"
                               onClick={(e) => handleDeleteMatch(match._id, formatPlayers(match), e)}
@@ -514,5 +530,6 @@ export default function PracticeMatchesPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </AuthGuard>
   );
 }

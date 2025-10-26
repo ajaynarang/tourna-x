@@ -169,15 +169,6 @@ export default function TournamentsPage() {
             <h1 className="text-primary text-3xl font-bold">Tournaments</h1>
             <p className="text-muted-foreground mt-2">Browse and register for tournaments</p>
           </div>
-          {user && (
-            <button
-              onClick={() => router.push('/player/dashboard')}
-              className="glass-card flex items-center gap-2 rounded-lg px-6 py-3 font-semibold transition-transform hover:scale-105"
-            >
-              <Trophy className="h-5 w-5" />
-              My Dashboard
-            </button>
-          )}
         </div>
 
         {/* Filters */}

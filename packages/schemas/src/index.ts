@@ -22,6 +22,11 @@ export const userSchema = z.object({
   username: z.string().min(3).max(50).optional(), // For admin users
   password: z.string().min(6).optional(), // For admin users only
   roles: z.array(z.enum(["admin", "player"])).default(["player"]), // Support multiple roles
+  isSuperAdmin: z.boolean().default(false), // Super admin flag - manually set
+ // Admin role request status
+  adminRequestedAt: z.date().optional(), // When admin access was requested
+  adminRequestProcessedAt: z.date().optional(), // When request was approved/denied adminRequestStatus: z.enum(["none", "pending", "approved", "denied"]).default("none"), 
+  adminRequestProcessedBy: objectIdSchema.optional(), // Super admin who processed the request
   name: z.string().min(1).max(100),
   phone: z.string().min(10).max(15), // Required for all users
   countryCode: z.string().min(2).max(5).default("+91"), // Country code (e.g., +91, +1)
@@ -304,7 +309,7 @@ export const pairingSchema = z.object({
 export const notificationSchema = z.object({
   _id: objectIdSchema.optional(),
   userId: objectIdSchema,
-  type: z.enum(["registration_approved", "registration_rejected", "match_scheduled", "match_starting", "match_result", "tournament_update", "practice_match_created"]),
+  type: z.enum(["registration_approved", "registration_rejected", "match_scheduled", "match_starting", "match_result", "tournament_update", "practice_match_created", "admin_request_approved", "admin_request_denied"]),
   title: z.string(),
   message: z.string(),
   isRead: z.boolean().default(false),
@@ -521,6 +526,8 @@ export const INDEXES = {
     { username: 1 }, // unique index
     { phone: 1 }, // unique index
     { email: 1 }, // unique index
+    { adminRequestStatus: 1 }, // For filtering pending admin requests
+    { isSuperAdmin: 1 }, // For super admin queries
   ],
   TOURNAMENTS: [
     { createdBy: 1 },

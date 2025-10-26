@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import { AuthGuard } from '@/components/auth-guard';
 import LiveScoring from '@/components/live-scoring';
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui';
 import { Button } from '@repo/ui';
@@ -204,7 +205,7 @@ export default function PracticeMatchDetailsPage({
             <AlertCircle className="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Match Not Found</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">The practice match you're looking for doesn't exist.</p>
-            <Link href="/admin/practice-matches">
+            <Link href="/practice-matches">
               <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                 Back to Practice Matches
               </Button>
@@ -250,12 +251,13 @@ export default function PracticeMatchDetailsPage({
   const players = formatPlayers(match);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <AuthGuard requiredRoles={['admin', 'player']}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link href="/admin/practice-matches">
+            <Link href="/practice-matches">
               <Button variant="outline" size="sm" className="border-gray-300 dark:border-gray-700">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
@@ -644,5 +646,6 @@ export default function PracticeMatchDetailsPage({
        
       </div>
     </div>
+    </AuthGuard>
   );
 }

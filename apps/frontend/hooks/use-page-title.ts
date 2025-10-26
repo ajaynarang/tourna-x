@@ -37,14 +37,20 @@ export function usePageTitle(): { title: string; subtitle?: string } {
   if (pathname?.startsWith('/admin/scoring/')) {
     return { title: 'Match Scoring', subtitle: 'Update match scores' };
   }
-  if (pathname === '/admin/practice-matches') {
+  if (pathname === '/practice-matches') {
     return { title: 'Practice Matches', subtitle: 'Record daily practice sessions' };
   }
-  if (pathname?.startsWith('/admin/practice-matches/')) {
-    return { title: 'Score Practice Match', subtitle: 'Live practice match scoring' };
+  if (pathname === '/practice-matches/create') {
+    return { title: 'Create Practice Match', subtitle: 'Set up a new practice session' };
+  }
+  if (pathname?.startsWith('/practice-matches/')) {
+    return { title: 'Practice Match Details', subtitle: 'View and score practice match' };
   }
   if (pathname === '/admin/analytics') {
     return { title: 'Analytics', subtitle: 'Tournament insights and reports' };
+  }
+  if (pathname === '/admin/admin-requests') {
+    return { title: 'Admin Access Requests', subtitle: 'Review and manage pending admin requests' };
   }
 
   // Player routes

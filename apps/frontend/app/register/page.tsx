@@ -31,6 +31,7 @@ export default function RegisterPage() {
     flatNumber: '',
     skillLevel: '',
     otp: '',
+    requestAdminAccess: false,
   });
 
   const router = useRouter();
@@ -367,6 +368,27 @@ export default function RegisterPage() {
                       value={form.flatNumber}
                       onChange={(e) => setForm({ ...form, flatNumber: e.target.value })}
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin Access Request */}
+              <div className="space-y-2 border-t pt-4">
+                <div className="flex items-start space-x-3">
+                  <input
+                    type="checkbox"
+                    id="requestAdminAccess"
+                    checked={form.requestAdminAccess}
+                    onChange={(e) => setForm({ ...form, requestAdminAccess: e.target.checked })}
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="requestAdminAccess" className="font-medium cursor-pointer">
+                      Request Admin Access
+                    </Label>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Check this box if you want to request admin privileges. Your request will be reviewed by a super admin.
+                    </p>
                   </div>
                 </div>
               </div>

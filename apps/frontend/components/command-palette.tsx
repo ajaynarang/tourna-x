@@ -86,7 +86,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       title: 'Practice Matches',
       subtitle: 'Record daily practice',
       icon: Target,
-      action: () => router.push('/admin/practice-matches'),
+      action: () => router.push('/practice-matches'),
       keywords: ['practice', 'matches', 'daily', 'training', 'practice sessions'],
       category: 'Navigate',
     },
@@ -108,6 +108,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       keywords: ['analytics', 'reports', 'insights', 'data'],
       category: 'Navigate',
     },
+    {
+      id: 'admin-requests',
+      title: 'Admin Requests',
+      subtitle: 'Manage admin access requests',
+      icon: Users,
+      action: () => router.push('/admin/admin-requests'),
+      keywords: ['admin', 'requests', 'approve', 'super admin', 'access'],
+      category: 'Navigate',
+    },
   ];
 
   const playerCommands: CommandItem[] = [
@@ -118,6 +127,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       icon: BarChart3,
       action: () => router.push('/player/dashboard'),
       keywords: ['home', 'overview', 'dashboard'],
+      category: 'Navigate',
+    },
+    {
+      id: 'player-practice-matches',
+      title: 'Practice Matches',
+      subtitle: 'Create and view practice sessions',
+      icon: Target,
+      action: () => router.push('/practice-matches'),
+      keywords: ['practice', 'matches', 'training', 'sessions'],
       category: 'Navigate',
     },
     {

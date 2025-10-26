@@ -149,17 +149,6 @@ function PlayerStatsContent() {
       >
         {/* Header */}
         <motion.div variants={item} className="mb-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/player/dashboard"
-                className="text-muted-foreground hover:text-primary flex items-center gap-2 text-sm transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </Link>
-            </div>
-          </div>
           <h1 className="text-primary text-3xl font-bold mt-4">Player Statistics</h1>
           <p className="text-muted-foreground mt-2">Track your performance across all matches</p>
         </motion.div>

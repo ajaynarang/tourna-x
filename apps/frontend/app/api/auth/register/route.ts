@@ -4,7 +4,7 @@ import { insertUserSchema, COLLECTIONS } from '@repo/schemas';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, phone, email, age, gender, society, block, flatNumber, skillLevel, otp } = await request.json();
+    const { name, phone, email, age, gender, society, block, flatNumber, skillLevel, otp, requestAdminAccess } = await request.json();
 
     if (!name || !phone || !otp) {
       return NextResponse.json(
@@ -87,6 +87,9 @@ export async function POST(request: NextRequest) {
       flatNumber: flatNumber || undefined,
       skillLevel: skillLevel,
       roles: ['player'],
+      isSuperAdmin: false,
+      adminRequestStatus: requestAdminAccess ? 'pending' : 'none',
+      adminRequestedAt: requestAdminAccess ? new Date() : undefined,
     });
 
     const result = await usersCollection.insertOne(userData);

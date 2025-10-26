@@ -272,13 +272,20 @@ function PlayerDashboardContent() {
 
         {/* Quick Actions */}
         <motion.div variants={item} className="mb-8">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <QuickActionCard
               title="Browse Tournaments"
               description="Discover new tournaments"
               icon={Trophy}
               color="from-blue-500 to-cyan-500"
               href="/tournaments"
+            />
+            <QuickActionCard
+              title="Practice Matches"
+              description="Create & track practice"
+              icon={Target}
+              color="from-orange-500 to-red-500"
+              href="/practice-matches"
             />
             <QuickActionCard
               title="My Matches"

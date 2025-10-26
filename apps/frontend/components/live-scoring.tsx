@@ -364,7 +364,7 @@ export default function LiveScoring({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                window.location.href = '/admin/practice-matches';
+                window.location.href = '/practice-matches';
               }}
               className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-semibold py-4 rounded-xl transition-colors"
             >
