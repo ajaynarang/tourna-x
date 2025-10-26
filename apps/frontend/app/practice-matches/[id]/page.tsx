@@ -8,6 +8,15 @@ import LiveScoring from '@/components/live-scoring';
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui';
 import { Button } from '@repo/ui';
 import { Badge } from '@repo/ui';
+import { Input } from '@repo/ui';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@repo/ui';
 import {
   ArrowLeft,
   Dumbbell,
@@ -21,7 +30,8 @@ import {
   CheckCircle,
   AlertCircle,
   Maximize2,
-  Play
+  Play,
+  Edit3
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -80,6 +90,13 @@ export default function PracticeMatchDetailsPage({
   const [match, setMatch] = useState<PracticeMatch | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showScoring, setShowScoring] = useState(false);
+  const [showDeclareWinnerModal, setShowDeclareWinnerModal] = useState(false);
+  const [declareWinnerData, setDeclareWinnerData] = useState({
+    winnerId: '',
+    reason: 'walkover',
+    player1Score: '',
+    player2Score: '',
+  });
 
   useEffect(() => {
     fetchMatch();
@@ -165,6 +182,66 @@ export default function PracticeMatchDetailsPage({
     // Match completion is already handled in handleScoreUpdate
     // Just refresh the match data
     await fetchMatch();
+  };
+
+  const handleDeclareWinner = () => {
+    if (!match) return;
+    
+    // Reset the form
+    setDeclareWinnerData({
+      winnerId: '',
+      reason: 'walkover',
+      player1Score: '',
+      player2Score: '',
+    });
+    
+    setShowDeclareWinnerModal(true);
+  };
+
+  const handleSaveDeclareWinner = async () => {
+    if (!match || !declareWinnerData.winnerId) {
+      alert('Please select a winner');
+      return;
+    }
+
+    try {
+      // Parse scores if provided
+      let player1Score: number[] = [];
+      let player2Score: number[] = [];
+      
+      if (declareWinnerData.player1Score && declareWinnerData.player2Score) {
+        player1Score = declareWinnerData.player1Score.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+        player2Score = declareWinnerData.player2Score.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+      }
+
+      const response = await fetch(`/api/practice-matches/${match._id}/declare-winner`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          winnerId: declareWinnerData.winnerId,
+          reason: declareWinnerData.reason,
+          player1Score: player1Score.length > 0 ? player1Score : undefined,
+          player2Score: player2Score.length > 0 ? player2Score : undefined,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setShowDeclareWinnerModal(false);
+        await fetchMatch();
+        
+        // Redirect to practice matches list after a short delay
+        setTimeout(() => {
+          router.push('/practice-matches');
+        }, 2000);
+      } else {
+        alert(data.error || 'Failed to declare winner');
+      }
+    } catch (error) {
+      console.error('Error declaring winner:', error);
+      alert('Failed to declare winner');
+    }
   };
 
   const getCategoryBadge = (category: string) => {
@@ -265,28 +342,38 @@ export default function PracticeMatchDetailsPage({
             </Link>
             
             {match.status !== 'completed' && match.status !== 'cancelled' && (
-              <Button
-                onClick={() => {
-                  if (match.status === 'scheduled') {
-                    handleStartMatch();
-                  } else {
-                    setShowScoring(true);
-                  }
-                }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25"
-              >
-                {match.status === 'scheduled' ? (
-                  <>
-                    <Play className="mr-2 h-4 w-4" />
-                    Start Scoring
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 className="mr-2 h-4 w-4" />
-                    Continue Scoring
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleDeclareWinner}
+                  variant="outline"
+                  className="border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <Edit3 className="mr-2 h-4 w-4" />
+                  Record Score
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    if (match.status === 'scheduled') {
+                      handleStartMatch();
+                    } else {
+                      setShowScoring(true);
+                    }
+                  }}
+                >
+                  {match.status === 'scheduled' ? (
+                    <>
+                      <Play className="mr-2 h-4 w-4" />
+                      Start Scoring
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="mr-2 h-4 w-4" />
+                      Continue Scoring
+                    </>
+                  )}
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -643,8 +730,172 @@ export default function PracticeMatchDetailsPage({
           </Card>
         </div>
 
-       
       </div>
+
+      {/* Declare Winner Modal */}
+      <Dialog open={showDeclareWinnerModal} onOpenChange={setShowDeclareWinnerModal}>
+        <DialogContent 
+          className="w-[600px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" 
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">
+              Record Match Result
+            </DialogTitle>
+            <DialogDescription className="text-gray-600 dark:text-gray-400">
+              Manually record the winner for this practice match. Optionally record scores if available.
+            </DialogDescription>
+          </DialogHeader>
+
+          {match && (
+            <div className="space-y-6 py-4">
+              {/* Match Info */}
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  {match.category.toUpperCase()} Practice Match
+                </div>
+                <div className="flex items-center justify-center gap-4 text-lg font-semibold">
+                  <span className="text-gray-900 dark:text-white">
+                    {formatPlayers(match).team1}
+                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">VS</span>
+                  <span className="text-gray-900 dark:text-white">
+                    {formatPlayers(match).team2}
+                  </span>
+                </div>
+              </div>
+
+              {/* Winner Selection */}
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Select Winner *
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setDeclareWinnerData(prev => ({ 
+                      ...prev, 
+                      winnerId: match.player1Id?.toString() || match.player1Name 
+                    }))}
+                    className={`h-auto min-h-[100px] py-4 px-4 flex flex-col items-center justify-center gap-2 rounded-lg border-2 transition-colors ${
+                      declareWinnerData.winnerId === (match.player1Id?.toString() || match.player1Name)
+                        ? 'bg-green-600 border-green-600 text-white'
+                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <Trophy className="h-5 w-5" />
+                    <div className="text-sm font-medium text-center">
+                      {formatPlayers(match).team1}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeclareWinnerData(prev => ({ 
+                      ...prev, 
+                      winnerId: match.player2Id?.toString() || match.player2Name 
+                    }))}
+                    className={`h-auto min-h-[100px] py-4 px-4 flex flex-col items-center justify-center gap-2 rounded-lg border-2 transition-colors ${
+                      declareWinnerData.winnerId === (match.player2Id?.toString() || match.player2Name)
+                        ? 'bg-green-600 border-green-600 text-white'
+                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <Trophy className="h-5 w-5" />
+                    <div className="text-sm font-medium text-center">
+                      {formatPlayers(match).team2}
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Reason Selection */}
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Reason *
+                </label>
+                <select
+                  value={declareWinnerData.reason}
+                  onChange={(e) => setDeclareWinnerData(prev => ({ ...prev, reason: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-gray-900 dark:text-white focus:border-green-500 dark:focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                >
+                  <option value="walkover">Walkover (W/O)</option>
+                  <option value="forfeit">Forfeit</option>
+                  <option value="retired">Retired (Injury)</option>
+                  <option value="disqualification">Disqualification</option>
+                  <option value="manual">Manual Entry (with scores)</option>
+                </select>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {declareWinnerData.reason === 'walkover' && 'Player did not show up'}
+                  {declareWinnerData.reason === 'forfeit' && 'Player gave up during match'}
+                  {declareWinnerData.reason === 'retired' && 'Player retired due to injury'}
+                  {declareWinnerData.reason === 'disqualification' && 'Player was disqualified'}
+                  {declareWinnerData.reason === 'manual' && 'Record the actual scores manually'}
+                </p>
+              </div>
+
+              {/* Optional Scores */}
+              <div className="space-y-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-gray-900 dark:text-white">
+                    Record Scores (Optional)
+                  </label>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    Format: 21,19,15 (comma-separated)
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-600 dark:text-gray-400">
+                      {formatPlayers(match).team1} Scores
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="e.g., 21,19,15"
+                      value={declareWinnerData.player1Score}
+                      onChange={(e) => setDeclareWinnerData(prev => ({ ...prev, player1Score: e.target.value }))}
+                      className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-600 dark:text-gray-400">
+                      {formatPlayers(match).team2} Scores
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="e.g., 18,21,13"
+                      value={declareWinnerData.player2Score}
+                      onChange={(e) => setDeclareWinnerData(prev => ({ ...prev, player2Score: e.target.value }))}
+                      className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Leave blank if scores are not available
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeclareWinnerModal(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveDeclareWinner}
+              disabled={!declareWinnerData.winnerId}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Trophy className="mr-2 h-4 w-4" />
+              Record Result
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </AuthGuard>
   );

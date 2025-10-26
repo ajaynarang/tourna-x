@@ -65,8 +65,9 @@ export async function POST(
     }
 
     // Determine winner and loser
-    const isPlayer1Winner = winnerId === match.player1Id?.toString();
-    const isPlayer3Winner = winnerId === match.player3Id?.toString();
+    // Handle both ObjectId and player name (for guest players)
+    const isPlayer1Winner = winnerId === match.player1Id?.toString() || winnerId === match.player1Name;
+    const isPlayer3Winner = winnerId === match.player3Id?.toString() || winnerId === match.player3Name;
     const isTeam1Winner = isPlayer1Winner || isPlayer3Winner;
     
     // Set winner name based on category
@@ -88,10 +89,10 @@ export async function POST(
       status: 'completed',
       winnerTeam: isTeam1Winner ? 'team1' : 'team2',
       winnerIds: match.category === 'singles'
-        ? [new ObjectId(winnerId)]
+        ? (ObjectId.isValid(winnerId) ? [new ObjectId(winnerId)] : []) // Handle guest players
         : isTeam1Winner
-          ? [match.player1Id, match.player3Id].filter(Boolean).map((id: any) => new ObjectId(id))
-          : [match.player2Id, match.player4Id].filter(Boolean).map((id: any) => new ObjectId(id)),
+          ? [match.player1Id, match.player3Id].filter(id => id && ObjectId.isValid(id)).map((id: any) => new ObjectId(id))
+          : [match.player2Id, match.player4Id].filter(id => id && ObjectId.isValid(id)).map((id: any) => new ObjectId(id)),
       winnerName,
       completedAt: new Date(),
       updatedAt: new Date(),
@@ -105,19 +106,31 @@ export async function POST(
       // User provided scores - use them
       updateData.player1Score = player1Score;
       updateData.player2Score = player2Score;
+      
+      // Calculate match result from scores
+      let player1GamesWon = 0;
+      let player2GamesWon = 0;
+      
       if (games && games.length > 0) {
         updateData.games = games;
-        
-        // Calculate match result from games
-        const player1GamesWon = games.filter((g: any) => g.winner === 'player1').length;
-        const player2GamesWon = games.filter((g: any) => g.winner === 'player2').length;
-        
-        updateData.matchResult = {
-          player1GamesWon,
-          player2GamesWon,
-          completedAt: new Date(),
-        };
+        player1GamesWon = games.filter((g: any) => g.winner === 'player1').length;
+        player2GamesWon = games.filter((g: any) => g.winner === 'player2').length;
+      } else {
+        // Calculate games won from scores array
+        for (let i = 0; i < Math.min(player1Score.length, player2Score.length); i++) {
+          if (player1Score[i] > player2Score[i]) {
+            player1GamesWon++;
+          } else if (player2Score[i] > player1Score[i]) {
+            player2GamesWon++;
+          }
+        }
       }
+      
+      updateData.matchResult = {
+        player1GamesWon,
+        player2GamesWon,
+        completedAt: new Date(),
+      };
     } else {
       // No scores provided - leave empty (don't add default [21,0,0])
       // The completion type will indicate why there are no scores
