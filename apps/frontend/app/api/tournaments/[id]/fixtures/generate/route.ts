@@ -34,7 +34,7 @@ function seedParticipants(participants: any[], method: string) {
 }
 
 // Fixture generation algorithms
-function generateKnockoutBracket(participants: any[], category: string, seedingMethod: string, ageGroup?: string, startMatchNumber: number = 1) {
+function generateKnockoutBracket(participants: any[], category: string, seedingMethod: string, userId: string, ageGroup?: string, startMatchNumber: number = 1) {
   // Seed participants first
   const seededParticipants = seedParticipants(participants, seedingMethod);
   
@@ -84,6 +84,7 @@ function generateKnockoutBracket(participants: any[], category: string, seedingM
         player1Score: [],
         player2Score: [],
         status: 'scheduled',
+        createdBy: new ObjectId(userId),
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -199,7 +200,7 @@ function generateKnockoutBracket(participants: any[], category: string, seedingM
   return matches;
 }
 
-function generateRoundRobin(participants: any[], category: string, ageGroup?: string, startMatchNumber: number = 1) {
+function generateRoundRobin(participants: any[], category: string, userId: string, ageGroup?: string, startMatchNumber: number = 1) {
   const matches = [];
   const n = participants.length;
   let matchNumber = startMatchNumber;
@@ -232,6 +233,7 @@ function generateRoundRobin(participants: any[], category: string, ageGroup?: st
         player1Score: [],
         player2Score: [],
         status: 'scheduled',
+        createdBy: new ObjectId(userId),
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -409,6 +411,7 @@ export async function POST(
           groupParticipants, 
           category || '', 
           config.seedingMethod,
+          user.userId,
           ageGroup === 'open' ? '' : (ageGroup || ''),
           globalMatchNumber
         );
@@ -416,6 +419,7 @@ export async function POST(
         matches = generateRoundRobin(
           groupParticipants, 
           category || '', 
+          user.userId,
           ageGroup === 'open' ? '' : (ageGroup || ''),
           globalMatchNumber
         );

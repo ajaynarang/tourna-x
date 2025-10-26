@@ -227,8 +227,11 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
       const hasRealScores = completionType === 'normal' || completionType === 'manual';
       const shouldShowScores = hasRealScores && match.player1Score && match.player1Score.length > 0;
       
+      // Get the first winner ID for display (singles will have 1, doubles will have 2)
+      const firstWinnerId = match.winnerIds && match.winnerIds.length > 0 ? match.winnerIds[0]?.toString() || '' : '';
+      
       setDeclareWinnerData({
-        winnerId: match.winnerId?.toString() || '',
+        winnerId: firstWinnerId,
         reason: completionType,
         player1Score: shouldShowScores ? match.player1Score.join(',') : '',
         player2Score: shouldShowScores && match.player2Score && match.player2Score.length > 0 ? match.player2Score.join(',') : '',
@@ -333,7 +336,13 @@ function TournamentFixturesContent({ params }: { params: Promise<{ id: string }>
       player1Score: [finalScore.player1GamesWon],
       player2Score: [finalScore.player2GamesWon],
       status: 'completed',
-      winnerId: winner.id === selectedMatch.player1Id ? selectedMatch.player1Id : selectedMatch.player2Id
+      winnerIds: winner.id === selectedMatch.player1Id 
+        ? (selectedMatch.category === 'singles' 
+            ? [selectedMatch.player1Id].filter((id): id is string => Boolean(id))
+            : [selectedMatch.player1Id, selectedMatch.player3Id].filter((id): id is string => Boolean(id)))
+        : (selectedMatch.category === 'singles' 
+            ? [selectedMatch.player2Id].filter((id): id is string => Boolean(id))
+            : [selectedMatch.player2Id, selectedMatch.player4Id].filter((id): id is string => Boolean(id)))
     };
     
     handleScoreUpdate(updatedMatch);
@@ -1136,6 +1145,12 @@ function getPlayerDisplay(match: Match | null, side: 'player1' | 'player2'): str
   }
 }
 
+// Helper function to check if a player/team won
+function isWinner(match: Match, playerId: string | undefined): boolean {
+  if (!playerId || !match.winnerIds || match.winnerIds.length === 0) return false;
+  return match.winnerIds.some((id: any) => id?.toString() === playerId.toString());
+}
+
 // Match Completion Type Badge Component
 function CompletionTypeBadge({ match }: { match: Match }) {
   const completionType = (match as any).completionType;
@@ -1321,7 +1336,7 @@ function MatchCard({
         {/* Team 1 */}
                     <div
           className={`rounded-lg p-3 transition-all ${
-                        match.winnerId === match.player1Id
+                        isWinner(match, match.player1Id)
               ? 'bg-green-500/10 ring-1 ring-green-500/30'
                           : 'glass-card'
                       }`}
@@ -1359,7 +1374,7 @@ function MatchCard({
         {/* Team 2 */}
                     <div
           className={`rounded-lg p-3 transition-all ${
-                        match.winnerId === match.player2Id
+                        isWinner(match, match.player2Id)
               ? 'bg-green-500/10 ring-1 ring-green-500/30'
                           : 'glass-card'
                       }`}
@@ -1686,11 +1701,11 @@ function ScheduleView({
                 {/* Score */}
                 {match.status === 'completed' && match.player1Score.length > 0 && match.player2Score.length > 0 && (
                   <div className="flex items-center gap-2 text-sm font-bold">
-                    <span className={match.winnerId === match.player1Id ? 'text-green-400' : 'text-primary'}>
+                    <span className={isWinner(match, match.player1Id) ? 'text-green-400' : 'text-primary'}>
                       {match.player1Score.join(', ')}
                     </span>
                     <span className="text-muted-foreground">-</span>
-                    <span className={match.winnerId === match.player2Id ? 'text-green-400' : 'text-primary'}>
+                    <span className={isWinner(match, match.player2Id) ? 'text-green-400' : 'text-primary'}>
                       {match.player2Score.join(', ')}
                     </span>
                   </div>

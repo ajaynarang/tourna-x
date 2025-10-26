@@ -252,12 +252,12 @@ export default function PracticeMatchesPage() {
               
               <Button
                 type="button"
+                variant="default"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   router.push('/practice-matches/create');
                 }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">New Match</span>
@@ -371,12 +371,12 @@ export default function PracticeMatchesPage() {
             </p>
             <Button
               type="button"
+              variant="default"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 router.push('/practice-matches/create');
               }}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25"
             >
               <Plus className="mr-2 h-4 w-4" />
               Create Practice Match
