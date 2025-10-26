@@ -156,23 +156,6 @@ function PlayerDashboardContent() {
     }
   };
 
-  const getSkillLevelColor = (level: string) => {
-    switch (level) {
-      case 'beginner':
-        return 'from-gray-500 to-gray-600';
-      case 'intermediate':
-        return 'from-blue-500 to-blue-600';
-      case 'advanced':
-        return 'from-purple-500 to-purple-600';
-      case 'expert':
-        return 'from-orange-500 to-orange-600';
-      case 'elite':
-        return 'from-red-500 to-red-600';
-      default:
-        return 'from-gray-500 to-gray-600';
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -231,40 +214,34 @@ function PlayerDashboardContent() {
             title="Tournament Matches"
             value={playerStats.tournamentMatches}
             icon={Trophy}
-            color="from-blue-500 to-cyan-500"
             href="/player/stats?type=tournament"
           />
           <StatCard
             title="Practice Matches"
             value={playerStats.practiceMatches}
             icon={Play}
-            color="from-green-500 to-emerald-500"
             href="/player/stats?type=practice"
           />
           <StatCard
             title="Tournament Win Rate"
             value={`${playerStats.tournamentWinRate.toFixed(0)}%`}
             icon={TrendingUp}
-            color="from-purple-500 to-pink-500"
             href="/player/stats?type=tournament"
           />
           <StatCard
             title="Practice Win Rate"
             value={`${playerStats.practiceWinRate.toFixed(0)}%`}
             icon={Activity}
-            color="from-orange-500 to-amber-500"
             href="/player/stats?type=practice"
           />
           <StatCard
             title="Active Tournaments"
             value={playerStats.activeTournaments}
             icon={Zap}
-            color="from-indigo-500 to-blue-500"
             href="#my-tournaments"
           />
           <SkillLevelCard
             level={skillLevel}
-            color={getSkillLevelColor(skillLevel)}
             href="/profile"
           />
         </motion.div>
@@ -276,28 +253,24 @@ function PlayerDashboardContent() {
               title="Browse Tournaments"
               description="Discover new tournaments"
               icon={Trophy}
-              color="from-blue-500 to-cyan-500"
               href="/tournaments"
             />
             <QuickActionCard
               title="Practice Matches"
               description="Create & track practice"
               icon={Target}
-              color="from-orange-500 to-red-500"
               href="/practice-matches"
             />
             <QuickActionCard
               title="My Matches"
               description="View match history"
               icon={Calendar}
-              color="from-green-500 to-emerald-500"
               href="/player/matches"
             />
             <QuickActionCard
               title="My Stats"
               description="Track performance"
               icon={TrendingUp}
-              color="from-purple-500 to-pink-500"
               href="/player/stats"
             />
           </div>
@@ -567,13 +540,11 @@ function StatCard({
   title,
   value,
   icon: Icon,
-  color,
   href,
 }: {
   title: string;
   value: string | number;
   icon: any;
-  color: string;
   href: string;
 }) {
   const router = useRouter();
@@ -587,8 +558,8 @@ function StatCard({
     >
       {/* Icon */}
       <div className="mb-4 flex items-center gap-4">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color} transition-transform group-hover:scale-110`}>
-          <Icon className="h-6 w-6 text-white" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform group-hover:scale-110">
+          <Icon className="h-6 w-6" />
         </div>
       </div>
 
@@ -603,15 +574,12 @@ function StatCard({
 
 function SkillLevelCard({
   level,
-  color,
   href,
 }: {
   level: string;
-  color: string;
   href: string;
 }) {
   const router = useRouter();
-  const description = SKILL_LEVEL_DESCRIPTIONS[level as keyof typeof SKILL_LEVEL_DESCRIPTIONS] || '';
 
   return (
     <motion.button
@@ -622,8 +590,8 @@ function SkillLevelCard({
     >
       {/* Icon */}
       <div className="mb-4 flex items-center gap-4">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color} transition-transform group-hover:scale-110`}>
-          <Star className="h-6 w-6 text-white" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-foreground transition-transform group-hover:scale-110">
+          <Star className="h-6 w-6" />
         </div>
       </div>
 
@@ -632,11 +600,6 @@ function SkillLevelCard({
 
       {/* Title */}
       <div className="text-muted-foreground text-sm font-medium">Skill Level</div>
-      
-      {/* Description */}
-      {/* {description && (
-        <div className="text-tertiary text-xs mt-2 line-clamp-2">{description}</div>
-      )} */}
     </motion.button>
   );
 }
@@ -645,13 +608,11 @@ function QuickActionCard({
   title,
   description,
   icon: Icon,
-  color,
   href,
 }: {
   title: string;
   description: string;
   icon: any;
-  color: string;
   href: string;
 }) {
   const router = useRouter();
@@ -668,11 +629,10 @@ function QuickActionCard({
           <div className="text-muted-foreground text-sm mb-1">{description}</div>
           <div className="text-primary text-lg font-semibold">{title}</div>
         </div>
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color} transition-transform group-hover:scale-110`}>
-          <Icon className="h-6 w-6 text-white" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-secondary-foreground transition-transform group-hover:scale-110">
+          <Icon className="h-6 w-6" />
         </div>
       </div>
-      {/* <ArrowRight className="text-tertiary absolute right-4 top-4 h-5 w-5 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" /> */}
     </motion.button>
   );
 }

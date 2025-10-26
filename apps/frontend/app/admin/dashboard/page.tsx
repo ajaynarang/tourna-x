@@ -129,9 +129,8 @@ function AdminDashboardContent() {
             className="glass-card-intense group flex w-full items-center justify-between p-6 transition-all hover:scale-[1.02] sm:w-auto"
           >
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl 
-              bg-primary">
-                <Dumbbell className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <Dumbbell className="h-6 w-6" />
               </div>
               <div className="text-left">
                 <h3 className="text-primary text-lg font-semibold">Practice Match</h3>
@@ -146,8 +145,8 @@ function AdminDashboardContent() {
             className="glass-card-intense group flex w-full items-center justify-between p-6 transition-all hover:scale-[1.02] sm:w-auto"
           >
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-blue-500">
-                <Plus className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                <Plus className="h-6 w-6" />
               </div>
               <div className="text-left">
                 <h3 className="text-primary text-lg font-semibold">Create Tournament</h3>
@@ -168,21 +167,18 @@ function AdminDashboardContent() {
             title="Active Tournaments"
             value={stats.activeTournaments}
             icon={Trophy}
-            color="from-green-500 to-emerald-500"
             href="/admin/tournaments"
           />
           <StatCard
             title="Total Participants"
             value={stats.totalParticipants}
             icon={Users}
-            color="from-blue-500 to-cyan-500"
             href="/admin/participants"
           />
           <StatCard
             title="Pending Approvals"
             value={stats.pendingApprovals}
             icon={Clock}
-            color="from-orange-500 to-amber-500"
             href="/admin/participants"
             alert={stats.pendingApprovals > 0}
           />
@@ -190,7 +186,6 @@ function AdminDashboardContent() {
             title="Ongoing Matches"
             value={stats.upcomingMatches}
             icon={Calendar}
-            color="from-purple-500 to-pink-500"
             href="/admin/fixtures"
           />
         </motion.div>
@@ -250,14 +245,12 @@ function StatCard({
   title,
   value,
   icon: Icon,
-  color,
   href,
   alert = false,
 }: {
   title: string;
   value: number;
   icon: any;
-  color: string;
   href: string;
   alert?: boolean;
 }) {
@@ -282,8 +275,8 @@ function StatCard({
 
       {/* Icon */}
       <div className="mb-4 flex items-center gap-4">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color} transition-transform group-hover:scale-110`}>
-          <Icon className="h-6 w-6 text-white" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform group-hover:scale-110">
+          <Icon className="h-6 w-6" />
         </div>
       </div>
 
@@ -355,7 +348,7 @@ function TournamentCard({ tournament }: { tournament: Tournament }) {
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 1, ease: 'easeOut' }}
-                className="h-full rounded-full bg-gradient-to-r from-green-500 to-blue-500"
+                className="h-full rounded-full bg-primary"
               />
             </div>
           </div>
