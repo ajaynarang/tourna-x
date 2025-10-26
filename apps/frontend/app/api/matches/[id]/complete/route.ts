@@ -29,11 +29,11 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { winnerId, winnerName, player1Score, player2Score, games } = body;
+    const { winnerTeam, player1Score, player2Score, games, player1GamesWon, player2GamesWon } = body;
 
-    if (!winnerId || !winnerName) {
+    if (!winnerTeam) {
       return NextResponse.json(
-        { success: false, error: 'Winner information is required' },
+        { success: false, error: 'Winner team is required' },
         { status: 400 }
       );
     }
@@ -50,14 +50,40 @@ export async function POST(
       );
     }
 
+    // Determine winner IDs and name based on team
+    let winnerIds: ObjectId[];
+    let winnerName: string;
+    
+    if (winnerTeam === 'team1') {
+      winnerIds = match.category === 'singles'
+        ? [match.player1Id]
+        : [match.player1Id, match.player3Id].filter(Boolean);
+      winnerName = match.category === 'singles'
+        ? match.player1Name
+        : `${match.player1Name} / ${match.player3Name}`;
+    } else {
+      winnerIds = match.category === 'singles'
+        ? [match.player2Id]
+        : [match.player2Id, match.player4Id].filter(Boolean);
+      winnerName = match.category === 'singles'
+        ? match.player2Name
+        : `${match.player2Name} / ${match.player4Name}`;
+    }
+
     // Update match as completed via live scoring
     const updateData: any = {
       status: 'completed',
-      winnerId: new ObjectId(winnerId),
+      winnerTeam,
+      winnerIds,
       winnerName,
       player1Score: player1Score || [],
       player2Score: player2Score || [],
       games: games || [],
+      matchResult: {
+        player1GamesWon: player1GamesWon || 0,
+        player2GamesWon: player2GamesWon || 0,
+        completedAt: new Date(),
+      },
       completionType: 'normal', // Completed via live scoring
       completedAt: new Date(),
       updatedAt: new Date(),
@@ -68,20 +94,20 @@ export async function POST(
       { $set: updateData }
     );
 
-    // AUTO-PROGRESS TO NEXT ROUND (only if this is a new completion)
+    // AUTO-PROGRESS TO NEXT ROUND (only if this is a new completion and tournament match)
     const wasAlreadyCompleted = match.status === 'completed';
-    if (!wasAlreadyCompleted) {
+    if (!wasAlreadyCompleted && match.matchType === 'tournament') {
       console.log(`[AUTO-PROGRESS] Starting progression for match ${id}, winner: ${winnerName}`);
-      await progressWinnerToNextRound(db, match, winnerId, winnerName);
+      await progressWinnerToNextRound(db, match, winnerTeam, winnerName, winnerIds);
       console.log(`[AUTO-PROGRESS] Completed progression for winner: ${winnerName}`);
-    } else {
+    } else if (wasAlreadyCompleted) {
       console.log(`[AUTO-PROGRESS] Skipping progression - match was already completed`);
     }
 
     return NextResponse.json({
       success: true,
       message: `Match completed. Winner: ${winnerName}`,
-      data: { winnerId, winnerName }
+      data: { winnerTeam, winnerIds, winnerName }
     });
 
   } catch (error) {
@@ -97,8 +123,9 @@ export async function POST(
 async function progressWinnerToNextRound(
   db: any,
   currentMatch: any,
-  winnerId: string,
-  winnerName: string
+  winnerTeam: string,
+  winnerName: string,
+  winnerIds: ObjectId[]
 ) {
   // Only progress in knockout tournaments
   if (currentMatch.round === 'Final' || currentMatch.round === 'Group Stage') {
@@ -147,22 +174,20 @@ async function progressWinnerToNextRound(
   const updateFields: any = {};
   
   if (isPlayer1Position) {
-    updateFields.player1Id = new ObjectId(winnerId);
+    updateFields.player1Id = winnerIds[0];
     updateFields.player1Name = winnerName;
     
     if (currentMatch.category === 'doubles' || currentMatch.category === 'mixed') {
-      const isWinnerPlayer1 = winnerId === currentMatch.player1Id?.toString();
-      updateFields.player3Id = isWinnerPlayer1 ? currentMatch.player3Id : currentMatch.player4Id;
-      updateFields.player3Name = isWinnerPlayer1 ? currentMatch.player3Name : currentMatch.player4Name;
+      updateFields.player3Id = winnerIds[1] || null;
+      updateFields.player3Name = winnerTeam === 'team1' ? currentMatch.player3Name : currentMatch.player4Name;
     }
   } else {
-    updateFields.player2Id = new ObjectId(winnerId);
+    updateFields.player2Id = winnerIds[0];
     updateFields.player2Name = winnerName;
     
     if (currentMatch.category === 'doubles' || currentMatch.category === 'mixed') {
-      const isWinnerPlayer1 = winnerId === currentMatch.player1Id?.toString();
-      updateFields.player4Id = isWinnerPlayer1 ? currentMatch.player3Id : currentMatch.player4Id;
-      updateFields.player4Name = isWinnerPlayer1 ? currentMatch.player3Name : currentMatch.player4Name;
+      updateFields.player4Id = winnerIds[1] || null;
+      updateFields.player4Name = winnerTeam === 'team1' ? currentMatch.player3Name : currentMatch.player4Name;
     }
   }
 
@@ -180,17 +205,22 @@ async function progressWinnerToNextRound(
 
   if (updatedNextMatch) {
     if (updatedNextMatch.player1Name !== 'TBD' && updatedNextMatch.player2Name === 'TBD') {
+      const team1WinnerIds = updatedNextMatch.category === 'singles'
+        ? [updatedNextMatch.player1Id]
+        : [updatedNextMatch.player1Id, updatedNextMatch.player3Id].filter(Boolean);
+      
       await db.collection(COLLECTIONS.MATCHES).updateOne(
         { _id: updatedNextMatch._id },
         {
           $set: {
             status: 'completed',
-            winnerId: updatedNextMatch.player1Id,
+            winnerTeam: 'team1',
+            winnerIds: team1WinnerIds,
             winnerName: updatedNextMatch.player1Name,
             player1Score: [21, 0, 0],
             player2Score: [0, 0, 0],
-            isWalkover: true,
-            walkoverReason: 'bye',
+            completionType: 'walkover',
+            completionReason: 'bye',
             completedAt: new Date(),
             updatedAt: new Date(),
           }
@@ -200,21 +230,27 @@ async function progressWinnerToNextRound(
       await progressWinnerToNextRound(
         db,
         updatedNextMatch,
-        updatedNextMatch.player1Id.toString(),
-        updatedNextMatch.player1Name
+        'team1',
+        updatedNextMatch.player1Name,
+        team1WinnerIds
       );
     } else if (updatedNextMatch.player2Name !== 'TBD' && updatedNextMatch.player1Name === 'TBD') {
+      const team2WinnerIds = updatedNextMatch.category === 'singles'
+        ? [updatedNextMatch.player2Id]
+        : [updatedNextMatch.player2Id, updatedNextMatch.player4Id].filter(Boolean);
+      
       await db.collection(COLLECTIONS.MATCHES).updateOne(
         { _id: updatedNextMatch._id },
         {
           $set: {
             status: 'completed',
-            winnerId: updatedNextMatch.player2Id,
+            winnerTeam: 'team2',
+            winnerIds: team2WinnerIds,
             winnerName: updatedNextMatch.player2Name,
             player1Score: [0, 0, 0],
             player2Score: [21, 0, 0],
-            isWalkover: true,
-            walkoverReason: 'bye',
+            completionType: 'walkover',
+            completionReason: 'bye',
             completedAt: new Date(),
             updatedAt: new Date(),
           }
@@ -224,8 +260,9 @@ async function progressWinnerToNextRound(
       await progressWinnerToNextRound(
         db,
         updatedNextMatch,
-        updatedNextMatch.player2Id.toString(),
-        updatedNextMatch.player2Name
+        'team2',
+        updatedNextMatch.player2Name,
+        team2WinnerIds
       );
     }
   }

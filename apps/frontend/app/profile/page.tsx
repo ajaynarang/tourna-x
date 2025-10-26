@@ -45,29 +45,10 @@ interface UserProfile {
   createdAt: string;
 }
 
-interface UserStats {
-  totalTournaments: number;
-  totalMatches: number;
-  wins: number;
-  losses: number;
-  winRate: number;
-  titles: number;
-  runnerUps: number;
-  currentStreak: number;
-  longestStreak: number;
-  favoriteCategory: string;
-  totalPoints: number;
-  averageMatchDuration: number;
-  societyRanking?: number;
-  overallRanking?: number;
-  recentForm: string[];
-}
-
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [stats, setStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -439,149 +420,6 @@ export default function ProfilePage() {
     </div>
   );
 
-  const renderStatsTab = () => {
-    if (!stats) {
-      return (
-        <div className="glass-card-intense p-12 text-center">
-          <BarChart3 className="h-16 w-16 text-tertiary mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-primary mb-2">No Statistics Available</h3>
-          <p className="text-tertiary">Statistics will appear after you participate in tournaments.</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-card-intense p-6"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500/20 rounded-lg">
-                <Trophy className="h-5 w-5 text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-tertiary">Win Rate</p>
-                <p className="text-2xl font-bold text-primary">{stats.winRate}%</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="glass-card-intense p-6"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <Users className="h-5 w-5 text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-tertiary">Total Matches</p>
-                <p className="text-2xl font-bold text-primary">{stats.totalMatches}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="glass-card-intense p-6"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-500/20 rounded-lg">
-                <Trophy className="h-5 w-5 text-yellow-400" />
-              </div>
-              <div>
-                <p className="text-sm text-tertiary">Titles</p>
-                <p className="text-2xl font-bold text-primary">{stats.titles}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="glass-card-intense p-6"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-500/20 rounded-lg">
-                <BarChart3 className="h-5 w-5 text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-tertiary">Current Streak</p>
-                <p className="text-2xl font-bold text-primary">{stats.currentStreak}</p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Detailed Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="glass-card-intense p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">Performance</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-tertiary">Wins</span>
-                <span className="text-primary font-semibold">{stats.wins}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-tertiary">Losses</span>
-                <span className="text-primary font-semibold">{stats.losses}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-tertiary">Runner-ups</span>
-                <span className="text-primary font-semibold">{stats.runnerUps}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-tertiary">Total Points</span>
-                <span className="text-primary font-semibold">{stats.totalPoints}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-card-intense p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">Recent Form</h3>
-            <div className="flex gap-2 mb-4">
-              {stats.recentForm.map((result, i) => (
-                <span
-                  key={i}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    result === 'W' ? 'bg-green-500/20 text-green-400' :
-                    result === 'L' ? 'bg-red-500/20 text-red-400' :
-                    'bg-gray-500/20 text-gray-400'
-                  }`}
-                >
-                  {result}
-                </span>
-              ))}
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-tertiary">Longest Streak</span>
-                <span className="text-primary">{stats.longestStreak}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-tertiary">Favorite Category</span>
-                <span className="text-primary">{stats.favoriteCategory || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-tertiary">Avg Match Duration</span>
-                <span className="text-primary">{stats.averageMatchDuration}m</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderSettingsTab = () => (
     <div className="space-y-6">
       <div className="glass-card-intense p-6">
@@ -677,15 +515,6 @@ export default function ProfilePage() {
     <div className="relative z-10 min-h-screen p-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
-          <Button asChild variant="outline" size="sm">
-            <Link href={profile.roles.includes('admin') ? '/admin/dashboard' : '/player/dashboard'}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Link>
-          </Button>
-        </div>
-
         {/* Tab Navigation */}
         <div className="glass-card-intense p-6">
           <div className="flex bg-white/5 border border-white/10 rounded-lg overflow-hidden">
@@ -698,17 +527,6 @@ export default function ProfilePage() {
               <User className="h-4 w-4 mr-1" />
               Profile
             </Button>
-            {profile.roles.includes('player') && (
-              <Button
-                onClick={() => setActiveTab('stats')}
-                variant={activeTab === 'stats' ? 'default' : 'ghost'}
-                size="sm"
-                className="flex-1 hover:bg-white/10"
-              >
-                <BarChart3 className="h-4 w-4 mr-1" />
-                Statistics
-              </Button>
-            )}
             <Button
               onClick={() => setActiveTab('settings')}
               variant={activeTab === 'settings' ? 'default' : 'ghost'}
@@ -724,7 +542,6 @@ export default function ProfilePage() {
 
       {/* Tab Content */}
       {activeTab === 'profile' && renderProfileTab()}
-      {activeTab === 'stats' && renderStatsTab()}
       {activeTab === 'settings' && renderSettingsTab()}
     </div>
   );

@@ -162,10 +162,12 @@ export default function LiveScoring({
   
   const saveMatchResult = async (winner: Player, finalScore: MatchScore) => {
     try {
+      // Determine which team won based on winner
+      const winnerTeam = finalScore.winner === 'player1' ? 'team1' : 'team2';
+      
       console.log('[LIVE-SCORING] Saving match result to backend...', {
         matchId,
-        winnerId: winner.id,
-        winnerName: winner.name,
+        winnerTeam,
         player1GamesWon: finalScore.player1GamesWon,
         player2GamesWon: finalScore.player2GamesWon
       });
@@ -174,11 +176,12 @@ export default function LiveScoring({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          winnerId: winner.id,
-          winnerName: winner.name,
+          winnerTeam,
           player1Score: finalScore.games.map(g => g.player1Score),
           player2Score: finalScore.games.map(g => g.player2Score),
           games: finalScore.games,
+          player1GamesWon: finalScore.player1GamesWon,
+          player2GamesWon: finalScore.player2GamesWon,
         }),
       });
 

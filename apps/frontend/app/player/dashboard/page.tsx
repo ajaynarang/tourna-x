@@ -666,7 +666,7 @@ function QuickActionCard({
           <Icon className="h-6 w-6 text-white" />
         </div>
       </div>
-      <ArrowRight className="text-tertiary absolute right-4 top-4 h-5 w-5 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
+      {/* <ArrowRight className="text-tertiary absolute right-4 top-4 h-5 w-5 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" /> */}
     </motion.button>
   );
 }

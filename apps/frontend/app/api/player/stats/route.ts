@@ -140,6 +140,7 @@ export async function GET(request: NextRequest) {
       losses,
       winRate: Math.round(winRate * 100) / 100,
       currentStreak,
+      streakType,
       longestStreak,
       recentForm,
       categoryStats,

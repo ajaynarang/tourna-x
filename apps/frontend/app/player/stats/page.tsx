@@ -30,6 +30,7 @@ interface StatsData {
   losses: number;
   winRate: number;
   currentStreak: number;
+  streakType: string;
   longestStreak: number;
   recentForm: string[];
   categoryStats: CategoryStat[];
@@ -256,7 +257,7 @@ function PlayerStatsContent() {
             <div className="text-center">
               <div className="text-5xl font-bold text-orange-400 mb-2">{stats.currentStreak}</div>
               <div className="text-sm text-muted-foreground">
-                {stats.currentStreak > 0 ? 'Consecutive Wins' : 'No Active Streak'}
+                {stats.currentStreak > 0 ? stats.streakType === 'W' ? 'Consecutive Wins' : 'Consecutive Losses' : 'No Active Streak'}
               </div>
               {stats.currentStreak >= 3 && (
                 <span className="mt-3 inline-block rounded-full bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-400">
