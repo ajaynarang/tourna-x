@@ -7,6 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo
 import { Button } from '@repo/ui';
 import { Badge } from '@repo/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@repo/ui';
+import { Input } from '@repo/ui';
+import { Label } from '@repo/ui';
+import { Alert, AlertDescription } from '@repo/ui';
 import { 
   ArrowLeft,
   User,
@@ -24,7 +27,8 @@ import {
   BarChart3,
   Bell,
   LogOut,
-  Star
+  Star,
+  CheckCircle
 } from 'lucide-react';
 import { SKILL_LEVEL_DESCRIPTIONS } from '@repo/schemas';
 import Link from 'next/link';
@@ -41,6 +45,7 @@ interface UserProfile {
   age?: number;
   gender?: string;
   skillLevel?: string;
+  passcode?: string;
   roles: string[];
   createdAt: string;
 }
@@ -72,6 +77,10 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<UserProfile>>({});
   const [activeTab, setActiveTab] = useState<'profile' | 'stats' | 'settings'>('profile');
+  const [showPasscodeDialog, setShowPasscodeDialog] = useState(false);
+  const [passcodeForm, setPasscodeForm] = useState({ passcode: '', confirmPasscode: '' });
+  const [passcodeError, setPasscodeError] = useState('');
+  const [passcodeSuccess, setPasscodeSuccess] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -142,6 +151,64 @@ export default function ProfilePage() {
 
   const updateFormData = (field: keyof UserProfile, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePasscodeUpdate = async () => {
+    setPasscodeError('');
+    setPasscodeSuccess(false);
+
+    // Validate passcode
+    if (!passcodeForm.passcode || passcodeForm.passcode.length !== 6) {
+      setPasscodeError('Passcode must be exactly 6 digits');
+      return;
+    }
+
+    if (passcodeForm.passcode !== passcodeForm.confirmPasscode) {
+      setPasscodeError('Passcodes do not match');
+      return;
+    }
+
+    // Check for sequential passcode
+    const isSequential = (code: string) => {
+      const digits = code.split('').map(Number);
+      let ascending = true;
+      let descending = true;
+      
+      for (let i = 1; i < digits.length; i++) {
+        if (digits[i] !== (digits[i - 1] ?? 0) + 1) ascending = false;
+        if (digits[i] !== (digits[i - 1] ?? 0) - 1) descending = false;
+      }
+      
+      return ascending || descending;
+    };
+
+    if (isSequential(passcodeForm.passcode)) {
+      setPasscodeError('Passcode cannot be sequential (e.g., 123456 or 654321)');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/update-passcode', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode: passcodeForm.passcode }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setPasscodeSuccess(true);
+        setPasscodeForm({ passcode: '', confirmPasscode: '' });
+        setTimeout(() => {
+          setShowPasscodeDialog(false);
+          setPasscodeSuccess(false);
+        }, 2000);
+      } else {
+        setPasscodeError(result.error || 'Failed to update passcode');
+      }
+    } catch (error) {
+      setPasscodeError('Failed to update passcode. Please try again.');
+    }
   };
 
   const renderProfileTab = () => (
@@ -641,20 +708,51 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Account Info */}
+      {/* Security Settings */}
       <div className="glass-card-intense p-4 md:p-6">
-        <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20 mb-4">
-          <div className="flex items-start gap-3">
-            <Phone className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
-            <div className="min-w-0">
-              <h4 className="font-medium text-primary mb-1 text-sm md:text-base">Phone Authentication</h4>
-              <p className="text-xs md:text-sm text-tertiary">
-                Your account is secured with phone number and OTP authentication. 
-                No password is required for login.
-              </p>
+        <div className="flex items-center gap-2 mb-4">
+          <Shield className="h-5 w-5 text-blue-400" />
+          <h3 className="text-lg font-semibold text-primary">Security</h3>
+        </div>
+
+        <div className="space-y-4">
+          {/* Passcode Management */}
+          <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-primary mb-1 text-sm md:text-base">Login Passcode</h4>
+                <p className="text-xs md:text-sm text-tertiary">
+                  Set a 6-digit passcode for quick login. You can use either passcode or OTP to login.
+                </p>
+              </div>
+              <Button
+                onClick={() => setShowPasscodeDialog(true)}
+                variant="outline"
+                size="sm"
+                className="bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 whitespace-nowrap"
+              >
+                {profile?.passcode ? 'Change' : 'Set'} Passcode
+              </Button>
+            </div>
+          </div>
+
+          {/* Phone Authentication Info */}
+          <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+            <div className="flex items-start gap-3">
+              <Phone className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0">
+                <h4 className="font-medium text-primary mb-1 text-sm md:text-base">Phone Authentication</h4>
+                <p className="text-xs md:text-sm text-tertiary">
+                  Your account is secured with phone number. You can login using OTP or your passcode.
+                </p>
+              </div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Account Info */}
+      <div className="glass-card-intense p-4 md:p-6">
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -745,6 +843,119 @@ export default function ProfilePage() {
       {activeTab === 'profile' && renderProfileTab()}
       {activeTab === 'stats' && renderStatsTab()}
       {activeTab === 'settings' && renderSettingsTab()}
+
+      {/* Passcode Dialog */}
+      {showPasscodeDialog && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card-intense p-6 max-w-md w-full"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-primary">
+                {profile?.passcode ? 'Change' : 'Set'} Passcode
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowPasscodeDialog(false);
+                  setPasscodeForm({ passcode: '', confirmPasscode: '' });
+                  setPasscodeError('');
+                  setPasscodeSuccess(false);
+                }}
+                className="h-8 w-8 p-0"
+              >
+                ×
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPasscode">New Passcode</Label>
+                <Input
+                  id="newPasscode"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Enter 6 digits"
+                  value={passcodeForm.passcode}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    if (value.length <= 6) {
+                      setPasscodeForm({ ...passcodeForm, passcode: value });
+                      setPasscodeError('');
+                    }
+                  }}
+                  maxLength={6}
+                  className="text-center tracking-widest"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmNewPasscode">Confirm Passcode</Label>
+                <Input
+                  id="confirmNewPasscode"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Confirm 6 digits"
+                  value={passcodeForm.confirmPasscode}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    if (value.length <= 6) {
+                      setPasscodeForm({ ...passcodeForm, confirmPasscode: value });
+                      setPasscodeError('');
+                    }
+                  }}
+                  maxLength={6}
+                  className="text-center tracking-widest"
+                />
+              </div>
+
+              <p className="text-xs text-tertiary">
+                Note: Passcode cannot be sequential (e.g., 123456 or 654321)
+              </p>
+
+              {passcodeError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{passcodeError}</AlertDescription>
+                </Alert>
+              )}
+
+              {passcodeSuccess && (
+                <Alert className="bg-green-500/10 border-green-500/30 text-green-400">
+                  <AlertDescription className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Passcode updated successfully!
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowPasscodeDialog(false);
+                    setPasscodeForm({ passcode: '', confirmPasscode: '' });
+                    setPasscodeError('');
+                    setPasscodeSuccess(false);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handlePasscodeUpdate}
+                  disabled={!passcodeForm.passcode || !passcodeForm.confirmPasscode}
+                  className="flex-1"
+                >
+                  {profile?.passcode ? 'Update' : 'Set'} Passcode
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

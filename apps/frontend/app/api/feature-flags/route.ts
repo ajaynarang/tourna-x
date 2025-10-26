@@ -33,12 +33,12 @@ export async function GET(request: NextRequest) {
 
       const result = await db
         .collection(COLLECTIONS.FEATURE_FLAGS)
-        .insertOne(defaultFlags);
+        .insertOne(defaultFlags as any);
 
       featureFlags = {
-        _id: result.insertedId,
+        _id: result.insertedId as any,
         ...defaultFlags,
-      };
+      } as any;
     }
 
     return NextResponse.json({

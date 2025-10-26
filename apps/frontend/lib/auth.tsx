@@ -26,6 +26,7 @@ interface AuthContextType {
   currentRole: UserRole | null;
   login: (username: string, password: string) => Promise<void>;
   loginWithPhone: (phone: string, otp: string) => Promise<void>;
+  loginWithPasscode: (phone: string, passcode: string) => Promise<void>;
   sendOtp: (phone: string, purpose?: 'login' | 'register') => Promise<void>;
   logout: () => void;
   switchRole: (role: UserRole) => void;
@@ -156,6 +157,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginWithPasscode = async (phone: string, passcode: string) => {
+    try {
+      const response = await fetch('/api/auth/passcode-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ phone, passcode }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.user) {
+          setUser(data.user);
+          
+          // Set initial role and redirect
+          if (data.user.roles?.includes('admin')) {
+            setCurrentRole('admin');
+            router.push('/admin/dashboard');
+          } else if (data.user.roles?.includes('player')) {
+            setCurrentRole('player');
+            router.push('/player/dashboard');
+          }
+        } else {
+          throw new Error(data.error || 'Passcode login failed');
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Passcode login failed');
+      }
+    } catch (error) {
+      console.error('Passcode login error:', error);
+      throw error;
+    }
+  };
+
   const sendOtp = async (phone: string, purpose: 'login' | 'register' = 'login') => {
     try {
       const response = await fetch('/api/auth/send-otp', {
@@ -203,6 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     currentRole,
     login,
     loginWithPhone,
+    loginWithPasscode,
     sendOtp,
     logout,
     switchRole,

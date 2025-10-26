@@ -16,11 +16,51 @@ export const SKILL_LEVEL_DESCRIPTIONS = {
   elite: "National/international competitive level",
 } as const;
 
+// Passcode validation utility
+export function isSequentialPasscode(passcode: string): boolean {
+  if (passcode.length !== 6 || !/^\d{6}$/.test(passcode)) {
+    return false;
+  }
+  
+  const digits = passcode.split('').map(Number);
+  
+  // Check for ascending sequence (123456, 234567, etc.)
+  let isAscending = true;
+  for (let i = 1; i < digits.length; i++) {
+    const current = digits[i];
+    const previous = digits[i - 1];
+    if (current === undefined || previous === undefined || current !== previous + 1) {
+      isAscending = false;
+      break;
+    }
+  }
+  
+  // Check for descending sequence (654321, 543210, etc.)
+  let isDescending = true;
+  for (let i = 1; i < digits.length; i++) {
+    const current = digits[i];
+    const previous = digits[i - 1];
+    if (current === undefined || previous === undefined || current !== previous - 1) {
+      isDescending = false;
+      break;
+    }
+  }
+  
+  return isAscending || isDescending;
+}
+
+// Passcode schema validation
+export const passcodeSchema = z.string().length(6).regex(/^\d{6}$/, "Passcode must be exactly 6 digits").refine(
+  (val) => !isSequentialPasscode(val),
+  { message: "Passcode cannot be sequential (e.g., 123456 or 654321)" }
+);
+
 // Base schemas for MongoDB collections
 export const userSchema = z.object({
   _id: objectIdSchema.optional(),
   username: z.string().min(3).max(50).optional(), // For admin users
   password: z.string().min(6).optional(), // For admin users only
+  passcode: z.string().length(6).regex(/^\d{6}$/).optional(), // 6-digit passcode for player authentication
   roles: z.array(z.enum(["admin", "player"])).default(["player"]), // Support multiple roles
   isSuperAdmin: z.boolean().default(false), // Super admin flag - manually set
  // Admin role request status

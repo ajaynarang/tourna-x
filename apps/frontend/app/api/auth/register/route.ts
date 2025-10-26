@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { insertUserSchema, COLLECTIONS } from '@repo/schemas';
+import { insertUserSchema, COLLECTIONS, isSequentialPasscode } from '@repo/schemas';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, phone, email, age, gender, society, block, flatNumber, skillLevel, otp, requestAdminAccess } = await request.json();
+    const { name, phone, email, age, gender, society, block, flatNumber, skillLevel, otp, requestAdminAccess, passcode } = await request.json();
 
     if (!name || !phone || !otp) {
       return NextResponse.json(
@@ -39,30 +39,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate passcode if provided (optional)
+    if (passcode) {
+      if (passcode.length !== 6 || !/^\d{6}$/.test(passcode)) {
+        return NextResponse.json(
+          { error: 'Passcode must be exactly 6 digits' },
+          { status: 400 }
+        );
+      }
+      
+      if (isSequentialPasscode(passcode)) {
+        return NextResponse.json(
+          { error: 'Passcode cannot be sequential (e.g., 123456 or 654321)' },
+          { status: 400 }
+        );
+      }
+    }
+
     const db = await connectToDatabase();
     const otpsCollection = db.collection(COLLECTIONS.OTPS);
     const usersCollection = db.collection(COLLECTIONS.USERS);
 
     // Verify OTP
-    // Allow test OTP 123456 for development/testing
-    const isTestOtp = otp === '123456';
-    
-    let otpRecord = null;
-    if (!isTestOtp) {
-      otpRecord = await otpsCollection.findOne({
-        phone: phoneNumber,
-        countryCode: '+91',
-        otp,
-        isUsed: false,
-        expiresAt: { $gt: new Date() },
-      });
+    const otpRecord = await otpsCollection.findOne({
+      phone: phoneNumber,
+      countryCode: '+91',
+      otp,
+      isUsed: false,
+      expiresAt: { $gt: new Date() },
+    });
 
-      if (!otpRecord) {
-        return NextResponse.json(
-          { error: 'Invalid or expired OTP' },
-          { status: 400 }
-        );
-      }
+    if (!otpRecord) {
+      return NextResponse.json(
+        { error: 'Invalid or expired OTP' },
+        { status: 400 }
+      );
     }
 
     // Check if user already exists
@@ -86,6 +97,7 @@ export async function POST(request: NextRequest) {
       block: block || undefined,
       flatNumber: flatNumber || undefined,
       skillLevel: skillLevel,
+      passcode: passcode || undefined, // Optional passcode
       roles: ['player'],
       isSuperAdmin: false,
       adminRequestStatus: requestAdminAccess ? 'pending' : 'none',
@@ -94,13 +106,11 @@ export async function POST(request: NextRequest) {
 
     const result = await usersCollection.insertOne(userData);
 
-    // Mark OTP as used (only for real OTPs, not test OTP)
-    if (otpRecord) {
-      await otpsCollection.updateOne(
-        { _id: otpRecord._id },
-        { $set: { isUsed: true } }
-      );
-    }
+    // Mark OTP as used
+    await otpsCollection.updateOne(
+      { _id: otpRecord._id },
+      { $set: { isUsed: true } }
+    );
 
     return NextResponse.json({
       message: 'Registration successful',

@@ -24,7 +24,7 @@ export default function LoginPage() {
     otp: '',
   });
 
-  const { loginWithPhone, sendOtp } = useAuth();
+  const { loginWithPhone, loginWithPasscode, sendOtp } = useAuth();
   const router = useRouter();
 
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -71,9 +71,30 @@ export default function LoginPage() {
     setError('');
 
     try {
-      await loginWithPhone(loginForm.phone, loginForm.otp);
-    } catch (err) {
-      setError('Invalid OTP. Please try again.');
+      // Try passcode login first (if OTP wasn't sent, user likely entered passcode)
+      if (!otpSent) {
+        // User entered code without requesting OTP - try as passcode
+        await loginWithPasscode(loginForm.phone, loginForm.otp);
+      } else {
+        // OTP was sent, try OTP login first
+        try {
+          await loginWithPhone(loginForm.phone, loginForm.otp);
+        } catch (otpError: any) {
+          // If OTP fails, try passcode as fallback
+          if (otpError.message?.includes('Invalid or expired OTP')) {
+            try {
+              await loginWithPasscode(loginForm.phone, loginForm.otp);
+            } catch (passcodeError) {
+              // Both failed, show error
+              throw new Error('Invalid OTP or passcode. Please try again.');
+            }
+          } else {
+            throw otpError;
+          }
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +170,11 @@ export default function LoginPage() {
             </Link>
             <CardContent className="p-8">
               {!otpSent ? (
-                <form onSubmit={handleSendOtp} className="space-y-6">
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  // Allow user to skip OTP and go directly to code entry
+                  setOtpSent(true);
+                }} className="space-y-6">
                   <div className="space-y-3">
                     <Label htmlFor="phone" className="text-gray-900 dark:text-white text-sm font-semibold">
                       Phone Number
@@ -163,7 +188,7 @@ export default function LoginPage() {
                       showValidation={true}
                     />
                     <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                      We'll send you a verification code. Works for both admins and players.
+                      Enter your phone number. You can login with OTP or your passcode (if set).
                     </p>
                   </div>
 
@@ -173,27 +198,39 @@ export default function LoginPage() {
                     </Alert>
                   )}
 
-                  <Button 
-                    type="submit" 
-                    variant="default"
-                    className="w-full h-12 text-lg font-semibold" 
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      'Send Verification Code'
-                    )}
-                  </Button>
+                  <div className="space-y-3">
+                    <Button 
+                      type="submit" 
+                      variant="default"
+                      className="w-full h-12 text-lg font-semibold" 
+                      disabled={isLoading || !loginForm.phone || loginForm.phone.length < 13}
+                    >
+                      Continue
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleSendOtp}
+                      disabled={isLoading || !loginForm.phone || loginForm.phone.length < 13}
+                      className="w-full h-12 text-lg font-semibold"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Sending OTP...
+                        </>
+                      ) : (
+                        'Send OTP to Phone'
+                      )}
+                    </Button>
+                  </div>
                 </form>
               ) : (
                 <form onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-3">
                     <Label htmlFor="otp" className="text-gray-900 dark:text-white text-sm font-semibold">
-                      Verification Code
+                      Verification Code or Passcode
                     </Label>
                     <Input
                       id="otp"
@@ -206,11 +243,15 @@ export default function LoginPage() {
                       required
                     />
                     <p className="text-gray-500 dark:text-gray-400 text-sm">
-                      Code sent to <span className="text-gray-900 dark:text-white font-medium">{loginForm.phone}</span>
+                      {otpSent ? (
+                        <>Code sent to <span className="text-gray-900 dark:text-white font-medium">{loginForm.phone}</span></>
+                      ) : (
+                        <>Enter your 6-digit OTP or passcode</>
+                      )}
                     </p>
                     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                       <p className="text-sm text-blue-800 dark:text-blue-200">
-                        <strong>For testing:</strong> Use verification code <span className="font-mono font-bold">123456</span>
+                        <strong>Tip:</strong> You can enter either your OTP (sent to your phone) or your passcode (if you've set one in your profile).
                       </p>
                     </div>
                   </div>

@@ -31,6 +31,8 @@ export default function RegisterPage() {
     flatNumber: '',
     skillLevel: '',
     otp: '',
+    passcode: '',
+    confirmPasscode: '',
     requestAdminAccess: false,
   });
 
@@ -91,6 +93,41 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError('');
 
+    // Validate passcode if provided
+    if (form.passcode) {
+      if (form.passcode.length !== 6 || !/^\d{6}$/.test(form.passcode)) {
+        setError('Passcode must be exactly 6 digits');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (form.passcode !== form.confirmPasscode) {
+        setError('Passcodes do not match');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check for sequential passcode
+      const isSequential = (code: string) => {
+        const digits = code.split('').map(Number);
+        let ascending = true;
+        let descending = true;
+        
+        for (let i = 1; i < digits.length; i++) {
+          if (digits[i] !== (digits[i - 1] ?? 0) + 1) ascending = false;
+          if (digits[i] !== (digits[i - 1] ?? 0) - 1) descending = false;
+        }
+        
+        return ascending || descending;
+      };
+      
+      if (isSequential(form.passcode)) {
+        setError('Passcode cannot be sequential (e.g., 123456 or 654321)');
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -100,6 +137,7 @@ export default function RegisterPage() {
         body: JSON.stringify({
           ...form,
           age: parseInt(form.age),
+          passcode: form.passcode || undefined, // Only send if provided
         }),
       });
 
@@ -370,6 +408,64 @@ export default function RegisterPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Passcode Setup (Optional) */}
+              <div className="space-y-4 border-t pt-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Set Passcode (Optional)</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Set a 6-digit passcode for quick login. You can also use OTP to login anytime.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="passcode">Passcode</Label>
+                    <Input
+                      id="passcode"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Enter 6 digits"
+                      value={form.passcode}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 6) {
+                          setForm({ ...form, passcode: value });
+                        }
+                      }}
+                      maxLength={6}
+                      className="text-center tracking-widest"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPasscode">Confirm Passcode</Label>
+                    <Input
+                      id="confirmPasscode"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Confirm 6 digits"
+                      value={form.confirmPasscode}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 6) {
+                          setForm({ ...form, confirmPasscode: value });
+                        }
+                      }}
+                      maxLength={6}
+                      className="text-center tracking-widest"
+                    />
+                  </div>
+                </div>
+                
+                {form.passcode && form.confirmPasscode && form.passcode !== form.confirmPasscode && (
+                  <p className="text-sm text-red-600">Passcodes do not match</p>
+                )}
+                
+                <p className="text-xs text-gray-500">
+                  Note: Passcode cannot be sequential (e.g., 123456 or 654321)
+                </p>
               </div>
 
               {/* Admin Access Request */}

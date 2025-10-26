@@ -40,35 +40,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify OTP
-    // Allow test OTP 123456 for development/testing
-    const isTestOtp = otp === '123456';
-    
-    if (!isTestOtp) {
-      console.log('Looking for OTP record...');
-      const otpRecord = await db.collection(COLLECTIONS.OTPS).findOne({
-        phone: phoneNumber,
-        otp,
-        isUsed: false
-      });
+    console.log('Looking for OTP record...');
+    const otpRecord = await db.collection(COLLECTIONS.OTPS).findOne({
+      phone: phoneNumber,
+      otp,
+      isUsed: false
+    });
 
-      console.log('OTP record found:', !!otpRecord);
+    console.log('OTP record found:', !!otpRecord);
 
-      if (!otpRecord) {
-        console.log('Invalid or expired OTP');
-        return NextResponse.json(
-          { success: false, error: 'Invalid or expired OTP' },
-          { status: 401 }
-        );
-      }
-
-      // Mark OTP as used
-      await db.collection(COLLECTIONS.OTPS).updateOne(
-        { _id: otpRecord._id },
-        { $set: { isUsed: true } }
+    if (!otpRecord) {
+      console.log('Invalid or expired OTP');
+      return NextResponse.json(
+        { success: false, error: 'Invalid or expired OTP' },
+        { status: 401 }
       );
-    } else {
-      console.log('Using test OTP 123456');
     }
+
+    // Mark OTP as used
+    await db.collection(COLLECTIONS.OTPS).updateOne(
+      { _id: otpRecord._id },
+      { $set: { isUsed: true } }
+    );
 
     // Find or create user
     console.log('Looking for user...');
