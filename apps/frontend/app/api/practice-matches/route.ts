@@ -31,6 +31,16 @@ export async function GET(request: NextRequest) {
       matchType: 'practice'
     };
     
+    // Check if user is super admin
+    const usersCollection = db.collection(COLLECTIONS.USERS);
+    const currentUser = await usersCollection.findOne({ _id: new ObjectId(authUser.userId) });
+    const isSuperAdmin = currentUser?.isSuperAdmin === true;
+    
+    // Non-super admins can only see matches they created
+    if (!isSuperAdmin) {
+      query.createdBy = new ObjectId(authUser.userId);
+    }
+    
     if (status && status !== 'all') {
       query.status = status;
     }

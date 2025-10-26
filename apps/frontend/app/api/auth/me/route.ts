@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
         phone: user.phone,
         email: user.email,
         roles: user.roles,
+        isSuperAdmin: user.isSuperAdmin || false,
         society: user.society,
         block: user.block,
         flatNumber: user.flatNumber,

@@ -21,13 +21,29 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid match ID' }, { status: 400 });
     }
 
-    const match = await db.collection(COLLECTIONS.MATCHES).findOne({
+    // Check if user is super admin
+    const usersCollection = db.collection(COLLECTIONS.USERS);
+    const currentUser = await usersCollection.findOne({ _id: new ObjectId(authUser.userId) });
+    const isSuperAdmin = currentUser?.isSuperAdmin === true;
+
+    // Build query - non-super admins can only see matches they created
+    const matchQuery: any = {
       _id: new ObjectId(id),
       matchType: 'practice'
-    });
+    };
+
+    if (!isSuperAdmin) {
+      matchQuery.createdBy = new ObjectId(authUser.userId);
+    }
+
+    const match = await db.collection(COLLECTIONS.MATCHES).findOne(matchQuery);
 
     if (!match) {
-      return NextResponse.json({ error: 'Practice match not found' }, { status: 404 });
+      return NextResponse.json({ 
+        error: isSuperAdmin 
+          ? 'Practice match not found' 
+          : 'Practice match not found or you do not have permission to view it' 
+      }, { status: 404 });
     }
 
     return NextResponse.json({

@@ -152,7 +152,7 @@ export default function PracticeMatchDetailsPage({
         // If match is completed, go back to listing after showing result
         if (data.match.status === 'completed') {
           setTimeout(() => {
-            router.push('/admin/practice-matches');
+            router.push('/practice-matches');
           }, 3000);
         }
       }

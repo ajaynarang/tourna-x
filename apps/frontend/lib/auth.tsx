@@ -9,6 +9,7 @@ export interface User {
   _id: string;
   username?: string;
   roles: UserRole[];
+  isSuperAdmin?: boolean;
   name: string;
   phone: string;
   email?: string;

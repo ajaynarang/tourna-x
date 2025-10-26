@@ -226,8 +226,15 @@ export default function PracticeMatchesPage() {
       <div className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
+            {/* Super Admin Badge */}
+            {user?.isSuperAdmin && (
+              <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 font-semibold">
+                <Trophy className="h-3 w-3 mr-1" />
+                Super Admin - Viewing All Matches
+              </Badge>
+            )}
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto">
               {/* Mobile Filter Toggle */}
               <Button
                 type="button"
@@ -248,7 +255,7 @@ export default function PracticeMatchesPage() {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  router.push('/admin/practice-matches/create');
+                  router.push('/practice-matches/create');
                 }}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25"
               >
@@ -367,7 +374,7 @@ export default function PracticeMatchesPage() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                router.push('/admin/practice-matches/create');
+                router.push('/practice-matches/create');
               }}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25"
             >
